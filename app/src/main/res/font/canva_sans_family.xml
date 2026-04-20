@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <font
+        android:font="@font/canvasansregular"
+        android:fontStyle="normal"
+        android:fontWeight="400"
+        app:font="@font/canvasansregular"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+
+    <font
+        android:font="@font/canvasansregularitalic"
+        android:fontStyle="italic"
+        android:fontWeight="400"
+        app:font="@font/canvasansregularitalic"
+        app:fontStyle="italic"
+        app:fontWeight="400" />
+
+    <font
+        android:font="@font/canvasansmedium"
+        android:fontStyle="normal"
+        android:fontWeight="500"
+        app:font="@font/canvasansmedium"
+        app:fontStyle="normal"
+        app:fontWeight="500" />
+
+    <font
+        android:font="@font/canvasansmediumitalic"
+        android:fontStyle="italic"
+        android:fontWeight="500"
+        app:font="@font/canvasansmediumitalic"
+        app:fontStyle="italic"
+        app:fontWeight="500" />
+
+    <font
+        android:font="@font/canvasansbold"
+        android:fontStyle="normal"
+        android:fontWeight="700"
+        app:font="@font/canvasansbold"
+        app:fontStyle="normal"
+        app:fontWeight="700" />
+
+    <font
+        android:font="@font/canvasansbolditalic"
+        android:fontStyle="italic"
+        android:fontWeight="700"
+        app:font="@font/canvasansbolditalic"
+        app:fontStyle="italic"
+        app:fontWeight="700" />
+
+</font-family>
