@@ -75,7 +75,7 @@ import kotlinx.coroutines.tasks.await
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: AppViewModel = viewModel()) {
+fun RateParkingLot(navController: NavController, parkingLotId: String, reservationId: String, viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
     var targetLocation by remember { mutableStateOf<LatLng?>(null) }
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
@@ -225,7 +225,7 @@ fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: 
             Button(
                 onClick = {
                     if (currentRating > 0) {
-                        viewModel.rateParkingLot(parkingLotId, currentRating)
+                        viewModel.rateParkingLot(parkingLotId, reservationId, currentRating)
                         Toast.makeText(context, "¡Gracias por tu calificación!", Toast.LENGTH_SHORT).show()
                         navController.navigate(AppScreens.HomeUser.name) {
                             popUpTo(AppScreens.HomeUser.name) { inclusive = true }

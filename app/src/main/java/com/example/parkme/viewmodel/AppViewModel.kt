@@ -215,10 +215,11 @@ class AppViewModel : ViewModel() {
             else -> "Error: $message"
         }
     }
-    fun rateParkingLot(parkingLotId: String, newRating: Float) {
+    fun rateParkingLot(parkingLotId: String, reservationId: String, newRating: Float) {
         viewModelScope.launch {
             try {
                 val docRef = firestore.collection("parqueaderos").document(parkingLotId)
+                val reservationRef = firestore.collection("reservas").document(reservationId)
 
                 firestore.runTransaction { transaction ->
                     val snapshot = transaction.get(docRef)
@@ -232,6 +233,7 @@ class AppViewModel : ViewModel() {
 
                         transaction.update(docRef, "rate", newAverage)
                         transaction.update(docRef, "ratingCount", newCount)
+                        transaction.update(reservationRef, "isRated", true)
                     }
                 }.await()
 
@@ -339,6 +341,7 @@ class AppViewModel : ViewModel() {
                         // Súper importante: Convertimos seguro el precio, sin importar si Firebase lo guardó como Int, Long o Double
                         val totalPrice = (doc.get("totalPrice") as? Number)?.toDouble()
                             ?: (doc.get("precioTotal") as? Number)?.toDouble() ?: 0.0
+                        val isRated = doc.getBoolean("isRated") ?: false
 
                         Log.d("RESERVAS_DEBUG", "Reserva leída correctamente: $parkingName - $placa")
 
@@ -352,7 +355,8 @@ class AppViewModel : ViewModel() {
                             startTime = startTime,
                             endTime = endTime,
                             status = status,
-                            totalPrice = totalPrice
+                            totalPrice = totalPrice,
+                            isRated = isRated
                         )
                     } catch (e: Exception) {
                         Log.e("RESERVAS_DEBUG", "Error armando la reserva ${doc.id}: ${e.message}")

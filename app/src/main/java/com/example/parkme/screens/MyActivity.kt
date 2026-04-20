@@ -206,19 +206,21 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
                                         Text(text = "${parqueaderoReciente?.pricePerHour ?: "$0"} por hora",
                                             fontSize = 16.sp,
                                             color = Color.DarkGray)
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(top = 8.dp).clickable {
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reservaReciente.parkingId)
-                                                navController.navigate(AppScreens.RateParkingLot.name)
+                                        if (!reservaReciente.isRated) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(top = 8.dp).clickable {
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reservaReciente.parkingId)
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("rateReservationId", reservaReciente.id)
+                                                    navController.navigate(AppScreens.RateParkingLot.name)
+                                                }
+                                            ) {
+                                                Icon(Icons.Outlined.Star, contentDescription = "Calificar", tint = colorResource(R.color.blue), modifier = Modifier.size(24.dp))
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text("Calificar", fontSize = 18.sp, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
                                             }
-                                        ) {
-                                            Icon(Icons.Outlined.Star,
-                                                contentDescription = "Calificar",
-                                                tint = colorResource(R.color.blue),
-                                                modifier = Modifier.size(24.dp))
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text("Calificar", fontSize = 18.sp, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Text("★ Calificado", color = Color.Gray, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
                                         }
                                     }
 
@@ -267,24 +269,32 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
                                     Text(text = "${parqueoData?.pricePerHour ?: "$0"} por hora",
                                         fontSize = 16.sp,
                                         color = Color.DarkGray)
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    ) {
-                                        Icon(Icons.Outlined.Star,
-                                            contentDescription = "Calificar",
-                                            tint = colorResource(R.color.blue),
-                                            modifier = Modifier.size(24.dp))
-                                        Text(
-                                            text = "Calificar experiencia",
-                                            color = colorResource(R.color.blue),
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(top = 8.dp).clickable {
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
-                                                navController.navigate(AppScreens.RateParkingLot.name)
-                                            }
-                                        )
+                                    if (!reserva.isRated) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Outlined.Star,
+                                                contentDescription = "Calificar",
+                                                tint = colorResource(R.color.blue),
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                            Text(
+                                                text = "Calificar experiencia",
+                                                color = colorResource(R.color.blue),
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(top = 8.dp).clickable {
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("rateReservationId", reserva.id)
+                                                    navController.navigate(AppScreens.RateParkingLot.name)
+                                                }
+                                            )
+
+                                        }
+                                    } else {
+                                        Text("★ Calificado", color = Color.Gray, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
                                     }
 
                                 }

@@ -81,10 +81,12 @@ fun Navigation() {
         composable(AppScreens.SearchMap.name) { SearchMap(navController, viewModel) }
         composable(AppScreens.RateParkingLot.name) {
             val parkingLotId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("rateParkingId") ?: ""
+            val reservationId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("rateReservationId") ?: ""
 
             RateParkingLot(
                 navController = navController,
                 parkingLotId = parkingLotId,
+                reservationId = reservationId,
                 viewModel = viewModel
             )
         }
