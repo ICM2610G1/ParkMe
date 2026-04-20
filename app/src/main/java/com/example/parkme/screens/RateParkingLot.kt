@@ -132,14 +132,14 @@ fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: 
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = MapProperties( mapStyleOptions = currentMapStyle),
-//            uiSettings = MapUiSettings(
-//                scrollGesturesEnabled = false,
-//                zoomGesturesEnabled = false,
-//                tiltGesturesEnabled = false,
-//                rotationGesturesEnabled = false,
-//                zoomControlsEnabled = false,
-//                compassEnabled = false
-//            )
+            uiSettings = MapUiSettings(
+                scrollGesturesEnabled = false,
+                zoomGesturesEnabled = false,
+                tiltGesturesEnabled = false,
+                rotationGesturesEnabled = false,
+                zoomControlsEnabled = false,
+                compassEnabled = false
+            )
         ) {
             targetLocation?.let {
                 Marker(

@@ -323,7 +323,6 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // Damos padding dinámico: más grande si el formulario está abierto
                 .padding(bottom = if (mostrarFormulario) 380.dp else 100.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),

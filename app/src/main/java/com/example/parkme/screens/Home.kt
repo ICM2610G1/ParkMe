@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.input.InputTransformation.Companion.keyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
@@ -40,7 +39,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
-import com.google.android.gms.maps.model.LatLng
 import com.example.parkme.models.SearchMapLocationHolder
 import com.example.parkme.viewmodel.AppViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -385,9 +383,12 @@ fun HomeOperator(navController: NavController) {
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
                         items(parqueaderos.value) { (id, data) ->
+                            val rawRate = data["rate"] ?: data["calificacion"]
+                            val rateFloat = (rawRate as? Number)?.toFloat() ?: 0f
+                            val rateString = if (rateFloat > 0f) String.format("%.1f", rateFloat) else "0.0"
                             ParqueaderoItem(
                                 nombre = data["name"] as? String ?: "Sin nombre",
-                                calificacion = data["calificacion"] as? String ?: "0.0",
+                                calificacion = rateString,
                                 parkingId = id,
                                 fotos = (data["fotos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                                 navController = navController
@@ -446,7 +447,7 @@ fun ParqueaderoItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                Text(text = calificacion, fontSize = 14.sp, color = Color.Black)
+                Text(text = "$calificacion", fontSize = 14.sp, color = Color.Black)
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Default.Star,
