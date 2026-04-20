@@ -52,7 +52,7 @@ import com.example.parkme.viewmodel.AppViewModel
 @Composable
 fun IdentityVerification(navController: NavController, viewModel: AppViewModel) {
     val scrollState = rememberScrollState()
-    var selectedDocument by remember { mutableStateOf("Cedula") }
+    var selectedDocument by remember { mutableStateOf<String?>(null) }
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
     val activity = context as? FragmentActivity
@@ -73,12 +73,13 @@ fun IdentityVerification(navController: NavController, viewModel: AppViewModel) 
             .padding(16.dp),
         horizontalAlignment = Alignment.Start
     ) {
+        Spacer(modifier = Modifier.height(30.dp))
         Image(
             painter = painterResource(id = R.drawable.logoparkme),
             contentDescription = "Logo de la app",
             modifier = Modifier
                 .fillMaxWidth()
-                .height(280.dp)
+                .height(240.dp)
                 .padding(top = 10.dp, bottom = 5.dp),
             contentScale = ContentScale.Fit
         )
@@ -152,7 +153,6 @@ fun IdentityVerification(navController: NavController, viewModel: AppViewModel) 
             }
         }
 
-        // Opción Pasaporte
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier

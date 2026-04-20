@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -40,6 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp // << CAMBIO 3: Importación para el tamaño de fuente
 import androidx.navigation.NavController
 import com.example.parkme.R
 import com.example.parkme.viewmodel.AppViewModel
@@ -66,6 +68,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         item {
+            Spacer(modifier = Modifier.height(24.dp))
+
             Image(
                 painter = painterResource(id = R.drawable.logoparkme),
                 contentDescription = "Logo de la app",
@@ -101,7 +105,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     text = "Nombres",
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    fontSize = 16.sp
                 )
                 TextField(
                     value = name,
@@ -110,7 +115,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     placeholder = {
                         Text(
                             "Ingrese su nombre/s",
-                            color = colorResource(R.color.black)
+                            color = colorResource(R.color.grisB),
+                            fontSize = 14.sp
                         )
                     },
                     shape = RoundedCornerShape(50),
@@ -128,7 +134,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     text = "Apellidos",
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    fontSize = 16.sp
                 )
                 TextField(
                     value = lastName,
@@ -137,7 +144,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     placeholder = {
                         Text(
                             "Ingrese sus apellidos",
-                            color = colorResource(R.color.black),
+                            color = colorResource(R.color.grisB),
+                            fontSize = 14.sp
                         )
                     },
                     shape = RoundedCornerShape(50),
@@ -155,7 +163,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     text = "Teléfono",
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    fontSize = 16.sp
                 )
                 TextField(
                     value = phone,
@@ -164,8 +173,9 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     placeholder = {
                         Text(
-                            "3XX-XXX XXXX",
-                            color = colorResource(R.color.black),
+                            "+57 3XX-XXX XXXX",
+                            color = colorResource(R.color.grisB),
+                            fontSize = 14.sp
                         )
                     },
                     shape = RoundedCornerShape(50),
@@ -183,7 +193,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     text = "Correo electrónico",
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    fontSize = 16.sp
                 )
                 TextField(
                     value = email,
@@ -192,8 +203,9 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     placeholder = {
                         Text(
-                            "tu@email.com",
-                            color = colorResource(R.color.black),
+                            "Dirección de correo electrónico",
+                            color = colorResource(R.color.grisB),
+                            fontSize = 14.sp
                         )
                     },
                     shape = RoundedCornerShape(50),
@@ -211,7 +223,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     text = "Contraseña",
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    fontSize = 16.sp
                 )
                 TextField(
                     value = password,
@@ -219,9 +232,9 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
                         Text(
-                            "",
-                            color = colorResource(R.color.black),
-                            fontWeight = FontWeight.ExtraBold
+                            "Ingrese su contraseña",
+                            color = colorResource(R.color.grisB),
+                            fontSize = 14.sp // << CAMBIO 3b
                         )
                     },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -251,7 +264,8 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     text = "Verificar contraseña",
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    fontSize = 16.sp // << CAMBIO 3a
                 )
                 TextField(
                     value = confirmPassword,
@@ -259,9 +273,9 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
                         Text(
-                            "",
-                            color = colorResource(R.color.black),
-                            fontWeight = FontWeight.ExtraBold
+                            "Confirme su contraseña",
+                            color = colorResource(R.color.grisB),
+                            fontSize = 14.sp // << CAMBIO 3b
                         )
                     },
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -288,10 +302,11 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
 
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Selecciona tu perfil (Temporal):",
+                    text = "Selecciona tu Rol:",
                     color = Color.Gray,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp)
+                    modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
+                    fontSize = 14.sp
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -312,7 +327,11 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
 
                     RadioButton(
                         selected = selectedRole == "Operador",
-                        onClick = { selectedRole = "Operador" }
+                        onClick = { selectedRole = "Operador" },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = colorResource(R.color.blue),
+                            unselectedColor = Color.Gray
+                        )
                     )
                     Text("Operador")
                 }
@@ -321,6 +340,10 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
             }
 
             Button(
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorResource(R.color.blue),
+                    contentColor = colorResource(R.color.white)
+                ),
                 onClick = {
                     viewModel.register(
                         email,
