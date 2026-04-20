@@ -64,7 +64,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
 
     val homeRoute = if (isOperator) AppScreens.HomeOperator.name else AppScreens.HomeUser.name
     val activityRoute = if (isOperator) AppScreens.MyActivityOperator.name else AppScreens.MyActivity.name
-    val chatRoute = if (isOperator) AppScreens.ChatOp.name else AppScreens.ChatCli.name
+    val chatRoute = if (isOperator) AppScreens.ChatListOp.name else AppScreens.ChatListCli.name
     val roleText = if (isOperator) "Operador" else "Usuario"
 
     Scaffold(

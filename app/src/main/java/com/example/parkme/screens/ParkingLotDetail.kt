@@ -564,7 +564,7 @@ fun ReservationBottomBox(
             .fillMaxWidth()
     ) {
         Text("Detalles de tu reserva", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        Text(parkingName, fontSize = 14.sp, color = Color.DarkGray)
+        Text(parkingName, fontSize = 14.sp,  color = Color.DarkGray)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
