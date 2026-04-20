@@ -53,13 +53,23 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
     }
+
+    // << CAMBIO 1: Se crea un objeto para configurar la UI del mapa
+    val uiSettings by remember {
+        mutableStateOf(
+            MapUiSettings(
+                zoomControlsEnabled = false, // Se ocultan los botones de zoom (+/-)
+                compassEnabled = true
+            )
+        )
+    }
+
     val sensorListener = remember {
         object : SensorEventListener {
             override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
 
             override fun onSensorChanged(event: SensorEvent?) {
                 if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
-                    // Obtener el valor de la luz en "Lux"
                     val lux = event.values[0]
                     currentMapStyle = if (lux < 2000) darkMapStyle else lightMapStyle
                 }
@@ -73,17 +83,20 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
 
         onDispose { sensorManager.unregisterListener(sensorListener) }
     }
-    Column(
-        modifier = Modifier.fillMaxSize(),
-    ) {
 
-    }
+    // El Column vacío se puede eliminar, ya que el Box lo contiene todo.
+    // Column(
+    //     modifier = Modifier.fillMaxSize(),
+    // ) {}
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(mapStyleOptions = currentMapStyle),
+            uiSettings = uiSettings, // << CAMBIO 1: Se aplican los ajustes de UI
+            // << CAMBIO 2: Se añade padding para bajar la brújula y el logo de Google
+            contentPadding = PaddingValues(top = 120.dp, bottom = 100.dp),
             onMapClick = { latLng ->
                 markerPosition = latLng
             }
@@ -100,11 +113,11 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
             onValueChange = { searchText = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 80.dp)
+                .padding(top = 50.dp) // << CAMBIO 3: La barra de búsqueda ahora está más arriba (80dp -> 50dp)
                 .padding(horizontal = 16.dp)
                 .align(Alignment.TopCenter),
-            label = { Text("Buscar dirección o Presionar en el Mapa") },
-            shape = RoundedCornerShape(12.dp),
+            placeholder = { Text("Buscar dirección o Presionar en el Mapa") }, // << CAMBIO: Usamos placeholder en lugar de label para mejor estética
+            shape = RoundedCornerShape(30.dp), // << CAMBIO 4: Bordes más redondeados (12dp -> 30dp)
             singleLine = true,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = colorResource(R.color.grisClaro),
@@ -112,7 +125,7 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 cursorColor = Color.Gray,
-                focusedLabelColor = Color.Gray,
+                focusedLabelColor = Color.Gray, // Label ya no se usa, pero lo dejamos por si acaso
                 unfocusedLabelColor = Color.Gray,
                 focusedTextColor = Color.Black,
                 unfocusedTextColor = Color.Black
@@ -159,19 +172,21 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
         }
     }
 }
-fun findLocation(address : String):LatLng?{
+
+fun findLocation(address: String): LatLng? {
     val addresses = geocoder.getFromLocationName(address, 2)
-    if(addresses != null && !addresses.isEmpty()){
+    if (addresses != null && !addresses.isEmpty()) {
         val addr = addresses.get(0)
         val location = LatLng(addr.latitude, addr.longitude)
         return location
     }
     return null
 }
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewPiccker() {
     val navControllerv: NavController
-    navControllerv= rememberNavController()
+    navControllerv = rememberNavController()
     MapPickerScreen(navControllerv) { }
 }
