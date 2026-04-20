@@ -134,9 +134,9 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                 Text(
                     text = "Buscar\nparqueadero",
                     color = colorResource(R.color.black),
-                    fontSize = 22.sp,
+                    fontSize = 25.sp,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 32.sp,
+                    lineHeight = 28.sp,
                     textAlign = TextAlign.Start
                 )
             }
@@ -339,13 +339,13 @@ fun HomeOperator(navController: NavController) {
                 .background(color = colorResource(R.color.back))
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp)
+                .padding(16.dp)
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
@@ -359,9 +359,9 @@ fun HomeOperator(navController: NavController) {
                 Text(
                     text = "Mis\nparqueaderos",
                     color = colorResource(R.color.black),
-                    fontSize = 22.sp,
+                    fontSize = 25.sp,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 32.sp,
+                    lineHeight = 28.sp,
                     textAlign = TextAlign.Start
                 )
             }
@@ -389,7 +389,6 @@ fun HomeOperator(navController: NavController) {
                             val rateFloat = (rawRate as? Number)?.toFloat() ?: 0f
                             val rateString = if (rateFloat > 0f) String.format("%.1f", rateFloat) else "0.0"
 
-                            // << CAMBIO PRINCIPAL AQUI: Hacemos la extracción de fotos a prueba de fallos
                             val rawPhotos = data["photos"] ?: data["fotos"] ?: data["imageUrl"] ?: data["imageUrls"]
                             val fotosList = when (rawPhotos) {
                                 is List<*> -> rawPhotos.filterIsInstance<String>()

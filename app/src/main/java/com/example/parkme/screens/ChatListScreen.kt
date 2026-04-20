@@ -76,21 +76,6 @@ fun ChatListScreen(
                     ChatRoomItem(
                         chatRoom = room,
                         onClick = {
-                            // 1. Necesitamos el objeto Reservation completo para tu Holder
-                            // Dado que tu ChatScreen actual usa ReservationHolder.selected,
-                            // necesitamos una forma de pasarlo.  Lo más sencillo es adaptar
-                            // tu ReservationHolder para que acepte solo el ID si no tienes
-                            // el objeto Reservation a mano en esta pantalla.
-
-                            // Por ahora, asumimos que tu ReservationHolder está adaptado
-                            // para manejar solo el ID si es necesario, o que buscas
-                            // la reserva completa.  Para mantener la compatibilidad con tu
-                            // Navigation.kt actual:
-
-                            // (Ajuste recomendado en tu ReservationHolder:
-                            // object ReservationHolder { var selectedId: String = "" })
-
-                            // Asumiendo que adaptaste ReservationHolder:
                             ReservationHolder.selectedReservationId = room.id
 
                             // Navegamos al chat

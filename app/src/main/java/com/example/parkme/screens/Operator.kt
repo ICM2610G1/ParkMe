@@ -129,23 +129,23 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            modifier = Modifier.fillMaxWidth()
         ) {
             Image(
                 painter = painterResource(id = R.drawable.logoparkme),
                 contentDescription = "Logo de la app",
-                modifier = Modifier.width(160.dp).height(95.dp),
+                modifier = Modifier.width(130.dp).height(80.dp),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Box(modifier = Modifier.height(70.dp).width(2.dp).background(Color.Black))
-            Spacer(modifier = Modifier.width(16.dp))
+            Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Crear\nparqueadero",
                 color = colorResource(R.color.black),
-                fontSize = 28.sp,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 32.sp,
+                lineHeight = 28.sp,
                 textAlign = TextAlign.Start
             )
         }
@@ -599,18 +599,18 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
             Image(
                 painter = painterResource(id = R.drawable.logoparkme),
                 contentDescription = "Logo de la app",
-                modifier = Modifier.width(160.dp).height(95.dp),
+                modifier = Modifier.width(130.dp).height(80.dp),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Box(modifier = Modifier.height(70.dp).width(2.dp).background(Color.Black))
+            Box(modifier = Modifier.height(50.dp).width(2.dp).background(Color.Black))
             Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = "Editar\nparqueadero",
                 color = colorResource(R.color.black),
-                fontSize = 28.sp,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 32.sp,
+                lineHeight = 28.sp,
                 textAlign = TextAlign.Start
             )
         }

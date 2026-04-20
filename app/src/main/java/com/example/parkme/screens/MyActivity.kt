@@ -426,6 +426,7 @@ fun MyActivityOperator(navController: NavController) {
             modifier = Modifier
                 .background(color = colorResource(R.color.back))
                 .padding(paddingValues)
+                .statusBarsPadding()
                 .fillMaxSize()
                 .padding(16.dp),
             horizontalAlignment = Alignment.Start
@@ -435,7 +436,6 @@ fun MyActivityOperator(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
@@ -452,7 +452,7 @@ fun MyActivityOperator(navController: NavController) {
                         .width(2.dp)
                         .background(Color.Black)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Mi\nActividad",
                     color = colorResource(R.color.black),
