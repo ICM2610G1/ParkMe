@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.parkme.models.ParkingLot
+import com.example.parkme.models.Reservation
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -34,6 +35,8 @@ class AppViewModel : ViewModel() {
     val authState: StateFlow<AuthState> = _authState
     private val _parkingLots = MutableStateFlow<List<ParkingLot>>(emptyList())
     val parkingLots: StateFlow<List<ParkingLot>> = _parkingLots.asStateFlow()
+    private val _userReservations = MutableStateFlow<List<Reservation>>(emptyList())
+    val userReservations: StateFlow<List<Reservation>> = _userReservations.asStateFlow()
 
     init {
         val currentUser = auth.currentUser
@@ -272,6 +275,7 @@ class AppViewModel : ViewModel() {
 
                         val rate = (doc.get("rate") as? Number)?.toFloat() ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
                         val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
+                        val direccion = doc.getString("direccion") ?: ""
 
                         ParkingLot(
                             id = id,
@@ -287,7 +291,8 @@ class AppViewModel : ViewModel() {
                             weekAvailability = weekAvailability,
                             slot = slot,
                             rate = rate,
-                            ratingCount = ratingCount
+                            ratingCount = ratingCount,
+                            direccion = direccion
                         )
                     } catch (e: Exception) {
                         Log.e("MAPS_DEBUG", "Error parseando documento ${doc.id}: ${e.message}")
@@ -298,6 +303,66 @@ class AppViewModel : ViewModel() {
                 _parkingLots.value = lots
             } catch (e: Exception) {
                 Log.e("MAPS_DEBUG", "Error de conexión a Firebase: ${e.message}")
+            }
+        }
+    }
+    fun fetchUserReservations() {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            Log.e("RESERVAS_DEBUG", "Error: No hay usuario iniciado.")
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                Log.d("RESERVAS_DEBUG", "Buscando reservas para el usuario: $uid")
+
+                // Asegúrate de que el nombre de tu colección sea "reservas"
+                val result = firestore.collection("reservas").whereEqualTo("userId", uid).get().await()
+                Log.d("RESERVAS_DEBUG", "Documentos encontrados en Firebase: ${result.documents.size}")
+
+                val reservas = result.documents.mapNotNull { doc ->
+                    try {
+                        val id = doc.id
+
+                        // Intentamos leer en inglés y en español por si acaso
+                        val parkingId = doc.getString("parkingId") ?: doc.getString("idParqueadero") ?: ""
+                        val parkingName = doc.getString("parkingName") ?: doc.getString("nombreParqueadero") ?: "Parqueadero"
+                        val userId = doc.getString("userId") ?: ""
+                        val placa = doc.getString("placa") ?: ""
+                        val startTime = doc.getString("startTime") ?: doc.getString("horaInicio") ?: ""
+                        val endTime = doc.getString("endTime") ?: doc.getString("horaFin") ?: ""
+                        val status = doc.getString("status") ?: doc.getString("estado") ?: "Activa"
+
+                        // Súper importante: Convertimos seguro el precio, sin importar si Firebase lo guardó como Int, Long o Double
+                        val totalPrice = (doc.get("totalPrice") as? Number)?.toDouble()
+                            ?: (doc.get("precioTotal") as? Number)?.toDouble() ?: 0.0
+
+                        Log.d("RESERVAS_DEBUG", "Reserva leída correctamente: $parkingName - $placa")
+
+                        // Construimos tu objeto
+                        Reservation(
+                            id = id,
+                            parkingId = parkingId,
+                            parkingName = parkingName,
+                            userId = userId,
+                            placa = placa,
+                            startTime = startTime,
+                            endTime = endTime,
+                            status = status,
+                            totalPrice = totalPrice
+                        )
+                    } catch (e: Exception) {
+                        Log.e("RESERVAS_DEBUG", "Error armando la reserva ${doc.id}: ${e.message}")
+                        null
+                    }
+                }
+
+                Log.d("RESERVAS_DEBUG", "Total de reservas válidas a mostrar en la lista: ${reservas.size}")
+                _userReservations.value = reservas
+
+            } catch (e: Exception) {
+                Log.e("RESERVAS_DEBUG", "Error conectando con Firebase para las reservas: ${e.message}")
             }
         }
     }

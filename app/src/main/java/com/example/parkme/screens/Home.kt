@@ -36,21 +36,28 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
 import com.google.android.gms.maps.model.LatLng
 import com.example.parkme.models.SearchMapLocationHolder
+import com.example.parkme.viewmodel.AppViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 
 @Composable
-fun HomeUser(navController: NavController) {
+fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
     var field by remember { mutableStateOf("") }
     var itemSeleccionado by remember { mutableIntStateOf(0) }
-
+    val reservasUsuario by viewModel.userReservations.collectAsState()
+    val allParkingLots by viewModel.parkingLots.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.fetchUserReservations()
+        viewModel.fetchParkingLots()
+    }
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
@@ -185,34 +192,53 @@ fun HomeUser(navController: NavController) {
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .weight(1f)
-                    .border(width = 1.5.dp, color = Color.LightGray, shape = RoundedCornerShape(24.dp))
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color.Transparent)
-                    .padding(16.dp)
+                    .fillMaxWidth().padding(horizontal = 8.dp).weight(1f)
+                    .border(1.5.dp, Color.LightGray, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp))
+                    .background(Color.Transparent).padding(16.dp)
             ) {
-                // HomeUser muestra lista simple de parqueos recientes (sin datos de Firestore aún)
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(10) { index ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    color = Color.LightGray.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(50)
+                if (reservasUsuario.isEmpty()) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No tienes reservas recientes", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        items(reservasUsuario) { reserva ->
+                            val parqueaderoDeEstaReserva = allParkingLots.find { it.id == reserva.parkingId }
+                            val direccionGuardada = parqueaderoDeEstaReserva?.direccion
+                            var direccionMostrar by remember(reserva.parkingId, direccionGuardada) {
+                                mutableStateOf(
+                                    if (!direccionGuardada.isNullOrBlank()) direccionGuardada
+                                    else "Calculando dirección..."
                                 )
-                                .padding(vertical = 20.dp, horizontal = 16.dp)
-                                .clickable { navController.navigate(AppScreens.RateParkingLot.name) }
-                        ) {
-                            Text(
-                                text = "Parqueo ${'A' + index} - Calle n #xy",
-                                color = Color.Black
-                            )
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(Color.LightGray.copy(alpha = 0.5f), shape = RoundedCornerShape(24.dp))
+                                    .clickable {
+                                        // SOLO enviamos el ID del parqueadero por la mochila
+                                        navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
+                                        navController.navigate(AppScreens.RateParkingLot.name)
+                                    }
+                                    .padding(vertical = 16.dp, horizontal = 16.dp)
+                            ) {
+                                Column {
+                                    Text(
+                                        "${reserva.parkingName}",
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                    Text(
+                                        text = direccionMostrar, // O "Dirección: ${reserva.direccion}" si prefieres
+                                        color = Color.DarkGray,
+                                        fontSize = 14.sp,
+                                        modifier = Modifier.padding(bottom = 8.dp) // Padding más grande antes de la instrucción
+                                    )
+                                    Text(text = "Toca para calificar la experiencia", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
+                                }
+                            }
                         }
                     }
                 }

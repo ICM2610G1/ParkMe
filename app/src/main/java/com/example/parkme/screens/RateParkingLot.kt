@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -61,24 +62,48 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.tasks.await
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun RateParkingLot(navController: NavController,parkingLotId: String,latitude: Double, longitude: Double,viewModel: AppViewModel = viewModel()) {
+fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
-    val parkingLocation = LatLng(latitude, longitude)
+    var targetLocation by remember { mutableStateOf<LatLng?>(null) }
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
     var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(parkingLocation, 17f)
+
+    LaunchedEffect(parkingLotId) {
+        if (parkingLotId.isNotEmpty()) {
+            try {
+                val doc = FirebaseFirestore.getInstance().collection("parqueaderos").document(parkingLotId).get().await()
+                if (doc.exists()) {
+                    val lat = doc.getDouble("latitud") ?: 4.6097
+                    val lng = doc.getDouble("longitud") ?: -74.0817
+                    targetLocation = LatLng(lat, lng)
+                }
+            } catch (e: Exception) {
+                targetLocation = LatLng(4.6097, -74.0817) // Coordenada por defecto si falla
+            }
+        }
     }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(targetLocation ?: LatLng(4.6097, -74.0817), 17f)
+    }
+
+    LaunchedEffect(targetLocation) {
+        targetLocation?.let {
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(it, 17f)
+        }
+    }
+
     val sensorListener = remember {
         object : SensorEventListener {
             override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
@@ -116,11 +141,13 @@ fun RateParkingLot(navController: NavController,parkingLotId: String,latitude: D
 //                compassEnabled = false
 //            )
         ) {
-            Marker(
-                state = MarkerState(position = parkingLocation),
-                icon = BitmapDescriptorFactory.fromBitmap(pinBitmap),
-                title = "Parqueadero"
-            )
+            targetLocation?.let {
+                Marker(
+                    state = MarkerState(it),
+                    icon = BitmapDescriptorFactory.fromBitmap(pinBitmap),
+                    title = "Parqueadero"
+                )
+            }
         }
 
         Button(

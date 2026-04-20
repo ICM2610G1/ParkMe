@@ -79,7 +79,15 @@ fun Navigation() {
         composable(AppScreens.HomeUser.name) { HomeUser(navController) }
         composable(AppScreens.HomeOperator.name) { HomeOperator(navController) }
         composable(AppScreens.SearchMap.name) { SearchMap(navController, viewModel) }
-        composable(AppScreens.RateParkingLot.name) { RateParkingLot(navController,parkingLotId = "",latitude = 0.0, longitude = 0.0,viewModel) }
+        composable(AppScreens.RateParkingLot.name) {
+            val parkingLotId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("rateParkingId") ?: ""
+
+            RateParkingLot(
+                navController = navController,
+                parkingLotId = parkingLotId,
+                viewModel = viewModel
+            )
+        }
         composable(AppScreens.MyActivity.name) { MyActivity(navController) }
         composable(AppScreens.UserProfile.name) { ProfileScreen(navController, viewModel) }
         composable(AppScreens.OperatorProfile.name) { ProfileScreen(navController, viewModel) }

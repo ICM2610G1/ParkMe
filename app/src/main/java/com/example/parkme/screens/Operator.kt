@@ -67,6 +67,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
     val mensaje = rememberSaveable { mutableStateOf("") }
     val subiendo = rememberSaveable { mutableStateOf(false) }
     val ubicacion = remember { mutableStateOf<LatLng?>(null) }
+    val direccion = rememberSaveable { mutableStateOf("") }
 
     val fotosUris = remember {
         mutableStateOf<List<Uri>>(
@@ -102,7 +103,20 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
     }
 
     LaunchedEffect(latLng) {
-        if (latLng != null) ubicacion.value = latLng
+        if (latLng != null) {
+            ubicacion.value = latLng
+            try {
+                val geocoder = android.location.Geocoder(context)
+                val addresses = geocoder.getFromLocation(latLng!!.latitude, latLng!!.longitude, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    direccion.value = addresses[0].getAddressLine(0) ?: ""
+                } else {
+                    direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+                }
+            } catch (e: Exception) {
+                direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+            }
+        }
     }
 
     Column(
@@ -405,7 +419,8 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     "slot" to (slot.value.toIntOrNull() ?: 0),
                     "fotos" to emptyList<String>(),
                     "latitud" to (ubicacion.value?.latitude ?: 0.0),
-                    "longitud" to (ubicacion.value?.longitude ?: 0.0)
+                    "longitud" to (ubicacion.value?.longitude ?: 0.0),
+                    "direccion" to direccion.value
                 )
 
                 db.collection("parqueaderos").add(parqueaderoBase)
@@ -493,6 +508,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
     val fotosUris = remember { mutableStateOf<List<Uri>>(emptyList()) }
     val fotosUrls = remember { mutableStateOf<List<String>>(emptyList()) }
     val ubicacion = remember { mutableStateOf<LatLng?>(null) }
+    val direccion = rememberSaveable { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -504,7 +520,20 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
         ?.collectAsState() ?: remember { mutableStateOf(null) }
 
     LaunchedEffect(latLng) {
-        if (latLng != null) ubicacion.value = latLng
+        if (latLng != null) {
+            ubicacion.value = latLng
+            try {
+                val geocoder = android.location.Geocoder(context)
+                val addresses = geocoder.getFromLocation(latLng!!.latitude, latLng!!.longitude, 1)
+                if (!addresses.isNullOrEmpty()) {
+                    direccion.value = addresses[0].getAddressLine(0) ?: ""
+                } else {
+                    direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+                }
+            } catch (e: Exception) {
+                direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+            }
+        }
     }
 
     LaunchedEffect(parkingId) {
@@ -520,6 +549,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
                     hourStart.value = doc.getString("hourStart") ?: "00:00"
                     hourFinish.value = doc.getString("hourFinish") ?: "23:59"
                     slot.value = doc.getLong("slot")?.toString() ?: "0"
+                    direccion.value = doc.getString("direccion") ?: ""
 
                     val lat = doc.getDouble("latitud")
                     val lng = doc.getDouble("longitud")
@@ -846,7 +876,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
                         fixedPrice.value, terms.value, electricCharges.value,
                         hourStart.value, hourFinish.value, diasString,
                         slot.value.toIntOrNull() ?: 0,
-                        fotosUrls.value, ubicacion.value,
+                        fotosUrls.value, ubicacion.value,direccion,
                         mensaje, subiendo, navController
                     )
                 } else {
@@ -863,7 +893,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
                             fixedPrice.value, terms.value, electricCharges.value,
                             hourStart.value, hourFinish.value, diasString,
                             slot.value.toIntOrNull() ?: 0,
-                            todasLasFotos, ubicacion.value,
+                            todasLasFotos, ubicacion.value,direccion,
                             mensaje, subiendo, navController
                         )
                     }
@@ -1010,6 +1040,7 @@ fun guardarDatos(
     slot: Int,
     fotos: List<String>,
     ubicacion: LatLng?,
+    direccion: MutableState<String>,
     mensaje: MutableState<String>,
     subiendo: MutableState<Boolean>,
     navController: NavController?
@@ -1027,7 +1058,8 @@ fun guardarDatos(
         "slot" to slot,
         "fotos" to fotos,
         "latitud" to (ubicacion?.latitude ?: 0.0),
-        "longitud" to (ubicacion?.longitude ?: 0.0)
+        "longitud" to (ubicacion?.longitude ?: 0.0),
+        "direccion" to direccion.value
     )
     db.collection("parqueaderos").document(parkingId)
         .set(datos, SetOptions.merge())
@@ -1068,4 +1100,5 @@ fun eliminarParqueadero(
             subiendo.value = false
         }
 }
+
 
