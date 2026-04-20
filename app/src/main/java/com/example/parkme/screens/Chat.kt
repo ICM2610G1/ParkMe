@@ -114,13 +114,8 @@ fun ChatCliente() {
             "09:02",
             false
         ),
-<<<<<<< HEAD
         ChatMessage("Listo, muchas gracias", "09:02", true),
         ChatMessage("Ok", "09:03", false)
-
-=======
-        ChatMessage("Listo, muchas gracias", "09:02", true)
->>>>>>> 55a3899c187e427b4c40b77a05eddbe3f5ce0cd2
     )
 
     Scaffold(
