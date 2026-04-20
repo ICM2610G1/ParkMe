@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.parkme.viewmodel.AppViewModel
 import com.example.parkme.R
@@ -49,24 +50,25 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
     var passwordVisible by remember { mutableStateOf(false) }
 
     val authState by viewModel.authState.collectAsState()
-    
+
 
     Column(
         modifier = Modifier
             .background(color = colorResource(R.color.back))
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Image(
             painter = painterResource(id = R.drawable.logoparkme),
             contentDescription = "Logo de la app",
             modifier = Modifier
-                .height(310.dp)
-                .padding(top = 10.dp, bottom = 5.dp)
+                .height(280.dp)
                 .width(400.dp),
             contentScale = ContentScale.Fit
         )
+
 
         Row {
             Text("Encuentra tu", color = colorResource(R.color.black), fontWeight = FontWeight.Bold)
@@ -83,18 +85,13 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
             )
         }
 
-        Text(
-            text = "Email o número de teléfono",
-            color = colorResource(R.color.black),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.Start).padding(start = 24.dp, bottom = 8.dp)
-        )
+
         TextField(
             value = email,
             onValueChange = { email = it; viewModel.clearError() },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            placeholder = { Text("tu@email.com", color = colorResource(R.color.black)) },
+            placeholder = { Text("Dirección de correo electrónico", color = colorResource(R.color.grisB), fontSize = 14.sp) },
             shape = RoundedCornerShape(50),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.LightGray,
@@ -107,17 +104,12 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Contraseña",
-            color = colorResource(R.color.black),
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.Start).padding(start = 24.dp, bottom = 8.dp)
-        )
+
         TextField(
             value = password,
             onValueChange = { password = it; viewModel.clearError() },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(".........", color = colorResource(R.color.black), fontWeight = FontWeight.ExtraBold) },
+            placeholder = { Text("Contraseña", color = colorResource(R.color.grisB), fontSize = 14.sp) },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
@@ -125,7 +117,9 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
                     text = if (passwordVisible) "Ocultar" else "Mostrar",
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(end = 16.dp).clickable { passwordVisible = !passwordVisible }
+                    modifier = Modifier
+                        .padding(end = 16.dp)
+                        .clickable { passwordVisible = !passwordVisible }
                 )
             },
             shape = RoundedCornerShape(50),
@@ -166,7 +160,7 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
                 contentColor = colorResource(R.color.blue)
             )
         ) {
-            Text("Regístrate")
+            Text("Regístrate", fontWeight = FontWeight.Bold)
         }
     }
 }
