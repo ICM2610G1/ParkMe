@@ -224,7 +224,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                             ) {
                                 Column {
                                     Text(
-                                        "${reserva.parkingName}",
+                                        reserva.parkingName,
                                         color = Color.Black,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
