@@ -376,7 +376,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             enabled = !subiendo.value,
             onClick = {
                 if (uid.isEmpty()) {
-                    mensaje.value = "❌ Usuario no autenticado"
+                    mensaje.value = "Usuario no autenticado"
                     return@Button
                 }
                 subiendo.value = true
@@ -407,7 +407,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     .addOnSuccessListener { docRef ->
                         val totalFotos = fotosUris.value.size
                         if (totalFotos == 0) {
-                            mensaje.value = "✅ Parqueadero creado"
+                            mensaje.value = " Parqueadero creado"
                             subiendo.value = false
                             return@addOnSuccessListener
                         }
@@ -421,21 +421,22 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                             if (fotosSubidas.size == totalFotos) {
                                 docRef.update("fotos", fotosSubidas)
                                     .addOnSuccessListener {
-                                        mensaje.value = "✅ Parqueadero creado con fotos"
+                                        mensaje.value = "Parqueadero creado con fotos"
                                         subiendo.value = false
+                                        navController?.popBackStack()
                                     }
                                     .addOnFailureListener { e ->
-                                        mensaje.value = "❌ Error guardando fotos: ${e.message}"
+                                        mensaje.value = "Error guardando fotos: ${e.message}"
                                         subiendo.value = false
                                     }
                             } else {
-                                mensaje.value = "❌ Algunas fotos no se subieron"
+                                mensaje.value = "Algunas fotos no se subieron"
                                 subiendo.value = false
                             }
                         }
                     }
                     .addOnFailureListener { e ->
-                        mensaje.value = "❌ Error creando parqueadero: ${e.message}"
+                        mensaje.value = "Error creando parqueadero: ${e.message}"
                         subiendo.value = false
                     }
             },
@@ -453,7 +454,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
         if (mensaje.value.isNotEmpty()) {
             Text(
                 text = mensaje.value,
-                color = if (mensaje.value.startsWith("✅")) Color.Green else Color.Red,
+                color = if (mensaje.value.startsWith("P")) Color.Green else Color.Red,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
@@ -863,7 +864,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
         if (mensaje.value.isNotEmpty()) {
             Text(
                 text = mensaje.value,
-                color = if (mensaje.value.startsWith("✅")) Color.Green else Color.Red,
+                color = if (mensaje.value.startsWith("P")) Color.Green else Color.Red,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }

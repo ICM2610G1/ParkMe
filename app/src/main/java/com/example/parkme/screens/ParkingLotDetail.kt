@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -39,14 +40,14 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 contentAlignment = Alignment.Center
             ) {
                 Button(
-                    onClick = { /*Editar*/ },
+                    onClick = { },
                     modifier = Modifier
                         .fillMaxWidth(0.80f)
                         .height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue))
                 ) {
                     Text(
-                        "Editar",
+                        "Reservar",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -96,7 +97,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 color = colorResource(R.color.grisprecios)
             ) {
                 Text(
-                    "$ ${parking.pricePerHour} / hora   •   $ ${parking.pricePerMin} / min   •   Tarifa plena: $ ${parking.fixedPrice}",
+                    " ${parking.pricePerHour} / hora   •    ${parking.pricePerMin} / min   •   Tarifa plena:  ${parking.fixedPrice}",
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
                     color = Color.Black,
                     fontSize = 14.sp
@@ -137,6 +138,9 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 ) {
                     if (parking.slot > 0) {
                         Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                    }else{
+                        Icon(Icons.Default.Cancel, null, Modifier.size(16.dp))
+
                     }
                 }
             }
