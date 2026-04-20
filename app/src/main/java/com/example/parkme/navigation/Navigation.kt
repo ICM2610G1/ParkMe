@@ -15,6 +15,7 @@ import com.example.parkme.models.ParkingLot
 import com.example.parkme.models.ParkingLotHolder
 import com.example.parkme.screens.*
 import com.example.parkme.viewmodel.AppViewModel
+import com.google.android.gms.maps.model.LatLng
 
 enum class AppScreens {
     HomeUser,
@@ -77,7 +78,7 @@ fun Navigation() {
         composable(AppScreens.IdentityVerification.name) { IdentityVerification(navController, viewModel) }
         composable(AppScreens.HomeUser.name) { HomeUser(navController) }
         composable(AppScreens.HomeOperator.name) { HomeOperator(navController) }
-        composable(AppScreens.SearchMap.name) { SearchMap(navController) }
+        composable(AppScreens.SearchMap.name) { SearchMap(navController, viewModel) }
         composable(AppScreens.RateParkingLot.name) { RateParkingLot(navController,parkingLotId = "",latitude = 0.0, longitude = 0.0,viewModel) }
         composable(AppScreens.MyActivity.name) { MyActivity(navController) }
         composable(AppScreens.UserProfile.name) { ProfileScreen(navController, viewModel) }

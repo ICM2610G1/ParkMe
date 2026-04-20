@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.parkme.R
+import com.example.parkme.geocoder
 import com.example.parkme.lightSensor
 import com.example.parkme.sensorManager
 import com.google.android.gms.maps.model.CameraPosition
@@ -40,7 +41,6 @@ import com.google.maps.android.compose.*
 @Composable
 fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> Unit) {
     val context = LocalContext.current
-    val geocoder = remember { Geocoder(context) }
 
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
@@ -121,14 +121,10 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
             keyboardActions = KeyboardActions(
                 onSearch = {
                     try {
-                        val addresses = geocoder.getFromLocationName(searchText, 1)
-                        if (!addresses.isNullOrEmpty()) {
-                            val foundAddress = addresses[0]
-                            val newLatLng = LatLng(foundAddress.latitude, foundAddress.longitude)
-                            markerPosition = newLatLng
-                            cameraPositionState.position = CameraPosition.fromLatLngZoom(newLatLng, 16f)
-                        } else {
-                            Toast.makeText(context, "Dirección no encontrada", Toast.LENGTH_SHORT).show()
+                        val addresses = findLocation(searchText)
+                        addresses?.let {
+                            markerPosition = addresses
+                            cameraPositionState.position = CameraPosition.fromLatLngZoom(addresses, 16f)
                         }
                     } catch (e: Exception) {
                         Toast.makeText(context, "Error buscando dirección", Toast.LENGTH_SHORT).show()
@@ -162,6 +158,15 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
             )
         }
     }
+}
+fun findLocation(address : String):LatLng?{
+    val addresses = geocoder.getFromLocationName(address, 2)
+    if(addresses != null && !addresses.isEmpty()){
+        val addr = addresses.get(0)
+        val location = LatLng(addr.latitude, addr.longitude)
+        return location
+    }
+    return null
 }
 @Preview(showBackground = true)
 @Composable

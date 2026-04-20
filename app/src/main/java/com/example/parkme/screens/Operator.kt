@@ -884,7 +884,6 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
         Button(
             enabled = !subiendo.value,
             onClick = {
-                // Llamamos a la función externa directamente
                 eliminarParqueadero(db, parkingId, mensaje, subiendo, navController)
             },
             shape = pill,

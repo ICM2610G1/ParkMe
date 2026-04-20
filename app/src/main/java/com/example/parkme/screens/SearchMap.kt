@@ -66,6 +66,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import com.google.maps.android.PolyUtil
 import com.google.maps.android.SphericalUtil
+import com.example.parkme.models.SearchMapLocationHolder
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.parkme.viewmodel.AppViewModel
 
@@ -78,7 +79,7 @@ fun Context.findActivity(): Activity? = when (this) {
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun SearchMap(navController: NavController,viewModel: AppViewModel = viewModel()) {
+fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
     val view = LocalView.current
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
@@ -130,8 +131,17 @@ fun SearchMap(navController: NavController,viewModel: AppViewModel = viewModel()
         onDispose { sensorManager.unregisterListener(sensorListener) }
     }
 
+    val myLocation = remember { LatLng(4.626072, -74.071427) }
+    val targetLocation = remember {
+        SearchMapLocationHolder.searchedLocation ?: myLocation
+    }
+    DisposableEffect(Unit) {
+        onDispose { SearchMapLocationHolder.searchedLocation = null }
+    }
 
-    val defaultLocation = LatLng(4.626072, -74.071427)
+    val defaultLocation = remember {
+        SearchMapLocationHolder.searchedLocation ?: LatLng(4.626072, -74.071427)
+    }
     val allParkingLots by viewModel.parkingLots.collectAsState()
 
     var showFilters by remember { mutableStateOf(false) }
@@ -143,11 +153,12 @@ fun SearchMap(navController: NavController,viewModel: AppViewModel = viewModel()
     var appliedMaxPrice by remember { mutableStateOf(10000f) }
     var appliedNeedElectric by remember { mutableStateOf(false) }
 
-    val nearbyParkingLots = remember(allParkingLots, defaultLocation, filtersActive, appliedMaxDistance, appliedMaxPrice, appliedNeedElectric) {
+    val nearbyParkingLots = remember(allParkingLots, targetLocation, filtersActive, appliedMaxDistance, appliedMaxPrice, appliedNeedElectric) {
         allParkingLots.map { parking ->
             val results = FloatArray(1)
+            // Calculamos la distancia desde el punto que buscaste (targetLocation)
             Location.distanceBetween(
-                defaultLocation.latitude, defaultLocation.longitude,
+                targetLocation.latitude, targetLocation.longitude,
                 parking.location.latitude, parking.location.longitude,
                 results
             )
@@ -173,14 +184,14 @@ fun SearchMap(navController: NavController,viewModel: AppViewModel = viewModel()
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(defaultLocation, 16f)
+        position = CameraPosition.fromLatLngZoom(targetLocation, 16f)
     }
 
     val carRotation = remember(routePoints, selectedForDetails) {
         if (!routePoints.isNullOrEmpty() && routePoints!!.size > 1) {
-            SphericalUtil.computeHeading(defaultLocation, routePoints!![1]).toFloat()
+            SphericalUtil.computeHeading(myLocation, routePoints!![1]).toFloat()
         } else if (selectedForDetails != null) {
-            SphericalUtil.computeHeading(defaultLocation, selectedForDetails!!.location).toFloat()
+            SphericalUtil.computeHeading(myLocation, selectedForDetails!!.location).toFloat()
         } else {
             0f
         }
@@ -201,7 +212,7 @@ fun SearchMap(navController: NavController,viewModel: AppViewModel = viewModel()
         if (selectedForDetails != null) {
             val applicationInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
             val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
-            routePoints = fetchRouteFromGoogle(defaultLocation, selectedForDetails!!.location, apiKey)
+            routePoints = fetchRouteFromGoogle(myLocation, selectedForDetails!!.location, apiKey)
         } else {
             routePoints = null
         }
@@ -235,7 +246,7 @@ fun SearchMap(navController: NavController,viewModel: AppViewModel = viewModel()
             contentPadding = PaddingValues(top = 90.dp, bottom = 460.dp, start = 8.dp, end = 8.dp)
         ) {
             Marker(
-                state = MarkerState(position = defaultLocation),
+                state = MarkerState(position = myLocation),
                 title = "Mi Ubicación",
                 icon = BitmapDescriptorFactory.fromBitmap(carBitmap),
                 anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f),

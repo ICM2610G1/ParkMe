@@ -515,7 +515,6 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     )
                 }
             } else {
-                // Botón original
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
                     contentAlignment = Alignment.Center
@@ -531,7 +530,6 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
             }
         }
 
-        // Mostrar mensaje de error si falla la reserva
         if (mensajeReserva.isNotEmpty() && !mostrarFormulario) {
             Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp)) {
                 Text(text = mensajeReserva, color = Color.Red, fontWeight = FontWeight.Bold)
@@ -540,7 +538,6 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
     }
 }
 
-// --- COMPOSABLE DEL FORMULARIO DE RESERVA ---
 @Composable
 fun ReservationBottomBox(
     parkingName: String,
