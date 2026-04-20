@@ -268,7 +268,8 @@ fun ReservationBottomBox(
 ) {
     var placa by remember { mutableStateOf("") }
     var horaLlegada by remember { mutableStateOf("08:00") }
-    var horaSalida by remember { mutableStateOf("10:00") }
+    // AJUSTE 1: Hora de salida por defecto en 15:00 (formato militar)
+    var horaSalida by remember { mutableStateOf("15:00") }
     var mostrarDialogoLlegada by remember { mutableStateOf(false) }
     var mostrarDialogoSalida by remember { mutableStateOf(false) }
 
@@ -294,7 +295,24 @@ fun ReservationBottomBox(
 
         OutlinedTextField(
             value = placa,
-            onValueChange = { placa = it.uppercase() },
+            onValueChange = { newValue ->
+                val textoBase = newValue.replace("-", "").uppercase()
+
+                var textoFiltrado = ""
+                for (i in textoBase.indices) {
+                    if (i < 3 && textoBase[i].isLetter()) {
+                        textoFiltrado += textoBase[i]
+                    } else if (i in 3..5 && textoBase[i].isDigit()) {
+                        textoFiltrado += textoBase[i]
+                    }
+                }
+
+                placa = if (textoFiltrado.length > 3) {
+                    "${textoFiltrado.substring(0, 3)}-${textoFiltrado.substring(3)}"
+                } else {
+                    textoFiltrado
+                }
+            },
             label = { Text("Placa (Ej: ABC-123)", fontSize = 14.sp) },
             shape = RoundedCornerShape(50),
             modifier = Modifier.fillMaxWidth(),
@@ -325,7 +343,7 @@ fun ReservationBottomBox(
             ) { Text("Cancelar", color = Color.White, fontWeight = FontWeight.Bold) }
 
             Button(
-                enabled = placa.isNotBlank(),
+                enabled = placa.length == 7,
                 onClick = { onConfirm(placa, horaLlegada, horaSalida) },
                 colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                 modifier = Modifier.weight(1f),
@@ -334,7 +352,6 @@ fun ReservationBottomBox(
         }
     }
 }
-
 fun crearReservaYActualizarCupo(
     reserva: Reservation,
     onSuccess: () -> Unit,
