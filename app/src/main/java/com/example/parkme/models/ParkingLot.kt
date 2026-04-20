@@ -15,5 +15,7 @@ data class ParkingLot(
     val hourFinish: String = "",
     val weekAvailability: String = "",
     val slot: Int = 0,
-    val photos: List<String> = emptyList()
+    val photos: List<String> = emptyList(),
+    val rate: Float = 0f,
+    val ratingCount: Int = 0
 )

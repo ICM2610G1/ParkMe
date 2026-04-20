@@ -206,6 +206,33 @@ class AppViewModel : ViewModel() {
             else -> "Error: $message"
         }
     }
+    fun rateParkingLot(parkingLotId: String, newRating: Float) {
+        viewModelScope.launch {
+            try {
+                val docRef = firestore.collection("parkingLots").document(parkingLotId)
+
+                firestore.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+
+                    if (snapshot.exists()) {
+                        val currentRate = snapshot.getDouble("rate")?.toFloat() ?: 0f
+                        val currentCount = snapshot.getLong("ratingCount")?.toInt() ?: 0
+
+                        val newCount = currentCount + 1
+                        val newAverage = ((currentRate * currentCount) + newRating) / newCount
+
+                        transaction.update(docRef, "rate", newAverage)
+                        transaction.update(docRef, "ratingCount", newCount)
+                    }
+                }.await()
+
+            } catch (e: Exception) {
+                _authState.value = _authState.value.copy(
+                    errorMessage = "Error al enviar la calificación: ${e.message}"
+                )
+            }
+        }
+    }
 
 
 }

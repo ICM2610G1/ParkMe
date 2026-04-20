@@ -370,7 +370,7 @@ fun ParqueaderoItem(
     nombre: String,
     calificacion: String,
     parkingId: String,
-    fotos: List<String> = emptyList(),  // ← valor por defecto para no romper nada
+    fotos: List<String> = emptyList(),
     navController: NavController
 ) {
     Column {

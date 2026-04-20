@@ -78,7 +78,7 @@ fun Navigation() {
         composable(AppScreens.HomeUser.name) { HomeUser(navController) }
         composable(AppScreens.HomeOperator.name) { HomeOperator(navController) }
         composable(AppScreens.SearchMap.name) { SearchMap(navController) }
-        composable(AppScreens.RateParkingLot.name) { RateParkingLot(navController) }
+        composable(AppScreens.RateParkingLot.name) { RateParkingLot(navController,parkingLotId = "",latitude = 0.0, longitude = 0.0,viewModel) }
         composable(AppScreens.MyActivity.name) { MyActivity(navController) }
         composable(AppScreens.UserProfile.name) { ProfileScreen(navController, viewModel) }
         composable(AppScreens.OperatorProfile.name) { ProfileScreen(navController, viewModel) }

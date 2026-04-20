@@ -195,7 +195,7 @@ fun SearchMap(navController: NavController) {
 
     val carBitmap = remember { resizeMapIcon(context,
         if(currentMapStyle==lightMapStyle){ R.drawable.blackcar} else { R.drawable.whitecar}, 35, 70) }
-    val pinBitmap = remember { resizeMapIcon(context, R.drawable.pinmaplogo, 45, 45) }
+    val pinBitmap = remember { resizeMapIcon(context, if(currentMapStyle==lightMapStyle){ R.drawable.pinmaplogo} else { R.drawable.pinmaplogoblanco}, 45, 45) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "buscando")
     val alphaAnim by infiniteTransition.animateFloat(
