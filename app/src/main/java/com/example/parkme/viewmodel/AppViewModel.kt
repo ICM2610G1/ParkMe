@@ -278,7 +278,7 @@ class AppViewModel : ViewModel() {
                         val rate = (doc.get("rate") as? Number)?.toFloat() ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
                         val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
                         val direccion = doc.getString("direccion") ?: ""
-                        val photos = (doc.get("photos") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+                        val photos = (doc.get("photos") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
 
                         ParkingLot(
                             id = id,

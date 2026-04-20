@@ -69,6 +69,7 @@ import com.google.maps.android.SphericalUtil
 import com.example.parkme.models.SearchMapLocationHolder
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.parkme.viewmodel.AppViewModel
+import com.google.android.gms.location.LocationServices
 
 fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -117,16 +118,36 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
 
-    val myLocation = remember { LatLng(4.626072, -74.071427) }
-    val targetLocation = remember {
-        SearchMapLocationHolder.searchedLocation ?: myLocation
-    }
+
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    var myLocation by remember { mutableStateOf(LatLng(4.626072, -74.071427)) }
+
+    val targetLocation = SearchMapLocationHolder.searchedLocation ?: myLocation
+    val defaultLocation = SearchMapLocationHolder.searchedLocation ?: myLocation
+
     DisposableEffect(Unit) {
         onDispose { SearchMapLocationHolder.searchedLocation = null }
     }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(targetLocation, 16f)
+    }
 
-    val defaultLocation = remember {
-        SearchMapLocationHolder.searchedLocation ?: LatLng(4.626072, -74.071427)
+    LaunchedEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                    if (location != null) {
+                        myLocation = LatLng(location.latitude, location.longitude)
+
+                        if (SearchMapLocationHolder.searchedLocation == null) {
+                            cameraPositionState.position = CameraPosition.fromLatLngZoom(myLocation, 16f)
+                        }
+                    }
+                }
+            } catch (e: SecurityException) {
+                Log.e("MAPS_DEBUG", "Error obteniendo la ubicación por GPS: ${e.message}")
+            }
+        }
     }
     val allParkingLots by viewModel.parkingLots.collectAsState()
 
@@ -142,7 +163,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     val nearbyParkingLots = remember(allParkingLots, targetLocation, filtersActive, appliedMaxDistance, appliedMaxPrice, appliedNeedElectric) {
         allParkingLots.map { parking ->
             val results = FloatArray(1)
-            // Calculamos la distancia desde el punto que buscaste (targetLocation)
             Location.distanceBetween(
                 targetLocation.latitude, targetLocation.longitude,
                 parking.location.latitude, parking.location.longitude,
@@ -180,9 +200,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
 
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(targetLocation, 16f)
-    }
+
 
     val carRotation = remember(routePoints, selectedForDetails) {
         if (!routePoints.isNullOrEmpty() && routePoints!!.size > 1) {
@@ -194,9 +212,12 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
 
-    val carBitmap = remember { resizeMapIcon(context,
-        if(currentMapStyle==lightMapStyle){ R.drawable.blackcar} else { R.drawable.whitecar}, 35, 70) }
-    val pinBitmap = remember { resizeMapIcon(context, if(currentMapStyle==lightMapStyle){ R.drawable.pinmaplogo} else { R.drawable.pinmaplogoblanco}, 45, 45) }
+    val carBitmap = remember(currentMapStyle) {
+        resizeMapIcon(context, if(currentMapStyle == lightMapStyle){ R.drawable.blackcar } else { R.drawable.whitecar }, 35, 70)
+    }
+    val pinBitmap = remember(currentMapStyle) {
+        resizeMapIcon(context, if(currentMapStyle == lightMapStyle){ R.drawable.pinmaplogo } else { R.drawable.pinmaplogoblanco }, 45, 45)
+    }
 
     val infiniteTransition = rememberInfiniteTransition(label = "buscando")
     val alphaAnim by infiniteTransition.animateFloat(
@@ -242,7 +263,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         lightSensor?.let {
             sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
-
         onDispose { sensorManager.unregisterListener(sensorListener) }
     }
 
