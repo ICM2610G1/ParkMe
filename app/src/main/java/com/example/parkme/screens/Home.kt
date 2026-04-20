@@ -214,9 +214,11 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                     .fillMaxWidth()
                                     .background(Color.LightGray.copy(alpha = 0.5f), shape = RoundedCornerShape(24.dp))
                                     .clickable {
-                                        // SOLO enviamos el ID del parqueadero por la mochila
-                                        navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
-                                        navController.navigate(AppScreens.RateParkingLot.name)
+                                        if (parqueaderoDeEstaReserva != null) {
+                                            navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoDeEstaReserva.location)
+                                            navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoDeEstaReserva.id)
+                                            navController.navigate(AppScreens.SearchMap.name)
+                                        }
                                     }
                                     .padding(vertical = 16.dp, horizontal = 16.dp)
                             ) {
