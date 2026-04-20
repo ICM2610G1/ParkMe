@@ -117,20 +117,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
 
-    LaunchedEffect(Unit) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-        viewModel.fetchParkingLots()
-    }
-    DisposableEffect(Unit) {
-        lightSensor?.let {
-            sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_NORMAL)
-        }
-
-        onDispose { sensorManager.unregisterListener(sensorListener) }
-    }
-
     val myLocation = remember { LatLng(4.626072, -74.071427) }
     val targetLocation = remember {
         SearchMapLocationHolder.searchedLocation ?: myLocation
@@ -178,10 +164,21 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             .map { it.first }
     }
 
-    var selectedForDetails by remember { mutableStateOf<ParkingLot?>(null) }
+    val preSelectedParkingId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
+    var selectedForDetails by remember(allParkingLots, preSelectedParkingId) {
+        mutableStateOf(
+            allParkingLots.find { it.id == preSelectedParkingId }
+        )
+    }
     var confirmedParkingLot by remember { mutableStateOf<ParkingLot?>(null) }
     var isSearching by remember { mutableStateOf(false) }
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            navController.previousBackStackEntry?.savedStateHandle?.remove<String>("preSelectedParkingId")
+        }
+    }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(targetLocation, 16f)
@@ -234,6 +231,19 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             delay(2500)
             isSearching = false
         }
+    }
+    LaunchedEffect(Unit) {
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        viewModel.fetchParkingLots()
+    }
+    DisposableEffect(Unit) {
+        lightSensor?.let {
+            sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+
+        onDispose { sensorManager.unregisterListener(sensorListener) }
     }
 
     Box(modifier = Modifier.background(colorResource(R.color.back)).fillMaxSize()) {

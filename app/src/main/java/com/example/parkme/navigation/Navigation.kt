@@ -88,7 +88,7 @@ fun Navigation() {
                 viewModel = viewModel
             )
         }
-        composable(AppScreens.MyActivity.name) { MyActivity(navController) }
+        composable(AppScreens.MyActivity.name) { MyActivity(navController,viewModel) }
         composable(AppScreens.UserProfile.name) { ProfileScreen(navController, viewModel) }
         composable(AppScreens.OperatorProfile.name) { ProfileScreen(navController, viewModel) }
         composable(AppScreens.ParkingLotDetail.name) {

@@ -27,15 +27,24 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
+import com.example.parkme.viewmodel.AppViewModel
 
 @Composable
-fun MyActivity(navController: NavController) {
+fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel()) {
     var itemSeleccionado by remember { mutableIntStateOf(1) }
+    val reservasUsuario by viewModel.userReservations.collectAsState()
+    val allParkingLots by viewModel.parkingLots.collectAsState()
 
+    LaunchedEffect(Unit) {
+        viewModel.fetchUserReservations()
+        viewModel.fetchParkingLots()
+    }
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
@@ -143,90 +152,171 @@ fun MyActivity(navController: NavController) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 20.dp)
-            ) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).border(2.dp, Color.Gray, RoundedCornerShape(24.dp))
-                            .background(Color.Transparent).padding(bottom = 16.dp)
-                    ) {
-                        Column {
-                            Image(
-                                painter = painterResource(id = R.drawable.mapa),
-                                contentDescription = "Mapa del parqueo",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                            )
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text("Parqueadero La 43", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
-                                    Text("$$$ por hora", fontSize = 16.sp, color = Color.DarkGray)
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .padding(top = 4.dp)
-                                            .clickable { navController.navigate(AppScreens.RateParkingLot.name) }
-                                    ) {
-                                        Icon(Icons.Outlined.Star, contentDescription = "Calificar", tint = Color.Black, modifier = Modifier.size(20.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Califica", fontSize = 16.sp, color = Color.Black)
-                                    }
+            if(reservasUsuario.isEmpty()){
+                Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Aún no tienes actividad registrada", color = Color.Gray)
+                }
+            }else{
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 20.dp)
+                ) {
+                    item {
+                        val reservaReciente = reservasUsuario.first()
+                        val parqueaderoReciente = allParkingLots.find { it.id == reservaReciente.parkingId }
+                        val primeraFoto = parqueaderoReciente?.photos?.firstOrNull()
+                        Box(
+                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).border(2.dp, Color.Gray, RoundedCornerShape(24.dp))
+                                .background(Color.Transparent).padding(bottom = 16.dp)
+                        ) {
+                            Column {
+                                if (primeraFoto != null) {
+                                    AsyncImage(
+                                        model = primeraFoto,
+                                        contentDescription = "Foto del parqueo",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                    )
+                                } else {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.parqueadero1), // Imagen por defecto de tu app
+                                        contentDescription = "Sin foto",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                    )
                                 }
-
-                                Button(
-                                    onClick = {  },
-                                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                                    shape = RoundedCornerShape(50)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Reservar de\nnuevo", textAlign = TextAlign.Center, lineHeight = 18.sp)
+                                    Column {
+                                        Text(reservaReciente.parkingName,
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 20.sp,
+                                            color = Color.Black)
+                                        Text(text = "${reservaReciente.startTime} - ${reservaReciente.status}",
+                                            fontSize = 16.sp,
+                                            color = Color.DarkGray)
+                                        Text(text = "${parqueaderoReciente?.pricePerHour ?: "$0"} por hora",
+                                            fontSize = 16.sp,
+                                            color = Color.DarkGray)
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(top = 8.dp).clickable {
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reservaReciente.parkingId)
+                                                navController.navigate(AppScreens.RateParkingLot.name)
+                                            }
+                                        ) {
+                                            Icon(Icons.Outlined.Star,
+                                                contentDescription = "Calificar",
+                                                tint = colorResource(R.color.blue),
+                                                modifier = Modifier.size(24.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("Calificar", fontSize = 18.sp, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            if (parqueaderoReciente != null) {
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoReciente.location)
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoReciente.id)
+                                                navController.navigate(AppScreens.SearchMap.name)
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                        shape = RoundedCornerShape(50)
+                                    ) {
+                                        Text("Reservar de\nnuevo",
+                                            textAlign = TextAlign.Center,
+                                            fontSize = 16.sp,
+                                            lineHeight = 20.sp,
+                                            fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+
+                    val restoReservas = reservasUsuario.drop(1)
+                    items(restoReservas.size) { index ->
+                        val reserva = restoReservas[index]
+                        val parqueoData = allParkingLots.find { it.id == reserva.parkingId }
+
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = reserva.parkingName,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = Color.Black)
+                                    Text(text = "${reserva.startTime} - ${reserva.status}",
+                                        fontSize = 16.sp,
+                                        color = Color.DarkGray)
+                                    Text(text = "${parqueoData?.pricePerHour ?: "$0"} por hora",
+                                        fontSize = 16.sp,
+                                        color = Color.DarkGray)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        Icon(Icons.Outlined.Star,
+                                            contentDescription = "Calificar",
+                                            tint = colorResource(R.color.blue),
+                                            modifier = Modifier.size(24.dp))
+                                        Text(
+                                            text = "Calificar experiencia",
+                                            color = colorResource(R.color.blue),
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(top = 8.dp).clickable {
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
+                                                navController.navigate(AppScreens.RateParkingLot.name)
+                                            }
+                                        )
+                                    }
+
+                                }
+
+                                Button(
+                                    onClick = {
+                                        if (parqueoData != null) {
+                                            navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueoData.location)
+                                            navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueoData.id)
+                                            navController.navigate(AppScreens.SearchMap.name)
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                    shape = RoundedCornerShape(50),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                    modifier = Modifier.padding(start = 12.dp)
+                                ) {
+
+                                    Text("Reservar\nde nuevo",
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 14.sp,
+                                        lineHeight = 18.sp,
+                                        fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+                        }
+                    }
                 }
-
-                item { HistoryItemRow("Parqueadero Sophieparking", "Feb 17 2026 - 2:05 p.m.", "$$$") }
-                item { HistoryItemRow("Parqueadero Sophieparking", "Feb 11 2026 - 1:30 p.m.", "$$$") }
-                item { HistoryItemRow("Parqueadero Be Parking", "Feb 2 2026 - 9:07 a.m.", "$$$") }
             }
+
         }
-    }
-}
-
-@Composable
-fun HistoryItemRow(name: String, date: String, price: String) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-                Text(text = date, fontSize = 14.sp, color = Color.DarkGray)
-                Text(text = "$price por hora", fontSize = 14.sp, color = Color.DarkGray)
-            }
-
-            Button(
-                onClick = {  },
-                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                shape = RoundedCornerShape(50),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-            ) {
-                Text("Reservar\nde nuevo", textAlign = TextAlign.Center, fontSize = 12.sp, lineHeight = 14.sp)
-            }
-        }
-        HorizontalDivider(thickness = 1.dp, color = Color.Gray)
     }
 }
 
