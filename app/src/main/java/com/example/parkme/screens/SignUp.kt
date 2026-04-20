@@ -90,6 +90,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
             }
         }
 
+
         item {
             Column(
                 modifier = Modifier.fillMaxWidth(),
