@@ -131,15 +131,7 @@ fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: 
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties( mapStyleOptions = currentMapStyle),
-            uiSettings = MapUiSettings(
-                scrollGesturesEnabled = false,
-                zoomGesturesEnabled = false,
-                tiltGesturesEnabled = false,
-                rotationGesturesEnabled = false,
-                zoomControlsEnabled = false,
-                compassEnabled = false
-            )
+            properties = MapProperties( mapStyleOptions = currentMapStyle)
         ) {
             targetLocation?.let {
                 Marker(
@@ -175,7 +167,7 @@ fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: 
                     color = colorResource(R.color.grisClaro),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                .padding(horizontal = 24.dp, vertical = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
