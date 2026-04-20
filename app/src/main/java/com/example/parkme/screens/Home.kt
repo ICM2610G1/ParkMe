@@ -388,11 +388,20 @@ fun HomeOperator(navController: NavController) {
                             val rawRate = data["rate"] ?: data["calificacion"]
                             val rateFloat = (rawRate as? Number)?.toFloat() ?: 0f
                             val rateString = if (rateFloat > 0f) String.format("%.1f", rateFloat) else "0.0"
+
+                            // << CAMBIO PRINCIPAL AQUI: Hacemos la extracción de fotos a prueba de fallos
+                            val rawPhotos = data["photos"] ?: data["fotos"] ?: data["imageUrl"] ?: data["imageUrls"]
+                            val fotosList = when (rawPhotos) {
+                                is List<*> -> rawPhotos.filterIsInstance<String>()
+                                is String -> if (rawPhotos.isNotBlank()) listOf(rawPhotos) else emptyList()
+                                else -> emptyList()
+                            }
+
                             ParqueaderoItem(
                                 nombre = data["name"] as? String ?: "Sin nombre",
                                 calificacion = rateString,
                                 parkingId = id,
-                                fotos = (data["photos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                                fotos = fotosList, // Pasamos la lista procesada
                                 navController = navController
                             )
                         }
@@ -464,7 +473,12 @@ fun ParqueaderoItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            val fotosMostrar = if (fotos.isNotEmpty()) fotos.take(2) else listOf(null, null)
+            // << CAMBIO: Forzamos a que SIEMPRE haya 2 espacios.
+            // Si la lista tiene 0 fotos, pone 2 default. Si tiene 1 foto, pone 1 real y 1 default.
+            val fotosMostrar = listOf(
+                fotos.getOrNull(0),
+                fotos.getOrNull(1)
+            )
 
             fotosMostrar.forEach { url ->
                 Box(
@@ -474,7 +488,7 @@ fun ParqueaderoItem(
                         .border(2.dp, Color(0xFF1877F2), RoundedCornerShape(12.dp))
                         .background(Color.LightGray, RoundedCornerShape(12.dp))
                 ) {
-                    if (url != null) {
+                    if (url != null && url.isNotBlank()) {
                         AsyncImage(
                             model = url,
                             contentDescription = "Foto parqueadero",
@@ -494,7 +508,6 @@ fun ParqueaderoItem(
         }
     }
 }
-
 
 @Composable
 @Preview
