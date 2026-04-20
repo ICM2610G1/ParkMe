@@ -114,10 +114,14 @@ fun ChatCliente() {
             "09:02",
             false
         ),
-        ChatMessage("Listo, muchas gracias", "09:02", true),
-        ChatMessage("Ok", "09:03", false)
-    )
 
+        ChatMessage("Listo, muchas gracias", "09:02", true),
+        ChatMessage("Ok", "09:03", false),
+        ChatMessage("Listo, muchas gracias", "09:02", true),
+        ChatMessage("prueba", "09:02", true)
+
+
+    )
     Scaffold(
         containerColor = colorResource(R.color.back),
         topBar = { ChatTopBar(x=true) },
@@ -136,8 +140,10 @@ fun ChatCliente() {
         }
     }
 }
-
-
+@Composable
+fun Prueba(){
+    Text("Hola")
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatTopBar(x: Boolean) {
