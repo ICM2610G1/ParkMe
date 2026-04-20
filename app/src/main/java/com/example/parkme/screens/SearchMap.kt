@@ -66,6 +66,8 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import com.google.maps.android.PolyUtil
 import com.google.maps.android.SphericalUtil
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.parkme.viewmodel.AppViewModel
 
 fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
@@ -76,7 +78,7 @@ fun Context.findActivity(): Activity? = when (this) {
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun SearchMap(navController: NavController) {
+fun SearchMap(navController: NavController,viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
     val view = LocalView.current
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
@@ -118,6 +120,7 @@ fun SearchMap(navController: NavController) {
         if (!hasLocationPermission) {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+        viewModel.fetchParkingLots()
     }
     DisposableEffect(Unit) {
         lightSensor?.let {
@@ -129,17 +132,7 @@ fun SearchMap(navController: NavController) {
 
 
     val defaultLocation = LatLng(4.626072, -74.071427)
-    val allParkingLots = remember {
-        listOf(
-            ParkingLot("1", "Parqueadero Javeriana", LatLng(4.627293, -74.063228), "$100", "$4.000", "$15.000", "No nos hacemos responsables por objetos.", true, "06:00", "22:00", "Lunes a Sábado", 12),
-            ParkingLot("2", "Parqueadero Teusaquillo", LatLng(4.632000, -74.068000), "$90", "$3.500", "$12.000", "Se cobra tarifa plena.", false, "07:00", "20:00", "Lunes a Viernes", 5),
-            ParkingLot("3", "ParkMe Central", LatLng(4.625000, -74.060000), "$120", "$5.000", "$20.000", "Vigilancia 24/7.", true, "00:00", "23:59", "Toda la semana", 2),
-            ParkingLot("4", "Parqueo Express Calle 42", LatLng(4.626500, -74.070000), "$110", "$4.500", "$16.000", "Parqueo rápido.", false, "06:00", "20:00", "Lunes a Sábado", 8),
-            ParkingLot("5", "Estacionamiento Sur", LatLng(4.624000, -74.073000), "$80", "$3.000", "$10.000", "Solo motos y carros compactos.", false, "08:00", "18:00", "Lunes a Viernes", 20),
-            ParkingLot("6", "Lejos Parking", LatLng(4.650000, -74.090000), "$150", "$6.000", "$25.000", "Bajo techo.", true, "05:00", "23:00", "Toda la semana", 3),
-            ParkingLot("7", "Parqueadero Caracas", LatLng(4.625500, -74.069000), "$100", "$4.000", "$14.000", "Al aire libre.", false, "06:00", "21:00", "Lunes a Domingo", 15)
-        )
-    }
+    val allParkingLots by viewModel.parkingLots.collectAsState()
 
     var showFilters by remember { mutableStateOf(false) }
     var filtersActive by remember { mutableStateOf(false) }
@@ -150,7 +143,7 @@ fun SearchMap(navController: NavController) {
     var appliedMaxPrice by remember { mutableStateOf(10000f) }
     var appliedNeedElectric by remember { mutableStateOf(false) }
 
-    val nearbyParkingLots = remember(defaultLocation, filtersActive, appliedMaxDistance, appliedMaxPrice, appliedNeedElectric) {
+    val nearbyParkingLots = remember(allParkingLots, defaultLocation, filtersActive, appliedMaxDistance, appliedMaxPrice, appliedNeedElectric) {
         allParkingLots.map { parking ->
             val results = FloatArray(1)
             Location.distanceBetween(

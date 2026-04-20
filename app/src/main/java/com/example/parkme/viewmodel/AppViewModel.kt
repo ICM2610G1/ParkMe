@@ -2,11 +2,14 @@ package com.example.parkme.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.parkme.models.ParkingLot
+import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -28,6 +31,8 @@ class AppViewModel : ViewModel() {
 
     private val _authState = MutableStateFlow(AuthState())
     val authState: StateFlow<AuthState> = _authState
+    private val _parkingLots = MutableStateFlow<List<ParkingLot>>(emptyList())
+    val parkingLots: StateFlow<List<ParkingLot>> = _parkingLots.asStateFlow()
 
     init {
         val currentUser = auth.currentUser
@@ -209,7 +214,7 @@ class AppViewModel : ViewModel() {
     fun rateParkingLot(parkingLotId: String, newRating: Float) {
         viewModelScope.launch {
             try {
-                val docRef = firestore.collection("parkingLots").document(parkingLotId)
+                val docRef = firestore.collection("parqueaderos").document(parkingLotId)
 
                 firestore.runTransaction { transaction ->
                     val snapshot = transaction.get(docRef)
@@ -229,6 +234,68 @@ class AppViewModel : ViewModel() {
             } catch (e: Exception) {
                 _authState.value = _authState.value.copy(
                     errorMessage = "Error al enviar la calificación: ${e.message}"
+                )
+            }
+        }
+    }
+    fun fetchParkingLots() {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("parqueaderos").get().await()
+
+                val lots = snapshot.documents.mapNotNull { doc ->
+                    try {
+                        val id = doc.id
+                        val name = doc.getString("nombre") ?: ""
+
+                        val lat = doc.getDouble("latitud") ?: 0.0
+                        val lng = doc.getDouble("longitud") ?: 0.0
+
+                        val precioMinNum = doc.getLong("precioMinuto") ?: 0
+                        val precioHoraNum = doc.getLong("precioHora") ?: 0
+                        val tarifaFijaNum = doc.getLong("tarifaFija") ?: 0
+
+                        val pricePerMin = "$$precioMinNum"
+                        val pricePerHour = "$$precioHoraNum"
+                        val fixedPrice = "$$tarifaFijaNum"
+
+                        val terms = doc.getString("terminos") ?: ""
+                        val hourStart = doc.getString("horaApertura") ?: ""
+                        val hourFinish = doc.getString("horaCierre") ?: ""
+                        val weekAvailability = doc.getString("disponibilidad") ?: ""
+                        val slot = doc.getLong("cupos")?.toInt() ?: 0
+
+                        val servicios = doc.get("servicios") as? List<String> ?: emptyList()
+                        val electricCharges = servicios.contains("Cargador de vehículos eléctricos")
+
+                        val rate = doc.getDouble("calificacion")?.toFloat() ?: 0f
+                        val ratingCount = doc.getLong("ratingCount")?.toInt() ?: 0 // Dejamos este por si lo añades luego para el promedio
+
+                        ParkingLot(
+                            id = id,
+                            name = name,
+                            location = LatLng(lat, lng),
+                            pricePerMin = pricePerMin,
+                            pricePerHour = pricePerHour,
+                            fixedPrice = fixedPrice,
+                            terms = terms,
+                            electricCharges = electricCharges,
+                            hourStart = hourStart,
+                            hourFinish = hourFinish,
+                            weekAvailability = weekAvailability,
+                            slot = slot,
+                            rate = rate,
+                            ratingCount = ratingCount
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                _parkingLots.value = lots
+            } catch (e: Exception) {
+                _authState.value = _authState.value.copy(
+                    errorMessage = "Error al cargar parqueaderos: ${e.message}"
                 )
             }
         }
