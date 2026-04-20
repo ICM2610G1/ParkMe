@@ -392,7 +392,7 @@ fun HomeOperator(navController: NavController) {
                                 nombre = data["name"] as? String ?: "Sin nombre",
                                 calificacion = rateString,
                                 parkingId = id,
-                                fotos = (data["fotos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                                fotos = (data["photos"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                                 navController = navController
                             )
                         }

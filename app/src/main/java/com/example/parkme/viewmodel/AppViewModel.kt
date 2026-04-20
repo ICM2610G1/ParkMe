@@ -276,6 +276,7 @@ class AppViewModel : ViewModel() {
                         val rate = (doc.get("rate") as? Number)?.toFloat() ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
                         val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
                         val direccion = doc.getString("direccion") ?: ""
+                        val photos = (doc.get("photos") as? List<*>)?.filterIsInstance<String>() ?: emptyList()
 
                         ParkingLot(
                             id = id,
@@ -292,7 +293,8 @@ class AppViewModel : ViewModel() {
                             slot = slot,
                             rate = rate,
                             ratingCount = ratingCount,
-                            direccion = direccion
+                            direccion = direccion,
+                            photos = photos
                         )
                     } catch (e: Exception) {
                         Log.e("MAPS_DEBUG", "Error parseando documento ${doc.id}: ${e.message}")

@@ -410,7 +410,6 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 Alignment.CenterVertically
             ) {
                 Text("Reglas del parqueadero", fontSize = 17.sp, color = colorResource(R.color.black), fontWeight = FontWeight.Medium)
-                Text("Ver más", Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 11.sp, textDecoration = TextDecoration.Underline, color = colorResource(R.color.blue))
             }
 
             Surface(
