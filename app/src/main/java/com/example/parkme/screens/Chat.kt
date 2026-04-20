@@ -118,7 +118,8 @@ fun ChatCliente() {
         ChatMessage("Listo, muchas gracias", "09:02", true),
         ChatMessage("Ok", "09:03", false),
         ChatMessage("Listo, muchas gracias", "09:02", true),
-        ChatMessage("prueba", "09:02", true)
+        ChatMessage("prueba", "09:02", true),
+        ChatMessage("pruebaconflicta", "09:02", true)
 
 
     )
