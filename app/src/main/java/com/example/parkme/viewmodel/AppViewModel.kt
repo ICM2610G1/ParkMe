@@ -1,5 +1,6 @@
 package com.example.parkme.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.parkme.models.ParkingLot
@@ -246,30 +247,31 @@ class AppViewModel : ViewModel() {
                 val lots = snapshot.documents.mapNotNull { doc ->
                     try {
                         val id = doc.id
-                        val name = doc.getString("nombre") ?: ""
 
-                        val lat = doc.getDouble("latitud") ?: 0.0
-                        val lng = doc.getDouble("longitud") ?: 0.0
+                        val name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre"
 
-                        val precioMinNum = doc.getLong("precioMinuto") ?: 0
-                        val precioHoraNum = doc.getLong("precioHora") ?: 0
-                        val tarifaFijaNum = doc.getLong("tarifaFija") ?: 0
+                        val lat = (doc.get("latitud") as? Number)?.toDouble() ?: 0.0
+                        val lng = (doc.get("longitud") as? Number)?.toDouble() ?: 0.0
 
-                        val pricePerMin = "$$precioMinNum"
-                        val pricePerHour = "$$precioHoraNum"
-                        val fixedPrice = "$$tarifaFijaNum"
+                        var pricePerMin = doc.getString("pricePerMin") ?: doc.getString("precioMinuto") ?: "0"
+                        var pricePerHour = doc.getString("pricePerHour") ?: doc.getString("precioHora") ?: "0"
+                        var fixedPrice = doc.getString("fixedPrice") ?: doc.getString("tarifaFija") ?: "0"
 
-                        val terms = doc.getString("terminos") ?: ""
-                        val hourStart = doc.getString("horaApertura") ?: ""
-                        val hourFinish = doc.getString("horaCierre") ?: ""
-                        val weekAvailability = doc.getString("disponibilidad") ?: ""
-                        val slot = doc.getLong("cupos")?.toInt() ?: 0
+                        if (!pricePerMin.startsWith("$")) pricePerMin = "$$pricePerMin"
+                        if (!pricePerHour.startsWith("$")) pricePerHour = "$$pricePerHour"
+                        if (!fixedPrice.startsWith("$")) fixedPrice = "$$fixedPrice"
 
-                        val servicios = doc.get("servicios") as? List<String> ?: emptyList()
-                        val electricCharges = servicios.contains("Cargador de vehículos eléctricos")
+                        val terms = doc.getString("terms") ?: doc.getString("terminos") ?: "Sin términos"
+                        val hourStart = doc.getString("hourStart") ?: doc.getString("horaApertura") ?: ""
+                        val hourFinish = doc.getString("hourFinish") ?: doc.getString("horaCierre") ?: ""
+                        val weekAvailability = doc.getString("weekAvailability") ?: doc.getString("disponibilidad") ?: ""
 
-                        val rate = doc.getDouble("calificacion")?.toFloat() ?: 0f
-                        val ratingCount = doc.getLong("ratingCount")?.toInt() ?: 0 // Dejamos este por si lo añades luego para el promedio
+                        val slot = (doc.get("slot") as? Number)?.toInt() ?: (doc.get("cupos") as? Number)?.toInt() ?: 0
+
+                        val electricCharges = doc.getBoolean("electricCharges") ?: false
+
+                        val rate = (doc.get("rate") as? Number)?.toFloat() ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
+                        val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
 
                         ParkingLot(
                             id = id,
@@ -288,15 +290,14 @@ class AppViewModel : ViewModel() {
                             ratingCount = ratingCount
                         )
                     } catch (e: Exception) {
+                        Log.e("MAPS_DEBUG", "Error parseando documento ${doc.id}: ${e.message}")
                         null
                     }
                 }
 
                 _parkingLots.value = lots
             } catch (e: Exception) {
-                _authState.value = _authState.value.copy(
-                    errorMessage = "Error al cargar parqueaderos: ${e.message}"
-                )
+                Log.e("MAPS_DEBUG", "Error de conexión a Firebase: ${e.message}")
             }
         }
     }
