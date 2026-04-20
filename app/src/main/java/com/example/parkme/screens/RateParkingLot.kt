@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Button
@@ -34,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -183,21 +185,33 @@ fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: 
                 thickness = 1.dp,
                 color = Color.Gray
             )
-            var currentRating by remember { mutableIntStateOf(0) }
+            var currentRating by remember { mutableFloatStateOf(0f) }
             Row(
                 modifier = Modifier.padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 for (i in 1..5) {
-                    val isSelected = i <= currentRating
+                    val starValue = i.toFloat()
+
+                    val icon = when {
+                        currentRating >= starValue -> Icons.Filled.Star
+                        currentRating >= starValue - 0.5f -> Icons.AutoMirrored.Filled.StarHalf
+                        else -> Icons.Outlined.Star
+                    }
+                    val isSelected = currentRating >= starValue - 0.5f
+
                     Icon(
-                        imageVector = if (isSelected) Icons.Filled.Star else Icons.Outlined.Star,
+                        imageVector = icon,
                         contentDescription = "Estrella de calificación $i",
-                        tint = if (isSelected) Color(0xFFFFC107) else Color.Black, // Amarillo o negro
+                        tint = if (isSelected) Color(0xFFFFC107) else Color.Black,
                         modifier = Modifier
                             .size(36.dp)
                             .clickable {
-                                currentRating = i
+                                currentRating = if (currentRating == starValue) {
+                                    starValue - 0.5f
+                                } else {
+                                    starValue
+                                }
                             }
                     )
                 }
@@ -211,7 +225,7 @@ fun RateParkingLot(navController: NavController,parkingLotId: String,viewModel: 
             Button(
                 onClick = {
                     if (currentRating > 0) {
-                        viewModel.rateParkingLot(parkingLotId, currentRating.toFloat())
+                        viewModel.rateParkingLot(parkingLotId, currentRating)
                         Toast.makeText(context, "¡Gracias por tu calificación!", Toast.LENGTH_SHORT).show()
                         navController.navigate(AppScreens.HomeUser.name) {
                             popUpTo(AppScreens.HomeUser.name) { inclusive = true }
