@@ -88,7 +88,6 @@ class AppViewModel : ViewModel() {
                 val result = auth.signInWithEmailAndPassword(email, password).await()
                 val user = result.user ?: throw Exception("Usuario nulo")
 
-                // Fuerza refresh del token antes de leer Firestore
                 user.getIdToken(true).await()
 
                 val doc = firestore.collection("users").document(user.uid).get().await()
@@ -137,7 +136,6 @@ class AppViewModel : ViewModel() {
                 val result = auth.createUserWithEmailAndPassword(email, password).await()
                 val user = result.user ?: throw Exception("Error creando usuario")
 
-                // Fuerza refresh del token antes de escribir en Firestore
                 user.getIdToken(true).await()
 
                 val userMap = hashMapOf(
@@ -178,7 +176,7 @@ class AppViewModel : ViewModel() {
                     .await()
 
                 _authState.value = _authState.value.copy(
-                    isVerified = true  // ← ¿Está esta línea?
+                    isVerified = true
                 )
             } catch (e: Exception) {
                 _authState.value = _authState.value.copy(
@@ -321,7 +319,6 @@ class AppViewModel : ViewModel() {
             try {
                 Log.d("RESERVAS_DEBUG", "Buscando reservas para el usuario: $uid")
 
-                // Asegúrate de que el nombre de tu colección sea "reservas"
                 val result = firestore.collection("reservas").whereEqualTo("userId", uid).get().await()
                 Log.d("RESERVAS_DEBUG", "Documentos encontrados en Firebase: ${result.documents.size}")
 
@@ -329,7 +326,6 @@ class AppViewModel : ViewModel() {
                     try {
                         val id = doc.id
 
-                        // Intentamos leer en inglés y en español por si acaso
                         val parkingId = doc.getString("parkingId") ?: doc.getString("idParqueadero") ?: ""
                         val parkingName = doc.getString("parkingName") ?: doc.getString("nombreParqueadero") ?: "Parqueadero"
                         val userId = doc.getString("userId") ?: ""
@@ -338,14 +334,12 @@ class AppViewModel : ViewModel() {
                         val endTime = doc.getString("endTime") ?: doc.getString("horaFin") ?: ""
                         val status = doc.getString("status") ?: doc.getString("estado") ?: "Activa"
 
-                        // Súper importante: Convertimos seguro el precio, sin importar si Firebase lo guardó como Int, Long o Double
                         val totalPrice = (doc.get("totalPrice") as? Number)?.toDouble()
                             ?: (doc.get("precioTotal") as? Number)?.toDouble() ?: 0.0
                         val isRated = doc.getBoolean("isRated") ?: false
 
                         Log.d("RESERVAS_DEBUG", "Reserva leída correctamente: $parkingName - $placa")
 
-                        // Construimos tu objeto
                         Reservation(
                             id = id,
                             parkingId = parkingId,

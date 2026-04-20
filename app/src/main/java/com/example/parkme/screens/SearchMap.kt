@@ -330,7 +330,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     Text(text = "Cupos disponibles: ${confirmedParkingLot!!.slot} | Tarifa: ${confirmedParkingLot!!.pricePerHour}", fontSize = 16.sp, color = Color.DarkGray, modifier = Modifier.padding(top = 8.dp))
                     Button(
                         onClick = {
-                            // ← CAMBIO CLAVE: usar ParkingLotHolder en lugar de savedStateHandle
                             ParkingLotHolder.selected = confirmedParkingLot
                             navController.navigate(AppScreens.ParkingLotDetail.name)
                         },

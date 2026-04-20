@@ -112,7 +112,6 @@ fun IdentityVerification(navController: NavController, viewModel: AppViewModel) 
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Opción Cédula
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier

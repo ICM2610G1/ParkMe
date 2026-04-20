@@ -43,219 +43,218 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
     var mensajeReserva by remember { mutableStateOf("") }
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-    Box(modifier = Modifier.fillMaxSize().background(colorResource(R.color.back))) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = colorResource(R.color.back)
+    ) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize()) {
 
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = if (mostrarFormulario) 380.dp else 100.dp)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
+                    .padding(bottom = if (mostrarFormulario) 380.dp else 100.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.Start
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logoparkme),
-                    contentDescription = "Logo de la app",
-                    modifier = Modifier.width(160.dp).height(95.dp),
-                    contentScale = ContentScale.Fit
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Box(modifier = Modifier.height(70.dp).width(2.dp).background(Color.Black))
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = parking.name,
-                    color = colorResource(R.color.black),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 32.sp,
-                    textAlign = TextAlign.Start
-                )
-            }
 
-            Spacer(modifier = Modifier.height(40.dp))
-
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                shape = RoundedCornerShape(50),
-                color = colorResource(R.color.grisprecios)
-            ) {
-                Text(
-                    " ${parking.pricePerHour} / hora   •    ${parking.pricePerMin} / min   •   Tarifa plena:  ${parking.fixedPrice}",
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                    color = Color.Black,
-                    fontSize = 14.sp
-                )
-            }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                shape = RoundedCornerShape(50),
-                color = colorResource(R.color.grisprecios)
-            ) {
-                Text(
-                    "Horario: ${parking.hourStart} - ${parking.hourFinish}   •   Días: ${parking.weekAvailability}",
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-                    color = Color.Black,
-                    fontSize = 14.sp
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
-                Arrangement.SpaceBetween,
-                Alignment.CenterVertically
-            ) {
-                Text("Disponible", fontSize = 17.sp, color = colorResource(R.color.black), fontWeight = FontWeight.Medium)
-                Box(Modifier.size(24.dp).border(1.dp, Color.Black, CircleShape), contentAlignment = Alignment.Center) {
-                    if (parking.slot > 0) Icon(Icons.Default.Check, null, Modifier.size(16.dp))
-                    else Icon(Icons.Default.Cancel, null, Modifier.size(16.dp))
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
-                Arrangement.SpaceBetween,
-                Alignment.CenterVertically
-            ) {
-                Text("Cargador EV", fontSize = 17.sp, color = colorResource(R.color.black), fontWeight = FontWeight.Medium)
-                Box(Modifier.size(24.dp).border(1.dp, Color.Black, CircleShape), contentAlignment = Alignment.Center) {
-                    if (parking.electricCharges) Icon(Icons.Default.Check, null, Modifier.size(16.dp))
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                Arrangement.SpaceBetween,
-                Alignment.CenterVertically
-            ) {
-                Text("Reglas del parqueadero", fontSize = 17.sp, color = colorResource(R.color.black), fontWeight = FontWeight.Medium) }
-
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 15.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = colorResource(R.color.grisClaro)
-            ) {
-                Text(
-                    text = parking.terms.ifEmpty { "Sin reglas definidas" },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    color = Color.Black,
-                    fontSize = 14.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = colorResource(R.color.grisClaro))
-            ) {
-                Column(modifier = Modifier.padding(15.dp)) {
-                    Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                        Text("Fotos del parqueadero", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                        TextButton(onClick = {}, contentPadding = PaddingValues(0.dp)) {
-                            Text("Ver todo", color = colorResource(R.color.blue), fontSize = 11.sp, textDecoration = TextDecoration.Underline)
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (parking.photos.isEmpty()) {
-                            repeat(3) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.parqueadero1),
-                                    contentDescription = "Sin foto",
-                                    modifier = Modifier.size(85.dp).clip(RoundedCornerShape(15.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                        } else {
-                            parking.photos.take(3).forEach { url ->
-                                AsyncImage(
-                                    model = url,
-                                    contentDescription = "Foto parqueadero",
-                                    modifier = Modifier.size(85.dp).clip(RoundedCornerShape(15.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- 2. ZONA INFERIOR (Formulario o Botón Original) ---
-        Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-            if (mostrarFormulario) {
-                if (isSubmitting) {
-                    // Animación de carga
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(colorResource(R.color.grisClaro), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                            .padding(40.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = colorResource(R.color.blue))
-                    }
-                } else {
-                    ReservationBottomBox(
-                        parkingName = parking.name,
-                        onCancel = { mostrarFormulario = false },
-                        onConfirm = { placa, horaLlegada, horaSalida ->
-                            isSubmitting = true
-                            mensajeReserva = ""
-
-                            val nuevaReserva = Reservation(
-                                parkingId = parking.id,
-                                parkingName = parking.name,
-                                userId = uid,
-                                placa = placa,
-                                startTime = horaLlegada,
-                                endTime = horaSalida,
-                                status = "Activa"
-                            )
-
-                            crearReservaYActualizarCupo(
-                                reserva = nuevaReserva,
-                                onSuccess = {
-                                    isSubmitting = false
-                                    mostrarFormulario = false
-                                    navController.navigate(AppScreens.MyActivity.name)
-                                },
-                                onError = { e ->
-                                    isSubmitting = false
-                                    mensajeReserva = "Error: ${e.message}"
-                                }
-                            )
-                        }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logoparkme),
+                        contentDescription = "Logo de la app",
+                        modifier = Modifier.width(130.dp).height(80.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = "Detalles del\nparqueadero",
+                        color = colorResource(R.color.black),
+                        fontSize = 25.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 28.sp,
+                        textAlign = TextAlign.Start
                     )
                 }
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-                    contentAlignment = Alignment.Center
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
                 ) {
-                    Button(
-                        onClick = { mostrarFormulario = true },
-                        modifier = Modifier.fillMaxWidth(0.80f).height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue))
-                    ) {
-                        Text("Reservar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Column(horizontalAlignment = Alignment.Start) {
+                        Text(
+                            text = parking.pricePerHour,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(R.color.black)
+                        )
+                        Text(text = "por hora", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(text = "${parking.pricePerMin} / min", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = "Plena: ${parking.fixedPrice}", fontSize = 14.sp, color = Color.DarkGray)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Horario de atención", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = "${parking.hourStart} - ${parking.hourFinish}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(text = "Días: ${parking.weekAvailability}", fontSize = 14.sp, color = Color.DarkGray)
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("Detalles del lugar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                    Box(Modifier.size(24.dp).border(1.dp, if(parking.slot > 0) Color.Black else Color.Red, CircleShape), contentAlignment = Alignment.Center) {
+                        if (parking.slot > 0) Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                        else Icon(Icons.Default.Cancel, null, Modifier.size(16.dp), tint = Color.Red)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(if (parking.slot > 0) "Cupos disponibles" else "Lleno", fontSize = 16.sp, color = Color.DarkGray)
+                }
+
+                if (parking.electricCharges) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
+                        Box(Modifier.size(24.dp).border(1.dp, Color.Black, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Check, null, Modifier.size(16.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Cargador para vehículos eléctricos", fontSize = 16.sp, color = Color.DarkGray)
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(bottom = 12.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 6.dp, end = 12.dp)
+                            .size(6.dp)
+                            .background(Color.Black, CircleShape)
+                    )
+                    Column {
+                        Text("Reglas del parqueadero", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = parking.terms.ifEmpty { "Sin reglas definidas" }, fontSize = 16.sp, color = Color.DarkGray)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
+                    Text("Fotos", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = colorResource(R.color.black))
+                    TextButton(onClick = {}, contentPadding = PaddingValues(0.dp)) {
+                        Text("Ver todo", color = colorResource(R.color.blue), fontSize = 14.sp)
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (parking.photos.isEmpty()) {
+                        repeat(3) {
+                            Image(
+                                painter = painterResource(id = R.drawable.parqueadero1),
+                                contentDescription = "Sin foto",
+                                modifier = Modifier.size(100.dp).clip(RoundedCornerShape(16.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    } else {
+                        parking.photos.take(3).forEach { url ->
+                            AsyncImage(
+                                model = url,
+                                contentDescription = "Foto parqueadero",
+                                modifier = Modifier.size(100.dp).clip(RoundedCornerShape(16.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        if (mensajeReserva.isNotEmpty() && !mostrarFormulario) {
-            Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp)) {
-                Text(text = mensajeReserva, color = Color.Red, fontWeight = FontWeight.Bold)
+            Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+                if (mostrarFormulario) {
+                    if (isSubmitting) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(colorResource(R.color.grisClaro), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                .padding(40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = colorResource(R.color.blue))
+                        }
+                    } else {
+                        ReservationBottomBox(
+                            parkingName = parking.name,
+                            onCancel = { mostrarFormulario = false },
+                            onConfirm = { placa, horaLlegada, horaSalida ->
+                                isSubmitting = true
+                                mensajeReserva = ""
+
+                                val nuevaReserva = Reservation(
+                                    parkingId = parking.id,
+                                    parkingName = parking.name,
+                                    userId = uid,
+                                    placa = placa,
+                                    startTime = horaLlegada,
+                                    endTime = horaSalida,
+                                    status = "Activa"
+                                )
+
+                                crearReservaYActualizarCupo(
+                                    reserva = nuevaReserva,
+                                    onSuccess = {
+                                        isSubmitting = false
+                                        mostrarFormulario = false
+                                        navController.navigate(AppScreens.MyActivity.name)
+                                    },
+                                    onError = { e ->
+                                        isSubmitting = false
+                                        mensajeReserva = "Error: ${e.message}"
+                                    }
+                                )
+                            }
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Button(
+                            onClick = { mostrarFormulario = true },
+                            modifier = Modifier.fillMaxWidth(0.85f).height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("Reservar espacio", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
+            }
+
+            if (mensajeReserva.isNotEmpty() && !mostrarFormulario) {
+                Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp)) {
+                    Text(text = mensajeReserva, color = Color.Red, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -336,7 +335,6 @@ fun ReservationBottomBox(
     }
 }
 
-// --- FUNCIÓN DE TRANSACCIÓN PARA FIREBASE ---
 fun crearReservaYActualizarCupo(
     reserva: Reservation,
     onSuccess: () -> Unit,

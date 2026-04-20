@@ -231,10 +231,10 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                         modifier = Modifier.padding(bottom = 4.dp)
                                     )
                                     Text(
-                                        text = direccionMostrar, // O "Dirección: ${reserva.direccion}" si prefieres
+                                        text = direccionMostrar,
                                         color = Color.DarkGray,
                                         fontSize = 14.sp,
-                                        modifier = Modifier.padding(bottom = 8.dp) // Padding más grande antes de la instrucción
+                                        modifier = Modifier.padding(bottom = 8.dp)
                                     )
                                     Text(text = "Toca para calificar la experiencia", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
                                 }
@@ -400,7 +400,7 @@ fun HomeOperator(navController: NavController) {
                                 nombre = data["name"] as? String ?: "Sin nombre",
                                 calificacion = rateString,
                                 parkingId = id,
-                                fotos = fotosList, // Pasamos la lista procesada
+                                fotos = fotosList,
                                 navController = navController
                             )
                         }
@@ -472,8 +472,7 @@ fun ParqueaderoItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            // << CAMBIO: Forzamos a que SIEMPRE haya 2 espacios.
-            // Si la lista tiene 0 fotos, pone 2 default. Si tiene 1 foto, pone 1 real y 1 default.
+
             val fotosMostrar = listOf(
                 fotos.getOrNull(0),
                 fotos.getOrNull(1)

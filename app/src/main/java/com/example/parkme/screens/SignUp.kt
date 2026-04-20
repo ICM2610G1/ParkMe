@@ -41,7 +41,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp // << CAMBIO 3: Importación para el tamaño de fuente
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.parkme.R
 import com.example.parkme.viewmodel.AppViewModel
@@ -234,7 +234,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                         Text(
                             "Ingrese su contraseña",
                             color = colorResource(R.color.grisB),
-                            fontSize = 14.sp // << CAMBIO 3b
+                            fontSize = 14.sp
                         )
                     },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -265,7 +265,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     color = colorResource(R.color.black),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 24.dp, bottom = 8.dp),
-                    fontSize = 16.sp // << CAMBIO 3a
+                    fontSize = 16.sp
                 )
                 TextField(
                     value = confirmPassword,
@@ -275,7 +275,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                         Text(
                             "Confirme su contraseña",
                             color = colorResource(R.color.grisB),
-                            fontSize = 14.sp // << CAMBIO 3b
+                            fontSize = 14.sp
                         )
                     },
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),

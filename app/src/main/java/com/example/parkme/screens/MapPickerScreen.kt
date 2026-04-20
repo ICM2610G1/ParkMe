@@ -54,11 +54,10 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
     }
 
-    // << CAMBIO 1: Se crea un objeto para configurar la UI del mapa
     val uiSettings by remember {
         mutableStateOf(
             MapUiSettings(
-                zoomControlsEnabled = false, // Se ocultan los botones de zoom (+/-)
+                zoomControlsEnabled = false,
                 compassEnabled = true
             )
         )
@@ -84,18 +83,13 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
         onDispose { sensorManager.unregisterListener(sensorListener) }
     }
 
-    // El Column vacío se puede eliminar, ya que el Box lo contiene todo.
-    // Column(
-    //     modifier = Modifier.fillMaxSize(),
-    // ) {}
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(mapStyleOptions = currentMapStyle),
-            uiSettings = uiSettings, // << CAMBIO 1: Se aplican los ajustes de UI
-            // << CAMBIO 2: Se añade padding para bajar la brújula y el logo de Google
+            uiSettings = uiSettings,
             contentPadding = PaddingValues(top = 120.dp, bottom = 100.dp),
             onMapClick = { latLng ->
                 markerPosition = latLng
@@ -113,11 +107,11 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
             onValueChange = { searchText = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 50.dp) // << CAMBIO 3: La barra de búsqueda ahora está más arriba (80dp -> 50dp)
+                .padding(top = 50.dp)
                 .padding(horizontal = 16.dp)
                 .align(Alignment.TopCenter),
-            placeholder = { Text("Buscar dirección o Presionar en el Mapa") }, // << CAMBIO: Usamos placeholder en lugar de label para mejor estética
-            shape = RoundedCornerShape(30.dp), // << CAMBIO 4: Bordes más redondeados (12dp -> 30dp)
+            placeholder = { Text("Buscar dirección o Presionar en el Mapa") },
+            shape = RoundedCornerShape(30.dp),
             singleLine = true,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = colorResource(R.color.grisClaro),
@@ -125,7 +119,7 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
                 cursorColor = Color.Gray,
-                focusedLabelColor = Color.Gray, // Label ya no se usa, pero lo dejamos por si acaso
+                focusedLabelColor = Color.Gray,
                 unfocusedLabelColor = Color.Gray,
                 focusedTextColor = Color.Black,
                 unfocusedTextColor = Color.Black
