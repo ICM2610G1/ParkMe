@@ -8,6 +8,10 @@ import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -44,14 +48,17 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.navigation.NavController
 import com.example.parkme.R
+import com.example.parkme.lightSensor
 import com.example.parkme.models.ParkingLot
 import com.example.parkme.models.ParkingLotHolder
 import com.example.parkme.navigation.AppScreens
+import com.example.parkme.sensorManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -72,7 +79,9 @@ fun Context.findActivity(): Activity? = when (this) {
 fun SearchMap(navController: NavController) {
     val context = LocalContext.current
     val view = LocalView.current
-
+    val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
+    val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
+    var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
     if (!view.isInEditMode) {
         SideEffect {
             val window = context.findActivity()?.window
@@ -92,12 +101,32 @@ fun SearchMap(navController: NavController) {
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted -> hasLocationPermission = isGranted }
     )
+    val sensorListener = remember {
+        object : SensorEventListener {
+            override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
+
+            override fun onSensorChanged(event: SensorEvent?) {
+                if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
+                    val lux = event.values[0]
+                    currentMapStyle = if (lux < 2000) darkMapStyle else lightMapStyle
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (!hasLocationPermission) {
             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
+    DisposableEffect(Unit) {
+        lightSensor?.let {
+            sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+
+        onDispose { sensorManager.unregisterListener(sensorListener) }
+    }
+
 
     val defaultLocation = LatLng(4.626072, -74.071427)
     val allParkingLots = remember {
@@ -164,7 +193,8 @@ fun SearchMap(navController: NavController) {
         }
     }
 
-    val carBitmap = remember { resizeMapIcon(context, R.drawable.blackcar, 35, 70) }
+    val carBitmap = remember { resizeMapIcon(context,
+        if(currentMapStyle==lightMapStyle){ R.drawable.blackcar} else { R.drawable.whitecar}, 35, 70) }
     val pinBitmap = remember { resizeMapIcon(context, R.drawable.pinmaplogo, 45, 45) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "buscando")
@@ -207,7 +237,7 @@ fun SearchMap(navController: NavController) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(isMyLocationEnabled = false),
+            properties = MapProperties( mapStyleOptions = currentMapStyle,isMyLocationEnabled = false),
             uiSettings = MapUiSettings(myLocationButtonEnabled = false, compassEnabled = true, zoomControlsEnabled = false),
             contentPadding = PaddingValues(top = 90.dp, bottom = 460.dp, start = 8.dp, end = 8.dp)
         ) {

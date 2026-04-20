@@ -1,41 +1,89 @@
 package com.example.parkme.screens
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.location.Geocoder
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.parkme.R
+import com.example.parkme.lightSensor
+import com.example.parkme.sensorManager
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.*
 
 @Composable
-fun MapPickerScreen(
-    navController: NavController,
-    onLocationPicked: (LatLng) -> Unit
-) {
-    // Bogotá como centro por defecto
+fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> Unit) {
+    val context = LocalContext.current
+    val geocoder = remember { Geocoder(context) }
+
+    val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
+    val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
+    var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
+
     val defaultLocation = LatLng(4.7110, -74.0721)
     var markerPosition by remember { mutableStateOf<LatLng?>(null) }
+    var searchText by remember { mutableStateOf("") }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
+    }
+    val sensorListener = remember {
+        object : SensorEventListener {
+            override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
+
+            override fun onSensorChanged(event: SensorEvent?) {
+                if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
+                    // Obtener el valor de la luz en "Lux"
+                    val lux = event.values[0]
+                    currentMapStyle = if (lux < 2000) darkMapStyle else lightMapStyle
+                }
+            }
+        }
+    }
+    DisposableEffect(Unit) {
+        lightSensor?.let {
+            sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+
+        onDispose { sensorManager.unregisterListener(sensorListener) }
+    }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
+            properties = MapProperties(mapStyleOptions = currentMapStyle),
             onMapClick = { latLng ->
                 markerPosition = latLng
             }
@@ -47,16 +95,46 @@ fun MapPickerScreen(
                 )
             }
         }
-
-        // Instrucción arriba
-        Text(
-            text = "Toca el mapa para poner el pin",
+        TextField(
+            value = searchText,
+            onValueChange = { searchText = it },
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp),
-            fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
-            color = Color.Black
+                .fillMaxWidth()
+                .padding(top = 80.dp)
+                .padding(horizontal = 16.dp)
+                .align(Alignment.TopCenter),
+            label = { Text("Buscar dirección o Presionar en el Mapa") },
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = colorResource(R.color.grisClaro),
+                unfocusedContainerColor = colorResource(R.color.grisClaro),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = Color.Gray,
+                focusedLabelColor = Color.Gray,
+                unfocusedLabelColor = Color.Gray,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black
+            ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    try {
+                        val addresses = geocoder.getFromLocationName(searchText, 1)
+                        if (!addresses.isNullOrEmpty()) {
+                            val foundAddress = addresses[0]
+                            val newLatLng = LatLng(foundAddress.latitude, foundAddress.longitude)
+                            markerPosition = newLatLng
+                            cameraPositionState.position = CameraPosition.fromLatLngZoom(newLatLng, 16f)
+                        } else {
+                            Toast.makeText(context, "Dirección no encontrada", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Error buscando dirección", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
         )
 
         Button(
@@ -74,8 +152,7 @@ fun MapPickerScreen(
             ),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(24.dp)
-                .fillMaxWidth(0.7f)
+                .padding(30.dp)
                 .height(52.dp)
         ) {
             Text(
@@ -85,4 +162,11 @@ fun MapPickerScreen(
             )
         }
     }
+}
+@Preview(showBackground = true)
+@Composable
+fun PreviewPiccker() {
+    val navControllerv: NavController
+    navControllerv= rememberNavController()
+    MapPickerScreen(navControllerv) { }
 }

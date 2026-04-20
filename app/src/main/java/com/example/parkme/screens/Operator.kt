@@ -305,7 +305,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             modifier = Modifier.fillMaxWidth(0.72f).align(Alignment.CenterHorizontally)
         ) {
             Text(
-                if (ubicacion.value != null) "📍 Ubicación agregada" else "Agregar Ubicación",
+                if (ubicacion.value != null) "Ubicación agregada" else "Agregar Ubicación",
                 color = if (ubicacion.value != null) Color.White else Color.DarkGray,
                 fontWeight = FontWeight.Bold
             )
@@ -736,7 +736,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
             modifier = Modifier.fillMaxWidth(0.72f).align(Alignment.CenterHorizontally)
         ) {
             Text(
-                if (ubicacion.value != null) "📍 Ubicación agregada" else "Agregar Ubicación",
+                if (ubicacion.value != null) "Ubicación agregada" else "Agregar Ubicación",
                 color = if (ubicacion.value != null) Color.White else Color.DarkGray,
                 fontWeight = FontWeight.Bold
             )
@@ -809,7 +809,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
             enabled = !subiendo.value,
             onClick = {
                 if (parkingId.isEmpty()) {
-                    mensaje.value = "❌ ID de parqueadero inválido"
+                    mensaje.value = "ID de parqueadero inválido"
                     return@Button
                 }
                 subiendo.value = true
@@ -988,12 +988,12 @@ fun guardarDatos(
     db.collection("parqueaderos").document(parkingId)
         .set(datos, SetOptions.merge())
         .addOnSuccessListener {
-            mensaje.value = "✅ Cambios guardados"
+            mensaje.value = "Cambios guardados"
             subiendo.value = false
             navController?.popBackStack()
         }
         .addOnFailureListener { e ->
-            mensaje.value = "❌ Error: ${e.message}"
+            mensaje.value = "Error: ${e.message}"
             subiendo.value = false
         }
 }
