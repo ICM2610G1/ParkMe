@@ -379,6 +379,11 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     mensaje.value = "Usuario no autenticado"
                     return@Button
                 }
+                if (ubicacion.value == null) {
+                    mensaje.value = "Debes agregar una ubicación en el mapa"
+                    return@Button
+                }
+
                 subiendo.value = true
 
                 val diasString = diasSeleccionados.value
@@ -423,7 +428,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                                     .addOnSuccessListener {
                                         mensaje.value = "Parqueadero creado con fotos"
                                         subiendo.value = false
-                                        navController?.popBackStack()
+                                        navController.popBackStack()
                                     }
                                     .addOnFailureListener { e ->
                                         mensaje.value = "Error guardando fotos: ${e.message}"
@@ -472,6 +477,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
 
+    val name = remember { mutableStateOf("") }
     val pricePerHour = remember { mutableStateOf("") }
     val pricePerMin = remember { mutableStateOf("") }
     val fixedPrice = remember { mutableStateOf("") }
@@ -505,6 +511,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
         if (parkingId.isNotEmpty()) {
             db.collection("parqueaderos").document(parkingId).get()
                 .addOnSuccessListener { doc ->
+                    name.value = doc.getString("name") ?: ""
                     pricePerHour.value = doc.getString("pricePerHour") ?: ""
                     pricePerMin.value = doc.getString("pricePerMin") ?: ""
                     fixedPrice.value = doc.getString("fixedPrice") ?: ""
@@ -579,6 +586,18 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+        OutlinedTextField(
+            value = name.value,
+            onValueChange = { name.value = it },
+            label = { Text("Nombre del parqueadero", fontSize = 12.sp) },
+            shape = RoundedCornerShape(50.dp),
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = colorResource(R.color.grisClaro),
+                unfocusedBorderColor = Color.Gray
+            )
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -651,7 +670,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
                 )
             }
         )
-
+        var mostrarDialogoEliminar by remember { mutableStateOf(false) }
         var mostrarDialogoTerms by remember { mutableStateOf(false) }
         LabelAndRight(
             label = "Reglas del parqueadero",
@@ -823,7 +842,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
                 val totalFotos = fotosUris.value.size
                 if (totalFotos == 0) {
                     guardarDatos(
-                        db, parkingId, pricePerHour.value, pricePerMin.value,
+                        db, parkingId, name.value, pricePerHour.value, pricePerMin.value,
                         fixedPrice.value, terms.value, electricCharges.value,
                         hourStart.value, hourFinish.value, diasString,
                         slot.value.toIntOrNull() ?: 0,
@@ -840,7 +859,7 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
                         }
                         val todasLasFotos = fotosUrls.value + fotosSubidas
                         guardarDatos(
-                            db, parkingId, pricePerHour.value, pricePerMin.value,
+                            db, parkingId, name.value , pricePerHour.value, pricePerMin.value,
                             fixedPrice.value, terms.value, electricCharges.value,
                             hourStart.value, hourFinish.value, diasString,
                             slot.value.toIntOrNull() ?: 0,
@@ -860,6 +879,29 @@ fun EditParkingVisual(parkingId: String = "", navController: NavController? = nu
                 Text("Guardar", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
         }
+        Spacer(Modifier.height(16.dp))
+
+        Button(
+            enabled = !subiendo.value,
+            onClick = {
+                // Llamamos a la función externa directamente
+                eliminarParqueadero(db, parkingId, mensaje, subiendo, navController)
+            },
+            shape = pill,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth(0.6f)
+                .height(54.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+        ) {
+            if (subiendo.value) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+            } else {
+                Text("Eliminar", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
 
         if (mensaje.value.isNotEmpty()) {
             Text(
@@ -957,6 +999,7 @@ fun HoraDialog(titulo: String, horaActual: String, onConfirm: (String) -> Unit, 
 fun guardarDatos(
     db: FirebaseFirestore,
     parkingId: String,
+    name : String,
     pricePerHour: String,
     pricePerMin: String,
     fixedPrice: String,
@@ -973,6 +1016,7 @@ fun guardarDatos(
     navController: NavController?
 ) {
     val datos = hashMapOf(
+        "name" to name,
         "pricePerHour" to pricePerHour,
         "pricePerMin" to pricePerMin,
         "fixedPrice" to fixedPrice,
@@ -995,6 +1039,33 @@ fun guardarDatos(
         }
         .addOnFailureListener { e ->
             mensaje.value = "Error: ${e.message}"
+            subiendo.value = false
+        }
+}
+
+fun eliminarParqueadero(
+    db: FirebaseFirestore,
+    parkingId: String,
+    mensaje: MutableState<String>,
+    subiendo: MutableState<Boolean>,
+    navController: NavController?
+) {
+    if (parkingId.isEmpty()) {
+        mensaje.value = "ID de parqueadero inválido"
+        return
+    }
+
+    subiendo.value = true
+
+    db.collection("parqueaderos").document(parkingId)
+        .delete()
+        .addOnSuccessListener {
+            mensaje.value = "Parqueadero eliminado"
+            subiendo.value = false
+            navController?.popBackStack()
+        }
+        .addOnFailureListener { e ->
+            mensaje.value = "Error al eliminar: ${e.message}"
             subiendo.value = false
         }
 }
