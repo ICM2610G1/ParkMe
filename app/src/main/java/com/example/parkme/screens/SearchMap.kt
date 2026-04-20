@@ -69,6 +69,8 @@ import com.google.maps.android.SphericalUtil
 import com.example.parkme.models.SearchMapLocationHolder
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.parkme.viewmodel.AppViewModel
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 
 fun Context.findActivity(): Activity? = when (this) {
@@ -83,6 +85,8 @@ fun Context.findActivity(): Activity? = when (this) {
 fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
     val view = LocalView.current
+
+    var currentSpeed by remember { mutableFloatStateOf(0f) } // En metros por segundo
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
     var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
@@ -118,7 +122,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
 
-
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     var myLocation by remember { mutableStateOf(LatLng(4.626072, -74.071427)) }
 
@@ -148,6 +151,15 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                 Log.e("MAPS_DEBUG", "Error obteniendo la ubicación por GPS: ${e.message}")
             }
         }
+        val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            for (location in locationResult.locations) {
+                val newLatLng = LatLng(location.latitude, location.longitude)
+                myLocation = newLatLng
+                currentSpeed = location.speed * 3.6f
+            }
+        }
+    }
     }
     val allParkingLots by viewModel.parkingLots.collectAsState()
 
@@ -293,6 +305,42 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             }
             if (routePoints != null) {
                 Polyline(points = routePoints!!, color = Color(0xFF0056D2), width = 12f, geodesic = true)
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 20.dp, bottom = 510.dp)
+        ) {
+            Surface(
+                modifier = Modifier
+                    .size(65.dp)
+                    .align(Alignment.BottomStart),
+                shape = RoundedCornerShape(50),
+                color = Color.White,
+                shadowElevation = 6.dp,
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 3.dp,
+                    color = if (currentSpeed > 60) Color.Red else colorResource(R.color.blue)
+                )
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = currentSpeed.toInt().toString(),
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "km/h",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                }
             }
         }
 
