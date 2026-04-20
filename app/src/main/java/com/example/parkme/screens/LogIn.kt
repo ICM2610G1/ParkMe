@@ -150,7 +150,6 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
             }
         }
 
-
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("¿No tienes cuenta?")
