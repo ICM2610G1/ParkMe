@@ -37,6 +37,9 @@ import com.example.parkme.viewmodel.AppViewModel
 
 @Composable
 fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel()) {
+
+    val chatViewModel: com.example.parkme.viewmodel.ChatViewModel = viewModel()
+
     var itemSeleccionado by remember { mutableIntStateOf(1) }
     val reservasUsuario by viewModel.userReservations.collectAsState()
     val allParkingLots by viewModel.parkingLots.collectAsState()
@@ -192,10 +195,10 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
+                                    // COLUMNA IZQUIERDA (Textos) - Le damos weight(1f) para que no aplaste a los botones
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(reservaReciente.parkingName,
                                             fontWeight = FontWeight.ExtraBold,
                                             fontSize = 20.sp,
@@ -224,22 +227,49 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
                                         }
                                     }
 
-                                    Button(
-                                        onClick = {
-                                            if (parqueaderoReciente != null) {
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoReciente.location)
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoReciente.id)
-                                                navController.navigate(AppScreens.SearchMap.name)
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    // COLUMNA DERECHA (Botones) - Los apilamos uno encima del otro
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Button(
+                                            onClick = {
+                                                if (parqueaderoReciente != null) {
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoReciente.location)
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoReciente.id)
+                                                    navController.navigate(AppScreens.SearchMap.name)
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                            shape = RoundedCornerShape(50),
+                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                        ) {
+                                            Text("Reservar\nde nuevo",
+                                                textAlign = TextAlign.Center,
+                                                fontSize = 14.sp,
+                                                lineHeight = 18.sp,
+                                                fontWeight = FontWeight.Bold)
+                                        }
+
+                                        if (reservaReciente.status == "Activa") {
+                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Button(
+                                                onClick = {
+                                                    chatViewModel.iniciarChatRoom(reservaReciente)
+                                                    // Navegamos a la bandeja de chats
+                                                    navController.navigate(AppScreens.ChatListCli.name)
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                                shape = RoundedCornerShape(50),
+                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                            ) {
+                                                Text(
+                                                    "Iniciar Chat",
+                                                    textAlign = TextAlign.Center,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
                                             }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                                        shape = RoundedCornerShape(50)
-                                    ) {
-                                        Text("Reservar de\nnuevo",
-                                            textAlign = TextAlign.Center,
-                                            fontSize = 16.sp,
-                                            lineHeight = 20.sp,
-                                            fontWeight = FontWeight.Bold)
+                                        }
                                     }
                                 }
                             }
