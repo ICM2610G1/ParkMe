@@ -1,5 +1,7 @@
 package com.example.parkme.screens
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -23,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +42,7 @@ import com.example.parkme.R
 import com.example.parkme.geocoder
 import com.example.parkme.lightSensor
 import com.example.parkme.sensorManager
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -52,17 +54,18 @@ import kotlinx.coroutines.withContext
 @Composable
 fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> Unit) {
     val context = LocalContext.current
-
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
     var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
-
     val defaultLocation = LatLng(4.7110, -74.0721)
     var markerPosition by remember { mutableStateOf<LatLng?>(null) }
     var searchText by remember { mutableStateOf("") }
-
     var suggestions by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
+    val customPinBitmap = remember(context) {
+        val imageBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.pinmaplogoblanco)
+        Bitmap.createScaledBitmap(imageBitmap, 120, 120, false)
+    }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 12f)
@@ -130,7 +133,9 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
             }) {
             markerPosition?.let { pos ->
                 Marker(
-                    state = MarkerState(position = pos), title = "Parqueadero aquí"
+                    state = MarkerState(position = pos),
+                    title = "Parqueadero aquí",
+                    icon = BitmapDescriptorFactory.fromBitmap(customPinBitmap)
                 )
             }
         }
@@ -191,17 +196,18 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
                             val placeName = address.featureName ?: "Dirección"
                             val fullAddress = address.getAddressLine(0) ?: ""
 
-                            Row(modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    searchText = fullAddress
-                                    isDropdownExpanded = false
-                                    val latLng = LatLng(address.latitude, address.longitude)
-                                    markerPosition = latLng
-                                    cameraPositionState.position =
-                                        CameraPosition.fromLatLngZoom(latLng, 16f)
-                                }
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        searchText = fullAddress
+                                        isDropdownExpanded = false
+                                        val latLng = LatLng(address.latitude, address.longitude)
+                                        markerPosition = latLng
+                                        cameraPositionState.position =
+                                            CameraPosition.fromLatLngZoom(latLng, 16f)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Default.LocationOn,
@@ -282,7 +288,6 @@ fun findLocation(address: String): LatLng? {
 @Preview(showBackground = true)
 @Composable
 fun PreviewPiccker() {
-    val navControllerv: NavController
-    navControllerv = rememberNavController()
+    val navControllerv = rememberNavController()
     MapPickerScreen(navControllerv) { }
 }
