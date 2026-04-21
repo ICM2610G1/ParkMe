@@ -464,7 +464,6 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     .filter { it.isNotEmpty() }
                     .joinToString(",")
 
-                // Guardamos ambas palabras para máxima compatibilidad
                 val parqueaderoBase = hashMapOf(
                     "operatorId" to uid,
                     "name" to name.value,
@@ -509,7 +508,6 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                                 }
 
                                 withContext(Dispatchers.Main) {
-                                    // Actualizamos ambas palabras para evitar errores
                                     docRef.update(mapOf(
                                         "fotos" to fotosSubidas,
                                         "photos" to fotosSubidas
@@ -657,7 +655,6 @@ fun EditParkingVisual(
                     val dias = listOf("L", "M", "M", "J", "V", "S", "D")
                     diasSeleccionados.value = dias.map { weekAvail.contains(it) }
 
-                    // Lee cualquier formato antiguo o nuevo
                     val fotosFirestore = doc.get("photos") ?: doc.get("fotos")
                     if (fotosFirestore is List<*>) {
                         fotosUrls.value = fotosFirestore.filterIsInstance<String>()
@@ -1212,7 +1209,6 @@ fun saveParkingDetails(
     subiendo: MutableState<Boolean>,
     navController: NavController?
 ) {
-    // Guardamos en ambos nombres para que tus otras pantallas siempre lo encuentren
     val datos = hashMapOf(
         "name" to name,
         "pricePerHour" to pricePerHour,
