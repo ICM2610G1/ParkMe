@@ -277,7 +277,12 @@ class AppViewModel : ViewModel() {
                         val rate = (doc.get("rate") as? Number)?.toFloat() ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
                         val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
                         val direccion = doc.getString("direccion") ?: ""
-                        val photos = (doc.get("photos") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+                        val rawPhotos = doc.get("photos") ?: doc.get("fotos") ?: doc.get("imageUrl") ?: doc.get("imageUrls")
+                        val photos = when (rawPhotos) {
+                            is List<*> -> rawPhotos.filterIsInstance<String>()
+                            is String -> if (rawPhotos.isNotBlank()) listOf(rawPhotos) else emptyList()
+                            else -> emptyList()
+                        }
 
                         ParkingLot(
                             id = id,
