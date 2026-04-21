@@ -211,6 +211,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                                     parkingId = parking.id,
                                     parkingName = parking.name,
                                     userId = uid,
+                                    operatorId = parking.operatorId,
                                     placa = placa,
                                     startTime = horaLlegada,
                                     endTime = horaSalida,

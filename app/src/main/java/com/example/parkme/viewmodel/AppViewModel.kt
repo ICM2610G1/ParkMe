@@ -252,6 +252,7 @@ class AppViewModel : ViewModel() {
                         val id = doc.id
 
                         val name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre"
+                        val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
 
                         val lat = (doc.get("latitud") as? Number)?.toDouble() ?: 0.0
                         val lng = (doc.get("longitud") as? Number)?.toDouble() ?: 0.0
@@ -280,6 +281,7 @@ class AppViewModel : ViewModel() {
 
                         ParkingLot(
                             id = id,
+                            operatorId = operatorId,
                             name = name,
                             location = LatLng(lat, lng),
                             pricePerMin = pricePerMin,
@@ -330,6 +332,7 @@ class AppViewModel : ViewModel() {
                         val parkingName = doc.getString("parkingName") ?: doc.getString("nombreParqueadero") ?: "Parqueadero"
                         val userId = doc.getString("userId") ?: ""
                         val placa = doc.getString("placa") ?: ""
+                        val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
                         val startTime = doc.getString("startTime") ?: doc.getString("horaInicio") ?: ""
                         val endTime = doc.getString("endTime") ?: doc.getString("horaFin") ?: ""
                         val status = doc.getString("status") ?: doc.getString("estado") ?: "Activa"
@@ -343,6 +346,7 @@ class AppViewModel : ViewModel() {
                         Reservation(
                             id = id,
                             parkingId = parkingId,
+                            operatorId = operatorId,
                             parkingName = parkingName,
                             userId = userId,
                             placa = placa,

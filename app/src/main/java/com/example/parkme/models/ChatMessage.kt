@@ -7,6 +7,7 @@ data class ChatMessage(
     val id: String = "",
     val text: String = "",
     val senderId: String = "",
+    val imageUrl: String? = null,
     val timestamp: Timestamp = Timestamp.now()
 ) {
     fun isEnviadoPorMi(miUserId: String): Boolean {

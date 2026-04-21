@@ -462,7 +462,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     .joinToString(",")
 
                 val parqueaderoBase = hashMapOf(
-                    "operadorId" to uid,
+                    "operatorId" to uid,
                     "name" to name.value,
                     "pricePerHour" to pricePerHour.value,
                     "pricePerMin" to pricePerMin.value,

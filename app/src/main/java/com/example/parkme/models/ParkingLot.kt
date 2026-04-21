@@ -4,6 +4,7 @@ import com.google.android.gms.maps.model.LatLng
 
 data class ParkingLot(
     val id: String = "",
+    val operatorId : String,
     val name: String = "",
     val location: LatLng = LatLng(0.0, 0.0),
     val pricePerMin: String = "",

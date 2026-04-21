@@ -10,27 +10,26 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import android.net.Uri
+import com.google.firebase.storage.FirebaseStorage
+import java.util.UUID
 
 class ChatViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
 
-    // Para los mensajes del chat activo
+
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
-    // Para la lista de chats en la bandeja de entrada
     private val _chatRooms = MutableStateFlow<List<ChatRoom>>(emptyList())
     val chatRooms: StateFlow<List<ChatRoom>> = _chatRooms.asStateFlow()
 
-    // --- FUNCIONES PARA LA BANDEJA DE CHATS ---
-
-    // Crea la sala si no existe cuando le dan "Iniciar Chat" en MyActivity
     fun iniciarChatRoom(reserva: Reservation) {
         val chatRoom = ChatRoom(
             id = reserva.id,
             parkingName = reserva.parkingName,
             userId = reserva.userId,
-            operatorId = reserva.parkingId
+            operatorId = reserva.operatorId
         )
 
         db.collection("chats").document(reserva.id)
@@ -39,13 +38,13 @@ class ChatViewModel : ViewModel() {
             .addOnFailureListener { e -> Log.e("ChatViewModel", "Error al crear sala", e) }
     }
 
-    // Carga la lista de chats para la bandeja de entrada
+
     fun fetchMyChats(userId: String, isOperador: Boolean) {
         val campoBusqueda = if (isOperador) "operatorId" else "userId"
 
         db.collection("chats")
             .whereEqualTo(campoBusqueda, userId)
-            // .orderBy("timestamp", Query.Direction.DESCENDING) // Opcional si agregas un índice en Firebase
+
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("ChatViewModel", "Error al escuchar chat rooms", error)
@@ -53,13 +52,11 @@ class ChatViewModel : ViewModel() {
                 }
                 if (snapshot != null) {
                     val rooms = snapshot.documents.mapNotNull { it.toObject(ChatRoom::class.java) }
-                    // Ordenamos localmente por timestamp si no creamos el índice en Firebase
                     _chatRooms.value = rooms.sortedByDescending { it.timestamp }
                 }
             }
     }
 
-    // --- FUNCIONES PARA LOS MENSAJES DEL CHAT ---
 
     fun listenForMessages(chatId: String) {
         db.collection("chats").document(chatId).collection("messages")
@@ -91,7 +88,6 @@ class ChatViewModel : ViewModel() {
         db.collection("chats").document(chatId).collection("messages")
             .add(newMessage)
             .addOnSuccessListener {
-                // Actualizar el "lastMessage" y "timestamp" en el documento principal del chat room
                 db.collection("chats").document(chatId)
                     .update(
                         mapOf(
@@ -99,6 +95,38 @@ class ChatViewModel : ViewModel() {
                             "timestamp" to System.currentTimeMillis()
                         )
                     )
+            }
+    }
+
+    fun sendImageMessage(chatId: String, imageUri: Uri, senderId: String) {
+        val storageRef = FirebaseStorage.getInstance().reference
+
+        val imageRef = storageRef.child("chat_images/${UUID.randomUUID()}.jpg")
+
+        imageRef.putFile(imageUri)
+            .addOnSuccessListener {
+                imageRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                    val newMessage = ChatMessage(
+                        text = "",
+                        imageUrl = downloadUrl.toString(),
+                        senderId = senderId
+                    )
+
+                    db.collection("chats").document(chatId).collection("messages")
+                        .add(newMessage)
+                        .addOnSuccessListener {
+                            db.collection("chats").document(chatId)
+                                .update(
+                                    mapOf(
+                                        "lastMessage" to "📷 Imagen enviada",
+                                        "timestamp" to System.currentTimeMillis()
+                                    )
+                                )
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatViewModel", "Error al subir imagen", e)
             }
     }
 }

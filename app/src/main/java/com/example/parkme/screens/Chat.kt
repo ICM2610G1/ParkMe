@@ -28,6 +28,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.parkme.R
 import com.example.parkme.models.ChatMessage
 import com.example.parkme.viewmodel.ChatViewModel
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
 
 @Composable
 fun ChatScreen(
@@ -49,6 +55,9 @@ fun ChatScreen(
             ChatBottomBar(
                 onSendMessage = { textoDelMensaje ->
                     chatViewModel.sendMessage(chatId, textoDelMensaje, miUserId)
+                },
+                onSendImage = { uriImagen ->
+                    chatViewModel.sendImageMessage(chatId, uriImagen, miUserId)
                 }
             )
         }
@@ -103,11 +112,18 @@ fun ChatTopBar(esOperador: Boolean) {
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatBottomBar(onSendMessage: (String) -> Unit) {
+fun ChatBottomBar(onSendMessage: (String) -> Unit, onSendImage: (Uri) -> Unit) {
     var textState by remember { mutableStateOf("") }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            onSendImage(uri)
+        }
+    }
 
     Row(
         modifier = Modifier
@@ -116,12 +132,14 @@ fun ChatBottomBar(onSendMessage: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
-            onClick = {  },
+            onClick = {
+                galleryLauncher.launch("image/*")
+            },
             modifier = Modifier
                 .background(Color.Gray, CircleShape)
                 .size(50.dp)
         ) {
-            Icon(Icons.Default.CameraAlt, contentDescription = "Cámara", tint = Color.White)
+            Icon(Icons.Default.CameraAlt, contentDescription = "Galería", tint = Color.White)
         }
 
         Spacer(modifier = Modifier.width(10.dp))
@@ -191,10 +209,28 @@ fun MessageContent(message: ChatMessage, miUserId: String) {
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Column {
-                Text(
-                    text = message.text,
-                    fontSize = 15.sp,
-                )
+
+                if (!message.imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = message.imageUrl,
+                        contentDescription = "Imagen de chat",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .padding(bottom = 6.dp)
+                    )
+                }
+
+
+                if (message.text.isNotBlank()) {
+                    Text(
+                        text = message.text,
+                        fontSize = 15.sp,
+                    )
+                }
+
                 Text(
                     text = message.getFormattedTime(),
                     fontSize = 10.sp,
