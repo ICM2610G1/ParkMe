@@ -29,7 +29,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -360,14 +359,14 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             })
 
         if (mostrarDialogoApertura) {
-            HoraDialog(
+            TimeEditDialog(
                 titulo = "Hora de apertura",
                 horaActual = hourStart.value,
                 onConfirm = { hourStart.value = it; mostrarDialogoApertura = false },
                 onDismiss = { mostrarDialogoApertura = false })
         }
         if (mostrarDialogoCierre) {
-            HoraDialog(
+            TimeEditDialog(
                 titulo = "Hora de cierre",
                 horaActual = hourFinish.value,
                 onConfirm = { hourFinish.value = it; mostrarDialogoCierre = false },
@@ -850,14 +849,14 @@ fun EditParkingVisual(
             })
 
         if (mostrarDialogoApertura) {
-            HoraDialog(
+            TimeEditDialog(
                 titulo = "Hora de apertura",
                 horaActual = hourStart.value,
                 onConfirm = { hourStart.value = it; mostrarDialogoApertura = false },
                 onDismiss = { mostrarDialogoApertura = false })
         }
         if (mostrarDialogoCierre) {
-            HoraDialog(
+            TimeEditDialog(
                 titulo = "Hora de cierre",
                 horaActual = hourFinish.value,
                 onConfirm = { hourFinish.value = it; mostrarDialogoCierre = false },
@@ -903,7 +902,7 @@ fun EditParkingVisual(
 
                 val totalFotos = fotosUris.value.size
                 if (totalFotos == 0) {
-                    guardarDatos(
+                    saveParkingDetails(
                         db,
                         parkingId,
                         name.value,
@@ -933,7 +932,7 @@ fun EditParkingVisual(
                             if (url != null) fotosSubidas.add(url)
                         }
                         val todasLasFotos = fotosUrls.value + fotosSubidas
-                        guardarDatos(
+                        saveParkingDetails(
                             db,
                             parkingId,
                             name.value,
@@ -974,7 +973,7 @@ fun EditParkingVisual(
         Button(
             enabled = !subiendo.value,
             onClick = {
-                eliminarParqueadero(db, parkingId, mensaje, subiendo, navController)
+                deleteParking(db, parkingId, mensaje, subiendo, navController)
             },
             shape = pill,
             modifier = Modifier
@@ -1073,7 +1072,7 @@ fun DayLetter(letter: String) {
 }
 
 @Composable
-fun HoraDialog(
+fun TimeEditDialog(
     titulo: String, horaActual: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit
 ) {
     var hora by remember { mutableStateOf(horaActual) }
@@ -1091,7 +1090,7 @@ fun HoraDialog(
     })
 }
 
-fun guardarDatos(
+fun saveParkingDetails(
     db: FirebaseFirestore,
     parkingId: String,
     name: String,
@@ -1109,6 +1108,7 @@ fun guardarDatos(
     direccion: MutableState<String>,
     mensaje: MutableState<String>,
     subiendo: MutableState<Boolean>,
+    navController: NavController?
 ) {
     val datos = hashMapOf(
         "name" to name,
@@ -1124,7 +1124,8 @@ fun guardarDatos(
         "fotos" to fotos,
         "latitud" to (ubicacion?.latitude ?: 0.0),
         "longitud" to (ubicacion?.longitude ?: 0.0),
-        "direccion" to direccion.value
+        "direccion" to direccion.value,
+
     )
     db.collection("parqueaderos").document(parkingId).set(datos, SetOptions.merge())
         .addOnSuccessListener {
@@ -1137,7 +1138,7 @@ fun guardarDatos(
         }
 }
 
-fun eliminarParqueadero(
+fun deleteParking(
     db: FirebaseFirestore,
     parkingId: String,
     mensaje: MutableState<String>,

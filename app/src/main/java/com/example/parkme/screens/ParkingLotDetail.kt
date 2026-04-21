@@ -323,10 +323,10 @@ fun ReservationBottomBox(
     }
 
     if (mostrarDialogoLlegada) {
-        HoraDialog("Hora de llegada", horaLlegada, { horaLlegada = it; mostrarDialogoLlegada = false }, { mostrarDialogoLlegada = false })
+        TimeEditDialog("Hora de llegada", horaLlegada, { horaLlegada = it; mostrarDialogoLlegada = false }, { mostrarDialogoLlegada = false })
     }
     if (mostrarDialogoSalida) {
-        HoraDialog("Hora de salida", horaSalida, { horaSalida = it; mostrarDialogoSalida = false }, { mostrarDialogoSalida = false })
+        TimeEditDialog("Hora de salida", horaSalida, { horaSalida = it; mostrarDialogoSalida = false }, { mostrarDialogoSalida = false })
     }
 
     Column(
