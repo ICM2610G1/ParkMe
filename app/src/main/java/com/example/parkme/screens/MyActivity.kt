@@ -185,7 +185,7 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
                                     )
                                 } else {
                                     Image(
-                                        painter = painterResource(id = R.drawable.parqueadero1), // Imagen por defecto de tu app
+                                        painter = painterResource(id = R.drawable.parqueadero1),
                                         contentDescription = "Sin foto",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
@@ -197,7 +197,6 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
                                         .padding(horizontal = 16.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // COLUMNA IZQUIERDA (Textos) - Le damos weight(1f) para que no aplaste a los botones
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(reservaReciente.parkingName,
                                             fontWeight = FontWeight.ExtraBold,
@@ -229,7 +228,6 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
 
                                     Spacer(modifier = Modifier.width(8.dp))
 
-                                    // COLUMNA DERECHA (Botones) - Los apilamos uno encima del otro
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Button(
                                             onClick = {
@@ -255,7 +253,6 @@ fun MyActivity(navController: NavController,viewModel: AppViewModel = viewModel(
                                             Button(
                                                 onClick = {
                                                     chatViewModel.iniciarChatRoom(reservaReciente)
-                                                    // Navegamos a la bandeja de chats
                                                     navController.navigate(AppScreens.ChatListCli.name)
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),

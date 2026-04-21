@@ -79,7 +79,19 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        val nuevaLista = fotosUris.value + uris
+        val espaciosDisponibles = 15 - fotosUris.value.size
+
+        val urisPermitidas = uris.take(espaciosDisponibles)
+
+        if (uris.size > espaciosDisponibles) {
+            android.widget.Toast.makeText(
+                context,
+                "Solo se permitieron ${urisPermitidas.size} fotos para no exceder el límite de 15",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+
+        val nuevaLista = fotosUris.value + urisPermitidas
         fotosUris.value = nuevaLista
         backStackEntry?.savedStateHandle?.set("fotosUris", ArrayList(nuevaLista))
     }
@@ -287,7 +299,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .background(colorResource(R.color.grisClaro), card)
-                .padding(14.dp)
+                .padding(20.dp)
         ) {
             Column {
                 Row(
@@ -295,12 +307,16 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Fotos del parqueadero", fontWeight = FontWeight.Bold)
+                    Text("Fotos del parqueadero", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Text("${fotosUris.value.size}/15", color = Color.Gray)
                 }
-                Spacer(Modifier.height(8.dp))
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Spacer(Modifier.height(16.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 4.dp, end = 4.dp)
+                ) {
                     items(fotosUris.value) { uri ->
                         SelectedImage(
                             model = uri,
@@ -556,7 +572,23 @@ fun EditParkingVisual(
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
-    ) { uris -> fotosUris.value = fotosUris.value + uris }
+    ) { uris ->
+        val totalActual = fotosUrls.value.size + fotosUris.value.size
+
+        val espaciosDisponibles = 15 - totalActual
+
+        val urisPermitidas = uris.take(espaciosDisponibles)
+
+        if (uris.size > espaciosDisponibles) {
+            android.widget.Toast.makeText(
+                context,
+                "Solo se agregaron ${urisPermitidas.size} fotos para respetar el límite de 15",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+
+        fotosUris.value = fotosUris.value + urisPermitidas
+    }
 
     val latLng by navController?.currentBackStackEntry
         ?.savedStateHandle
@@ -798,7 +830,7 @@ fun EditParkingVisual(
                 .fillMaxWidth()
                 .wrapContentHeight()
                 .background(colorResource(R.color.grisClaro), card)
-                .padding(14.dp)
+                .padding(20.dp)
         ) {
             Column {
                 val totalFotos = fotosUrls.value.size + fotosUris.value.size
@@ -807,12 +839,16 @@ fun EditParkingVisual(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Fotos del parqueadero", fontWeight = FontWeight.Bold)
+                    Text("Fotos del parqueadero", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Text("$totalFotos/15", color = Color.Gray)
                 }
-                Spacer(Modifier.height(8.dp))
 
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Spacer(Modifier.height(16.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 4.dp, end = 4.dp)
+                ) {
                     items(fotosUrls.value) { url ->
                         SelectedImage(
                             model = url,
