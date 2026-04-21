@@ -1,6 +1,5 @@
 package com.example.parkme.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,7 +10,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,6 +20,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import android.location.Geocoder
+import androidx.compose.foundation.lazy.LazyRow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -568,7 +566,7 @@ fun HomeOperator(navController: NavController) {
                                 else -> emptyList()
                             }
 
-                            ParqueaderoItem(
+                            ParkingLotItem(
                                 nombre = data["name"] as? String ?: "Sin nombre",
                                 calificacion = rateString,
                                 parkingId = id,
@@ -603,9 +601,8 @@ fun HomeOperator(navController: NavController) {
     }
 }
 
-
 @Composable
-fun ParqueaderoItem(
+fun ParkingLotItem(
     nombre: String,
     calificacion: String,
     parkingId: String,
@@ -647,34 +644,55 @@ fun ParqueaderoItem(
             }
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        if (fotos.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(fotos) { url ->
+                    Box(
+                        modifier = Modifier
 
-            val fotosMostrar = listOf(
-                fotos.getOrNull(0),
-                fotos.getOrNull(1)
-            )
-
-            fotosMostrar.forEach { url ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(100.dp)
-                        .border(2.dp, Color(0xFF1877F2), RoundedCornerShape(12.dp))
-                        .background(Color.LightGray, RoundedCornerShape(12.dp))
-                ) {
-                    if (url != null && url.isNotBlank()) {
-                        AsyncImage(
-                            model = url,
-                            contentDescription = "Foto parqueadero",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
+                            .width(160.dp)
+                            .height(110.dp)
+                            .border(2.dp, Color(0xFF1877F2), RoundedCornerShape(12.dp))
+                            .background(Color.LightGray, RoundedCornerShape(12.dp))
+                    ) {
+                        if (url.isNotBlank()) {
+                            AsyncImage(
+                                model = url,
+                                contentDescription = "Foto parqueadero",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(R.drawable.parqueadero1),
+                                contentDescription = "Sin foto",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(12.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                repeat(2) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(110.dp)
+                            .border(2.dp, Color(0xFF1877F2), RoundedCornerShape(12.dp))
+                            .background(Color.LightGray, RoundedCornerShape(12.dp))
+                    ) {
                         Image(
                             painter = painterResource(R.drawable.parqueadero1),
                             contentDescription = "Sin foto",
