@@ -18,5 +18,8 @@
     <color name="nombrecomunicado">#1F4287</color>
     <color name="grisB">#7A7A7A</color>
     <color name="azulruta">#0056D2</color>
+    <color name="grisclaro">#FFE0E0E0</color>
+
+
 
 </resources>
