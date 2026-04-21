@@ -217,7 +217,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                                     status = "Activa"
                                 )
 
-                                crearReservaYActualizarCupo(
+                                reserveSlot(
                                     reserva = nuevaReserva,
                                     maxSlots = parking.slot,
                                     onSuccess = {
@@ -413,7 +413,7 @@ fun ReservationBottomBox(
     }
 }
 
-fun crearReservaYActualizarCupo(
+fun reserveSlot(
     reserva: Reservation,
     maxSlots: Int,
     onSuccess: () -> Unit,
