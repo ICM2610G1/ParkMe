@@ -379,5 +379,61 @@ class AppViewModel : ViewModel() {
         }
     }
 
+    private val _operatorParkingLots = MutableStateFlow<List<ParkingLot>>(emptyList())
+    val operatorParkingLots: StateFlow<List<ParkingLot>> = _operatorParkingLots.asStateFlow()
+
+    private val _operatorReservations = MutableStateFlow<List<Reservation>>(emptyList())
+    val operatorReservations: StateFlow<List<Reservation>> = _operatorReservations.asStateFlow()
+
+    fun fetchOperatorActivity() {
+        val uid = auth.currentUser?.uid ?: return
+
+        firestore.collection("parqueaderos")
+            .whereEqualTo("operatorId", uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+
+                if (snapshot != null) {
+                    val lots = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            ParkingLot(
+                                id = doc.id,
+                                operatorId = doc.getString("operatorId") ?: "",
+                                name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre",
+                                slot = (doc.get("slot") as? Number)?.toInt() ?: 0
+                            )
+                        } catch (e: Exception) { null }
+                    }
+                    _operatorParkingLots.value = lots
+                }
+            }
+
+        firestore.collection("reservas")
+            .whereEqualTo("operatorId", uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+
+                if (snapshot != null) {
+                    val res = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            Reservation(
+                                id = doc.id,
+                                parkingId = doc.getString("parkingId") ?: "",
+                                operatorId = doc.getString("operatorId") ?: "",
+                                parkingName = doc.getString("parkingName") ?: "",
+                                userId = doc.getString("userId") ?: "",
+                                placa = doc.getString("placa") ?: "",
+                                startTime = doc.getString("startTime") ?: "",
+                                endTime = doc.getString("endTime") ?: "",
+                                status = doc.getString("status") ?: "Activa",
+                                totalPrice = (doc.get("totalPrice") as? Number)?.toDouble() ?: 0.0,
+                                isRated = doc.getBoolean("isRated") ?: false
+                            )
+                        } catch (e: Exception) { null }
+                    }
+                    _operatorReservations.value = res.sortedByDescending { it.startTime }
+                }
+            }
+    }
 
 }
