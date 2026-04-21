@@ -85,11 +85,12 @@ fun Context.findActivity(): Activity? = when (this) {
 fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
     val view = LocalView.current
-
     var currentSpeed by remember { mutableFloatStateOf(0f) }
-    val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
-    val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
-    var currentMapStyle by remember { mutableStateOf(lightMapStyle) }
+    var isDarkMode by remember { mutableStateOf(false) }
+    val lightMapStyle = remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap) }
+    val darkMapStyle = remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap) }
+
+    val currentMapStyle = if (isDarkMode) darkMapStyle else lightMapStyle
     if (!view.isInEditMode) {
         SideEffect {
             val window = context.findActivity()?.window
@@ -101,14 +102,15 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
 
     var hasLocationPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
         )
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted -> hasLocationPermission = isGranted }
-    )
+        onResult = { isGranted -> hasLocationPermission = isGranted })
     val sensorListener = remember {
         object : SensorEventListener {
             override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
@@ -116,7 +118,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             override fun onSensorChanged(event: SensorEvent?) {
                 if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
                     val lux = event.values[0]
-                    currentMapStyle = if (lux < 2000) darkMapStyle else lightMapStyle
+                    isDarkMode = lux < 2000
                 }
             }
         }
@@ -143,7 +145,8 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         myLocation = LatLng(location.latitude, location.longitude)
 
                         if (SearchMapLocationHolder.searchedLocation == null) {
-                            cameraPositionState.position = CameraPosition.fromLatLngZoom(myLocation, 16f)
+                            cameraPositionState.position =
+                                CameraPosition.fromLatLngZoom(myLocation, 16f)
                         }
                     }
                 }
@@ -152,14 +155,14 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             }
         }
         val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            for (location in locationResult.locations) {
-                val newLatLng = LatLng(location.latitude, location.longitude)
-                myLocation = newLatLng
-                currentSpeed = location.speed * 3.6f
+            override fun onLocationResult(locationResult: LocationResult) {
+                for (location in locationResult.locations) {
+                    val newLatLng = LatLng(location.latitude, location.longitude)
+                    myLocation = newLatLng
+                    currentSpeed = location.speed * 3.6f
+                }
             }
         }
-    }
     }
     val allParkingLots by viewModel.parkingLots.collectAsState()
 
@@ -172,35 +175,42 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     var appliedMaxPrice by remember { mutableStateOf(10000f) }
     var appliedNeedElectric by remember { mutableStateOf(false) }
 
-    val nearbyParkingLots = remember(allParkingLots, targetLocation, filtersActive, appliedMaxDistance, appliedMaxPrice, appliedNeedElectric) {
+    val nearbyParkingLots = remember(
+        allParkingLots,
+        targetLocation,
+        filtersActive,
+        appliedMaxDistance,
+        appliedMaxPrice,
+        appliedNeedElectric
+    ) {
         allParkingLots.map { parking ->
             val results = FloatArray(1)
             Location.distanceBetween(
-                targetLocation.latitude, targetLocation.longitude,
-                parking.location.latitude, parking.location.longitude,
+                targetLocation.latitude,
+                targetLocation.longitude,
+                parking.location.latitude,
+                parking.location.longitude,
                 results
             )
             parking to results[0]
-        }
-            .filter { item ->
-                val dist = item.second
-                val parking = item.first
-                val price = parking.pricePerHour.replace("$", "").replace(".", "").trim().toFloatOrNull() ?: 0f
-                if (filtersActive) {
-                    dist <= appliedMaxDistance && price <= appliedMaxPrice && (if (appliedNeedElectric) parking.electricCharges else true)
-                } else {
-                    dist <= 2000f
-                }
+        }.filter { item ->
+            val dist = item.second
+            val parking = item.first
+            val price =
+                parking.pricePerHour.replace("$", "").replace(".", "").trim().toFloatOrNull() ?: 0f
+            if (filtersActive) {
+                dist <= appliedMaxDistance && price <= appliedMaxPrice && (if (appliedNeedElectric) parking.electricCharges else true)
+            } else {
+                dist <= 2000f
             }
-            .sortedBy { it.second }
-            .map { it.first }
+        }.sortedBy { it.second }.map { it.first }
     }
 
-    val preSelectedParkingId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
+    val preSelectedParkingId =
+        navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
     var selectedForDetails by remember(allParkingLots, preSelectedParkingId) {
         mutableStateOf(
-            allParkingLots.find { it.id == preSelectedParkingId }
-        )
+            allParkingLots.find { it.id == preSelectedParkingId })
     }
     var confirmedParkingLot by remember { mutableStateOf<ParkingLot?>(null) }
     var isSearching by remember { mutableStateOf(false) }
@@ -213,7 +223,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     }
 
 
-
     val carRotation = remember(routePoints, selectedForDetails) {
         if (!routePoints.isNullOrEmpty() && routePoints!!.size > 1) {
             SphericalUtil.computeHeading(myLocation, routePoints!![1]).toFloat()
@@ -224,23 +233,36 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
 
-    val carBitmap = remember(currentMapStyle) {
-        resizeMapIcon(context, if(currentMapStyle == lightMapStyle){ R.drawable.blackcar } else { R.drawable.whitecar }, 35, 70)
+    val carBitmap = remember(isDarkMode) {
+        resizeMapIcon(
+            context,
+            resId = if (isDarkMode) R.drawable.whitecar else R.drawable.blackcar,
+            widthDp = 35,
+            heightDp = 70
+        )
     }
-    val pinBitmap = remember(currentMapStyle) {
-        resizeMapIcon(context, if(currentMapStyle == lightMapStyle){ R.drawable.pinmaplogo } else { R.drawable.pinmaplogoblanco }, 45, 45)
+
+    val pinBitmap = remember(isDarkMode) {
+        resizeMapIcon(
+            context,
+            resId = if (isDarkMode) R.drawable.pinmaplogoblanco else R.drawable.pinmaplogo,
+            widthDp = 45,
+            heightDp = 45
+        )
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "buscando")
     val alphaAnim by infiniteTransition.animateFloat(
-        initialValue = 0.3f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(animation = tween(800, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse),
-        label = "BuscandoAlpha"
+        initialValue = 0.3f, targetValue = 1f, animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing), repeatMode = RepeatMode.Reverse
+        ), label = "BuscandoAlpha"
     )
 
     LaunchedEffect(selectedForDetails) {
         if (selectedForDetails != null) {
-            val applicationInfo = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+            val applicationInfo = context.packageManager.getApplicationInfo(
+                context.packageName, PackageManager.GET_META_DATA
+            )
             val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
             routePoints = fetchRouteFromGoogle(myLocation, selectedForDetails!!.location, apiKey)
         } else {
@@ -253,9 +275,15 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             val boundsBuilder = LatLngBounds.Builder()
             routePoints!!.forEach { boundsBuilder.include(it) }
             val bounds = boundsBuilder.build()
-            cameraPositionState.animate(update = CameraUpdateFactory.newLatLngBounds(bounds, 150), durationMs = 1200)
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngBounds(bounds, 150), durationMs = 1200
+            )
         } else if (selectedForDetails == null) {
-            cameraPositionState.animate(update = CameraUpdateFactory.newLatLngZoom(defaultLocation, 16f), durationMs = 1000)
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngZoom(
+                    defaultLocation, 16f
+                ), durationMs = 1000
+            )
         }
     }
 
@@ -278,13 +306,21 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         onDispose { sensorManager.unregisterListener(sensorListener) }
     }
 
-    Box(modifier = Modifier.background(colorResource(R.color.back)).fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .background(colorResource(R.color.back))
+            .fillMaxSize()
+    ) {
 
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties( mapStyleOptions = currentMapStyle,isMyLocationEnabled = false),
-            uiSettings = MapUiSettings(myLocationButtonEnabled = false, compassEnabled = true, zoomControlsEnabled = false),
+            properties = MapProperties(
+                mapStyleOptions = currentMapStyle, isMyLocationEnabled = false
+            ),
+            uiSettings = MapUiSettings(
+                myLocationButtonEnabled = false, compassEnabled = true, zoomControlsEnabled = false
+            ),
             contentPadding = PaddingValues(top = 90.dp, bottom = 460.dp, start = 8.dp, end = 8.dp)
         ) {
             Marker(
@@ -300,11 +336,12 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     title = parking.name,
                     snippet = "Cupos: ${parking.slot} - Precio: ${parking.pricePerHour}",
                     icon = BitmapDescriptorFactory.fromBitmap(pinBitmap),
-                    onClick = { selectedForDetails = parking; false }
-                )
+                    onClick = { selectedForDetails = parking; false })
             }
             if (routePoints != null) {
-                Polyline(points = routePoints!!, color = Color(0xFF0056D2), width = 12f, geodesic = true)
+                Polyline(
+                    points = routePoints!!, color = Color(0xFF0056D2), width = 12f, geodesic = true
+                )
             }
         }
         Box(
@@ -347,7 +384,10 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         Button(
             onClick = { showFilters = true },
             colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 16.dp, top = 38.dp).size(50.dp),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 38.dp)
+                .size(50.dp),
             shape = RoundedCornerShape(28),
             contentPadding = PaddingValues(0.dp)
         ) {
@@ -357,7 +397,10 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .background(color = colorResource(R.color.grisClaro), shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                .background(
+                    color = colorResource(R.color.grisClaro),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                )
                 .padding(24.dp)
                 .fillMaxWidth()
                 .heightIn(max = 450.dp)
@@ -367,24 +410,55 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     Text(
                         text = buildAnnotatedString {
                             append("Conectando con el ")
-                            withStyle(style = SpanStyle(color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)) { append("parqueadero seleccionado") }
+                            withStyle(
+                                style = SpanStyle(
+                                    color = colorResource(R.color.blue),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) { append("parqueadero seleccionado") }
                             append("...")
                         },
-                        fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.Black, modifier = Modifier.alpha(alphaAnim)
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black,
+                        modifier = Modifier.alpha(alphaAnim)
                     )
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), color = colorResource(R.color.blue))
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        color = colorResource(R.color.blue)
+                    )
                 } else {
-                    Text(text = confirmedParkingLot!!.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(text = "Cupos disponibles: ${confirmedParkingLot!!.slot} | Tarifa: ${confirmedParkingLot!!.pricePerHour}", fontSize = 16.sp, color = Color.DarkGray, modifier = Modifier.padding(top = 8.dp))
+                    Text(
+                        text = confirmedParkingLot!!.name,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "Cupos disponibles: ${confirmedParkingLot!!.slot} | Tarifa: ${confirmedParkingLot!!.pricePerHour}",
+                        fontSize = 16.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
                     Button(
                         onClick = {
                             ParkingLotHolder.selected = confirmedParkingLot
                             navController.navigate(AppScreens.ParkingLotDetail.name)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
                         shape = RoundedCornerShape(50)
-                    ) { Text("Ver Detalles Completos", color = Color.White, fontWeight = FontWeight.Bold) }
+                    ) {
+                        Text(
+                            "Ver Detalles Completos",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Button(
@@ -395,26 +469,61 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         routePoints = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    modifier = Modifier.fillMaxWidth().padding(top = if (isSearching) 24.dp else 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = if (isSearching) 24.dp else 12.dp),
                     shape = RoundedCornerShape(50)
-                ) { Text(text = "Cancelar conexión", color = Color.White, fontWeight = FontWeight.Bold) }
+                ) {
+                    Text(
+                        text = "Cancelar conexión",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
             } else if (selectedForDetails != null) {
                 val p = selectedForDetails!!
-                Column(modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
-                    Text(text = p.name, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = p.name,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "Cupos disponibles: ${p.slot}", fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+                    Text(
+                        text = "Cupos disponibles: ${p.slot}",
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.DarkGray
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Tarifas:", fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(text = "• Por Minuto: ${p.pricePerMin}\n• Por Hora: ${p.pricePerHour}\n• Tarifa Fija: ${p.fixedPrice}", color = Color.DarkGray)
+                    Text(
+                        text = "• Por Minuto: ${p.pricePerMin}\n• Por Hora: ${p.pricePerHour}\n• Tarifa Fija: ${p.fixedPrice}",
+                        color = Color.DarkGray
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = "Horario:", fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(text = "${p.weekAvailability} | ${p.hourStart} - ${p.hourFinish}", color = Color.DarkGray)
+                    Text(
+                        text = "${p.weekAvailability} | ${p.hourStart} - ${p.hourFinish}",
+                        color = Color.DarkGray
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Carga Eléctrica: ${if (p.electricCharges) "Sí" else "No"}", fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+                    Text(
+                        text = "Carga Eléctrica: ${if (p.electricCharges) "Sí" else "No"}",
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.DarkGray
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Términos y condiciones:", fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(
+                        text = "Términos y condiciones:",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                     Text(text = p.terms, fontSize = 12.sp, color = Color.Gray)
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -431,29 +540,65 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     }
                 }
             } else {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "Parqueaderos Cercanos", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Parqueaderos Cercanos",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                     if (filtersActive) {
-                        Text(text = "Filtros Activos", fontSize = 12.sp, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Filtros Activos",
+                            fontSize = 12.sp,
+                            color = colorResource(R.color.blue),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 if (nearbyParkingLots.isEmpty()) {
-                    Text("No hay parqueaderos que cumplan tus filtros.", color = Color.Gray, modifier = Modifier.padding(vertical = 20.dp))
+                    Text(
+                        "No hay parqueaderos que cumplan tus filtros.",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 20.dp)
+                    )
                 } else {
-                    LazyColumn(modifier = Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f, fill = false),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         items(nearbyParkingLots) { parking ->
                             val distance = calculateDistance(defaultLocation, parking.location)
                             Card(
-                                modifier = Modifier.fillMaxWidth().clickable { selectedForDetails = parking },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedForDetails = parking },
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(text = parking.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
+                                    Text(
+                                        text = parking.name,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = Color.Black
+                                    )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = "Hora: ${parking.pricePerHour}", fontSize = 14.sp, color = Color.DarkGray)
-                                    Text(text = "Distancia: $distance", fontSize = 14.sp, color = colorResource(R.color.blue))
+                                    Text(
+                                        text = "Hora: ${parking.pricePerHour}",
+                                        fontSize = 14.sp,
+                                        color = Color.DarkGray
+                                    )
+                                    Text(
+                                        text = "Distancia: $distance",
+                                        fontSize = 14.sp,
+                                        color = colorResource(R.color.blue)
+                                    )
                                 }
                             }
                         }
@@ -462,14 +607,20 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                 Button(
                     onClick = { navController.navigate(AppScreens.HomeUser.name) },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
                     shape = RoundedCornerShape(50)
                 ) { Text(text = "Salir", color = Color.White, fontWeight = FontWeight.Bold) }
             }
         }
 
         if (showFilters) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).clickable { showFilters = false })
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable { showFilters = false })
         }
 
         AnimatedVisibility(
@@ -486,32 +637,75 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Text("Filtros", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.align(Alignment.Center))
-                    IconButton(onClick = { showFilters = false }, modifier = Modifier.align(Alignment.CenterEnd)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp)
+                ) {
+                    Text(
+                        "Filtros",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                    IconButton(
+                        onClick = { showFilters = false },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
                         Icon(Icons.Default.Close, "Cerrar", tint = Color.Black)
                     }
                 }
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Distancia Máxima: ${tempMaxDistance.toInt()} m", fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(
+                    "Distancia Máxima: ${tempMaxDistance.toInt()} m",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
                 Slider(
-                    value = tempMaxDistance, onValueChange = { tempMaxDistance = it },
-                    valueRange = 500f..5000f, steps = 8,
-                    colors = SliderDefaults.colors(thumbColor = colorResource(R.color.blue), activeTrackColor = colorResource(R.color.blue))
+                    value = tempMaxDistance,
+                    onValueChange = { tempMaxDistance = it },
+                    valueRange = 500f..5000f,
+                    steps = 8,
+                    colors = SliderDefaults.colors(
+                        thumbColor = colorResource(R.color.blue),
+                        activeTrackColor = colorResource(R.color.blue)
+                    )
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Precio por Hora (Max): $${tempMaxPrice.toInt()}", fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(
+                    "Precio por Hora (Max): $${tempMaxPrice.toInt()}",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
                 Slider(
-                    value = tempMaxPrice, onValueChange = { tempMaxPrice = it },
-                    valueRange = 2000f..20000f, steps = 35,
-                    colors = SliderDefaults.colors(thumbColor = colorResource(R.color.blue), activeTrackColor = colorResource(R.color.blue))
+                    value = tempMaxPrice,
+                    onValueChange = { tempMaxPrice = it },
+                    valueRange = 2000f..20000f,
+                    steps = 35,
+                    colors = SliderDefaults.colors(
+                        thumbColor = colorResource(R.color.blue),
+                        activeTrackColor = colorResource(R.color.blue)
+                    )
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Requiere Carga Eléctrica", fontWeight = FontWeight.Bold, color = Color.Black)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Requiere Carga Eléctrica",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
                     Switch(
-                        checked = tempNeedElectric, onCheckedChange = { tempNeedElectric = it },
-                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = colorResource(R.color.blue))
+                        checked = tempNeedElectric,
+                        onCheckedChange = { tempNeedElectric = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = colorResource(R.color.blue)
+                        )
                     )
                 }
                 Spacer(modifier = Modifier.height(40.dp))
@@ -549,10 +743,14 @@ fun calculateDistance(start: LatLng, end: LatLng): String {
     val results = FloatArray(1)
     Location.distanceBetween(start.latitude, start.longitude, end.latitude, end.longitude, results)
     val distanceInMeters = results[0]
-    return if (distanceInMeters > 1000) String.format("%.1f km", distanceInMeters / 1000) else "${distanceInMeters.toInt()} m"
+    return if (distanceInMeters > 1000) String.format(
+        "%.1f km", distanceInMeters / 1000
+    ) else "${distanceInMeters.toInt()} m"
 }
 
-fun resizeMapIcon(context: android.content.Context, resId: Int, widthDp: Int, heightDp: Int): Bitmap {
+fun resizeMapIcon(
+    context: android.content.Context, resId: Int, widthDp: Int, heightDp: Int
+): Bitmap {
     val density = context.resources.displayMetrics.density
     val widthPx = (widthDp * density).toInt()
     val heightPx = (heightDp * density).toInt()
@@ -560,10 +758,13 @@ fun resizeMapIcon(context: android.content.Context, resId: Int, widthDp: Int, he
     return Bitmap.createScaledBitmap(imageBitmap, widthPx, heightPx, false)
 }
 
-suspend fun fetchRouteFromGoogle(origin: LatLng, destination: LatLng, apiKey: String): List<LatLng>? {
+suspend fun fetchRouteFromGoogle(
+    origin: LatLng, destination: LatLng, apiKey: String
+): List<LatLng>? {
     return withContext(Dispatchers.IO) {
         try {
-            val url = "https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=$apiKey"
+            val url =
+                "https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=$apiKey"
             val response = java.net.URL(url).readText()
             val jsonObject = JSONObject(response)
             val status = jsonObject.getString("status")
@@ -577,7 +778,9 @@ suspend fun fetchRouteFromGoogle(origin: LatLng, destination: LatLng, apiKey: St
                 val polylineEncoded = route.getJSONObject("overview_polyline").getString("points")
                 return@withContext PolyUtil.decode(polylineEncoded)
             }
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         return@withContext null
     }
 }
