@@ -243,10 +243,14 @@ class AppViewModel : ViewModel() {
         }
     }
     fun fetchParkingLots() {
-        viewModelScope.launch {
-            try {
-                val snapshot = firestore.collection("parqueaderos").get().await()
 
+        firestore.collection("parqueaderos").addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("MAPS_DEBUG", "Error de conexión a Firebase en tiempo real: ${error.message}")
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null) {
                 val lots = snapshot.documents.mapNotNull { doc ->
                     try {
                         val id = doc.id
@@ -309,9 +313,8 @@ class AppViewModel : ViewModel() {
                     }
                 }
 
+
                 _parkingLots.value = lots
-            } catch (e: Exception) {
-                Log.e("MAPS_DEBUG", "Error de conexión a Firebase: ${e.message}")
             }
         }
     }
