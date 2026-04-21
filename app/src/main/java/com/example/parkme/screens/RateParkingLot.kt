@@ -92,7 +92,7 @@ fun RateParkingLot(navController: NavController, parkingLotId: String, reservati
                     targetLocation = LatLng(lat, lng)
                 }
             } catch (e: Exception) {
-                targetLocation = LatLng(4.6097, -74.0817) // Coordenada por defecto si falla
+                targetLocation = LatLng(4.6097, -74.0817)
             }
         }
     }

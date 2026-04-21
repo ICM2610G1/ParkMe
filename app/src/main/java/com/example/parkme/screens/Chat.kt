@@ -116,7 +116,7 @@ fun ChatBottomBar(onSendMessage: (String) -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
-            onClick = { /* Acción de cámara */ },
+            onClick = {  },
             modifier = Modifier
                 .background(Color.Gray, CircleShape)
                 .size(50.dp)

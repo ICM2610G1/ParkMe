@@ -23,11 +23,9 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.room.util.copy
 import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.models.ParkingLot
@@ -106,7 +104,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-                Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
+                HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -118,7 +116,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-                Divider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
+                HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text("Detalles del lugar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
@@ -130,7 +128,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                         else Icon(Icons.Default.Cancel, null, Modifier.size(16.dp), tint = Color.Red)
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(if (parking.slot > 0) "Cupos disponibles" else "Lleno", fontSize = 16.sp, color = Color.DarkGray)
+                    Text(if (parking.slot > 0) "Capacidad total: ${parking.slot} espacios" else "Sin servicio", fontSize = 16.sp, color = Color.DarkGray)
                 }
 
                 if (parking.electricCharges) {
@@ -203,7 +201,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                         }
                     } else {
                         ReservationBottomBox(
-                            parkingName = parking.name,
+                            parking = parking,
                             onCancel = { mostrarFormulario = false },
                             onConfirm = { placa, horaLlegada, horaSalida ->
                                 isSubmitting = true
@@ -221,6 +219,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
 
                                 crearReservaYActualizarCupo(
                                     reserva = nuevaReserva,
+                                    maxSlots = parking.slot,
                                     onSuccess = {
                                         isSubmitting = false
                                         mostrarFormulario = false
@@ -262,16 +261,66 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
 
 @Composable
 fun ReservationBottomBox(
-    parkingName: String,
+    parking: ParkingLot,
     onCancel: () -> Unit,
     onConfirm: (placa: String, horaLlegada: String, horaSalida: String) -> Unit
 ) {
     var placa by remember { mutableStateOf("") }
-    var horaLlegada by remember { mutableStateOf("08:00") }
-    // AJUSTE 1: Hora de salida por defecto en 15:00 (formato militar)
-    var horaSalida by remember { mutableStateOf("15:00") }
+    var horaLlegada by remember { mutableStateOf(parking.hourStart) }
+    var horaSalida by remember { mutableStateOf(parking.hourFinish) }
+
     var mostrarDialogoLlegada by remember { mutableStateOf(false) }
     var mostrarDialogoSalida by remember { mutableStateOf(false) }
+
+    var cuposDisponibles by remember { mutableIntStateOf(parking.slot) }
+    var mensajeErrorHorario by remember { mutableStateOf("") }
+    var isCheckingDisponibilidad by remember { mutableStateOf(false) }
+
+    LaunchedEffect(horaLlegada, horaSalida) {
+        isCheckingDisponibilidad = true
+        mensajeErrorHorario = ""
+
+        if (horaLlegada >= horaSalida) {
+            mensajeErrorHorario = "La hora de salida debe ser mayor a la de llegada"
+            cuposDisponibles = 0
+            isCheckingDisponibilidad = false
+            return@LaunchedEffect
+        }
+        if (horaLlegada < parking.hourStart || horaSalida > parking.hourFinish) {
+            mensajeErrorHorario = "Fuera del horario de atención (${parking.hourStart} - ${parking.hourFinish})"
+            cuposDisponibles = 0
+            isCheckingDisponibilidad = false
+            return@LaunchedEffect
+        }
+
+        FirebaseFirestore.getInstance().collection("reservas")
+            .whereEqualTo("parkingId", parking.id)
+            .whereEqualTo("status", "Activa")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                var reservasSuperpuestas = 0
+                for (doc in snapshot.documents) {
+                    val rStart = doc.getString("startTime") ?: ""
+                    val rEnd = doc.getString("endTime") ?: ""
+
+
+                    if (horaLlegada < rEnd && horaSalida > rStart) {
+                        reservasSuperpuestas++
+                    }
+                }
+
+                cuposDisponibles = parking.slot - reservasSuperpuestas
+
+                if (cuposDisponibles <= 0) {
+                    mensajeErrorHorario = "Agotado en este horario, selecciona otro."
+                }
+                isCheckingDisponibilidad = false
+            }
+            .addOnFailureListener {
+                mensajeErrorHorario = "Error al conectar con la base de datos"
+                isCheckingDisponibilidad = false
+            }
+    }
 
     if (mostrarDialogoLlegada) {
         HoraDialog("Hora de llegada", horaLlegada, { horaLlegada = it; mostrarDialogoLlegada = false }, { mostrarDialogoLlegada = false })
@@ -290,7 +339,7 @@ fun ReservationBottomBox(
             .fillMaxWidth()
     ) {
         Text("Detalles de tu reserva", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        Text(parkingName, fontSize = 14.sp,  color = Color.DarkGray)
+        Text(parking.name, fontSize = 14.sp,  color = Color.DarkGray)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -332,7 +381,18 @@ fun ReservationBottomBox(
             Box(modifier = Modifier.clickable { mostrarDialogoSalida = true }) { TimePill(horaSalida) }
         })
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (isCheckingDisponibilidad) {
+                Text("Calculando disponibilidad...", color = Color.Gray, fontSize = 13.sp)
+            } else if (mensajeErrorHorario.isNotEmpty()) {
+                Text(mensajeErrorHorario, color = Color.Red, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            } else {
+                Text("Hay $cuposDisponibles cupos en este horario", color = Color(0xFF008000), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
@@ -343,7 +403,7 @@ fun ReservationBottomBox(
             ) { Text("Cancelar", color = Color.White, fontWeight = FontWeight.Bold) }
 
             Button(
-                enabled = placa.length == 7,
+                enabled = placa.length == 7 && mensajeErrorHorario.isEmpty() && !isCheckingDisponibilidad,
                 onClick = { onConfirm(placa, horaLlegada, horaSalida) },
                 colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                 modifier = Modifier.weight(1f),
@@ -352,30 +412,39 @@ fun ReservationBottomBox(
         }
     }
 }
+
 fun crearReservaYActualizarCupo(
     reserva: Reservation,
+    maxSlots: Int,
     onSuccess: () -> Unit,
     onError: (Exception) -> Unit
 ) {
     val db = FirebaseFirestore.getInstance()
-    val parkingRef = db.collection("parqueaderos").document(reserva.parkingId)
-    val reservationRef = db.collection("reservas").document()
 
-    val reservaFinal = reserva.copy(id = reservationRef.id)
+    db.collection("reservas")
+        .whereEqualTo("parkingId", reserva.parkingId)
+        .whereEqualTo("status", "Activa")
+        .get()
+        .addOnSuccessListener { snapshot ->
+            var reservasSuperpuestas = 0
+            for (doc in snapshot.documents) {
+                val rStart = doc.getString("startTime") ?: ""
+                val rEnd = doc.getString("endTime") ?: ""
+                if (reserva.startTime < rEnd && reserva.endTime > rStart) {
+                    reservasSuperpuestas++
+                }
+            }
 
-    db.runTransaction { transaction ->
-        val snapshot = transaction.get(parkingRef)
-        val cuposActuales = snapshot.getLong("slot") ?: 0
+            if (reservasSuperpuestas < maxSlots) {
+                val reservationRef = db.collection("reservas").document()
+                val reservaFinal = reserva.copy(id = reservationRef.id)
 
-        if (cuposActuales > 0) {
-            transaction.update(parkingRef, "slot", cuposActuales - 1)
-            transaction.set(reservationRef, reservaFinal)
-        } else {
-            throw Exception("No hay cupos disponibles")
+                reservationRef.set(reservaFinal)
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener { e -> onError(e) }
+            } else {
+                onError(Exception("Lo sentimos, alguien acaba de tomar el último cupo en este horario."))
+            }
         }
-    }.addOnSuccessListener {
-        onSuccess()
-    }.addOnFailureListener { e ->
-        onError(e)
-    }
+        .addOnFailureListener { e -> onError(e) }
 }

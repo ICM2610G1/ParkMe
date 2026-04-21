@@ -78,7 +78,6 @@ fun ChatListScreen(
                         onClick = {
                             ReservationHolder.selectedReservationId = room.id
 
-                            // Navegamos al chat
                             val ruta = if (esOperador) AppScreens.ChatOp.name else AppScreens.ChatCli.name
                             navController.navigate(ruta)
                         }
@@ -108,7 +107,6 @@ fun ChatRoomItem(chatRoom: ChatRoom, onClick: () -> Unit) {
                 fontSize = 18.sp
             )
 
-            // Formatear timestamp a hora
             val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
             val date = Date(chatRoom.timestamp)
             Text(

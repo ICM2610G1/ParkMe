@@ -107,7 +107,7 @@ fun Navigation() {
         composable(AppScreens.EditParking.name) { EditParkingVisual() }
 
         composable(AppScreens.ChatCli.name) {
-            val reservaId = ReservationHolder.selectedReservationId // Leemos el String
+            val reservaId = ReservationHolder.selectedReservationId
             val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: "usuario_desconocido"
 
             if (reservaId.isNotEmpty()) {

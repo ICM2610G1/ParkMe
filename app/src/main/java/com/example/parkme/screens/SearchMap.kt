@@ -86,7 +86,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     val context = LocalContext.current
     val view = LocalView.current
 
-    var currentSpeed by remember { mutableFloatStateOf(0f) } // En metros por segundo
+    var currentSpeed by remember { mutableFloatStateOf(0f) }
     val lightMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap)
     val darkMapStyle = MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap)
     var currentMapStyle by remember { mutableStateOf(lightMapStyle) }

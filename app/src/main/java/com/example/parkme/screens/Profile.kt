@@ -201,21 +201,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.Top
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                Icons.Default.Payment,
-                                contentDescription = null,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Text(
-                                "Formas de pago\nregistradas",
-                                fontSize = 10.sp,
-                                textAlign = TextAlign.Center
-                            )
-                        }
 
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
