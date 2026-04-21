@@ -63,7 +63,8 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     val isOperator = authState.userRole == "Operador"
 
     val homeRoute = if (isOperator) AppScreens.HomeOperator.name else AppScreens.HomeUser.name
-    val activityRoute = if (isOperator) AppScreens.MyActivityOperator.name else AppScreens.MyActivity.name
+    val activityRoute =
+        if (isOperator) AppScreens.MyActivityOperator.name else AppScreens.MyActivity.name
     val chatRoute = if (isOperator) AppScreens.ChatListOp.name else AppScreens.ChatListCli.name
     val roleText = if (isOperator) "Operador" else "Usuario"
 
@@ -166,7 +167,11 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                     contentColor = colorResource(R.color.white)
                 )
             ) {
-                Text(authState.userName ?: "Cargando...", fontSize = 17.sp, textAlign = TextAlign.Center)
+                Text(
+                    authState.userName ?: "Cargando...",
+                    fontSize = 17.sp,
+                    textAlign = TextAlign.Center
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))

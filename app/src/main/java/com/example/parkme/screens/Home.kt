@@ -5,8 +5,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -16,6 +21,11 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
+import android.location.Geocoder
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.google.android.gms.maps.model.LatLng
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +58,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 @Composable
 fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
+    var suggestions by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
+    var isDropdownExpanded by remember { mutableStateOf(false) }
+    val geocoder = remember { Geocoder(context) }
     var field by remember { mutableStateOf("") }
     var itemSeleccionado by remember { mutableIntStateOf(0) }
     val reservasUsuario by viewModel.userReservations.collectAsState()
@@ -56,6 +69,35 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
         viewModel.fetchUserReservations()
         viewModel.fetchParkingLots()
     }
+
+
+    LaunchedEffect(field) {
+        if (field.length > 3) {
+            delay(500)
+            withContext(Dispatchers.IO) {
+                try {
+
+                    val results = geocoder.getFromLocationName(
+                        field,
+                        5,
+                        -4.22,
+                        -79.27,
+                        12.59,
+                        -66.86
+                    )
+
+                    suggestions = results ?: emptyList()
+                    isDropdownExpanded = suggestions.isNotEmpty()
+                } catch (e: Exception) {
+                    suggestions = emptyList()
+                }
+            }
+        } else {
+            suggestions = emptyList()
+            isDropdownExpanded = false
+        }
+    }
+
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
@@ -79,7 +121,12 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Parqueaderos") },
+                        icon = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.List,
+                                contentDescription = "Parqueaderos"
+                            )
+                        },
                         label = { Text("Actividad", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 1,
                         onClick = {
@@ -120,16 +167,25 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
                     contentDescription = "Logo de la app",
-                    modifier = Modifier.width(130.dp).height(80.dp),
+                    modifier = Modifier
+                        .width(130.dp)
+                        .height(80.dp),
                     contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
+                Box(
+                    modifier = Modifier
+                        .height(60.dp)
+                        .width(2.dp)
+                        .background(Color.Black)
+                )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Buscar\nparqueadero",
@@ -143,37 +199,110 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            TextField(
-                value = field,
-                onValueChange = { field = it },
-                modifier = Modifier.fillMaxWidth().height(64.dp),
-                placeholder = {
-                    Text("¿Dónde te estacionarás hoy?", color = colorResource(R.color.black), fontSize = 18.sp)
-                },
-                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = "types") },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        try {
-                            val addresses = findLocation(field)
-                            addresses?.let {
-                                SearchMapLocationHolder.searchedLocation= addresses
-                                navController.navigate(AppScreens.SearchMap.name)
+            Column(modifier = Modifier.fillMaxWidth()) {
+
+                TextField(
+                    value = field,
+                    onValueChange = { field = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp),
+                    placeholder = {
+                        Text(
+                            "¿Dónde te estacionarás hoy?",
+                            color = colorResource(R.color.black),
+                            fontSize = 18.sp
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "types"
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    shape = RoundedCornerShape(50),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.LightGray,
+                        unfocusedContainerColor = Color.LightGray,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    ),
+                    singleLine = true
+                )
+
+
+                AnimatedVisibility(visible = isDropdownExpanded && suggestions.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp, start = 8.dp, end = 8.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        shadowElevation = 8.dp
+                    ) {
+                        Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                            suggestions.forEachIndexed { index, address ->
+                                val placeName = address.featureName ?: "Dirección"
+                                val fullAddress = address.getAddressLine(0) ?: ""
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            field = fullAddress
+                                            isDropdownExpanded = false
+                                            val location =
+                                                LatLng(address.latitude, address.longitude)
+                                            SearchMapLocationHolder.searchedLocation = location
+                                            navController.navigate(AppScreens.SearchMap.name)
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = "Ubicación",
+                                        tint = Color.Gray,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(16.dp))
+
+
+                                    Column {
+                                        Text(
+                                            text = placeName,
+                                            color = Color.Black,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Text(
+                                            text = fullAddress,
+                                            color = Color.DarkGray,
+                                            fontSize = 13.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+
+                                if (index < suggestions.lastIndex) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(
+                                            horizontal = 56.dp,
+                                            vertical = 4.dp
+                                        ),
+                                        color = Color.LightGray.copy(alpha = 0.5f),
+                                        thickness = 1.dp
+                                    )
+                                }
                             }
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Error buscando dirección", Toast.LENGTH_SHORT).show()
                         }
                     }
-                ),
-                shape = RoundedCornerShape(50),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.LightGray,
-                    unfocusedContainerColor = Color.LightGray,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
-                ),
-                singleLine = true
-            )
+                }
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -190,18 +319,26 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
 
             Box(
                 modifier = Modifier
-                    .fillMaxWidth().padding(horizontal = 8.dp).weight(1f)
-                    .border(1.5.dp, Color.LightGray, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp))
-                    .background(Color.Transparent).padding(16.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .weight(1f)
+                    .border(1.5.dp, Color.LightGray, RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color.Transparent)
+                    .padding(16.dp)
             ) {
                 if (reservasUsuario.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No tienes reservas recientes", color = Color.Gray)
                     }
                 } else {
-                    LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         items(reservasUsuario) { reserva ->
-                            val parqueaderoDeEstaReserva = allParkingLots.find { it.id == reserva.parkingId }
+                            val parqueaderoDeEstaReserva =
+                                allParkingLots.find { it.id == reserva.parkingId }
                             val direccionGuardada = parqueaderoDeEstaReserva?.direccion
                             var direccionMostrar by remember(reserva.parkingId, direccionGuardada) {
                                 mutableStateOf(
@@ -212,11 +349,20 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(Color.LightGray.copy(alpha = 0.5f), shape = RoundedCornerShape(24.dp))
+                                    .background(
+                                        Color.LightGray.copy(alpha = 0.5f),
+                                        shape = RoundedCornerShape(24.dp)
+                                    )
                                     .clickable {
                                         if (parqueaderoDeEstaReserva != null) {
-                                            navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoDeEstaReserva.location)
-                                            navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoDeEstaReserva.id)
+                                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                                "ubicacionBuscada",
+                                                parqueaderoDeEstaReserva.location
+                                            )
+                                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                                "preSelectedParkingId",
+                                                parqueaderoDeEstaReserva.id
+                                            )
                                             navController.navigate(AppScreens.SearchMap.name)
                                         }
                                     }
@@ -236,7 +382,12 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                         fontSize = 14.sp,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
-                                    Text(text = "Toca para calificar la experiencia", color = Color.Gray, fontSize = 10.sp, modifier = Modifier.padding(top = 8.dp))
+                                    Text(
+                                        text = "Toca para calificar la experiencia",
+                                        color = Color.Gray,
+                                        fontSize = 10.sp,
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    )
                                 }
                             }
                         }
@@ -248,14 +399,20 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
 
             Button(
                 onClick = { navController.navigate(AppScreens.SearchMap.name) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorResource(R.color.blue),
                     contentColor = colorResource(R.color.white)
                 ),
                 shape = RoundedCornerShape(50)
             ) {
-                Text(text = "Reservar nuevo parqueadero", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Reservar nuevo parqueadero",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -267,7 +424,8 @@ fun HomeOperator(navController: NavController) {
     var itemSeleccionado by remember { mutableIntStateOf(0) }
     val db = FirebaseFirestore.getInstance()
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-    val parqueaderos = remember { mutableStateOf<List<Pair<String, Map<String, Any>>>>(emptyList()) }
+    val parqueaderos =
+        remember { mutableStateOf<List<Pair<String, Map<String, Any>>>>(emptyList()) }
 
     LaunchedEffect(uid) {
         db.collection("parqueaderos")
@@ -303,7 +461,12 @@ fun HomeOperator(navController: NavController) {
                         )
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Parqueaderos") },
+                        icon = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.List,
+                                contentDescription = "Parqueaderos"
+                            )
+                        },
                         label = { Text("Actividad", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 1,
                         onClick = {
@@ -350,11 +513,18 @@ fun HomeOperator(navController: NavController) {
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
                     contentDescription = "Logo de la app",
-                    modifier = Modifier.width(130.dp).height(80.dp),
+                    modifier = Modifier
+                        .width(130.dp)
+                        .height(80.dp),
                     contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
+                Box(
+                    modifier = Modifier
+                        .height(60.dp)
+                        .width(2.dp)
+                        .background(Color.Black)
+                )
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Mis\nparqueaderos",
@@ -387,9 +557,11 @@ fun HomeOperator(navController: NavController) {
                         items(parqueaderos.value) { (id, data) ->
                             val rawRate = data["rate"] ?: data["calificacion"]
                             val rateFloat = (rawRate as? Number)?.toFloat() ?: 0f
-                            val rateString = if (rateFloat > 0f) String.format("%.1f", rateFloat) else "0.0"
+                            val rateString =
+                                if (rateFloat > 0f) String.format("%.1f", rateFloat) else "0.0"
 
-                            val rawPhotos = data["photos"] ?: data["fotos"] ?: data["imageUrl"] ?: data["imageUrls"]
+                            val rawPhotos = data["photos"] ?: data["fotos"] ?: data["imageUrl"]
+                            ?: data["imageUrls"]
                             val fotosList = when (rawPhotos) {
                                 is List<*> -> rawPhotos.filterIsInstance<String>()
                                 is String -> if (rawPhotos.isNotBlank()) listOf(rawPhotos) else emptyList()
@@ -412,11 +584,18 @@ fun HomeOperator(navController: NavController) {
 
             Button(
                 onClick = { navController.navigate(AppScreens.CreateParking.name) },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)),
                 shape = RoundedCornerShape(28.dp)
             ) {
-                Text(text = "Crear nuevo parqueadero", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Crear nuevo parqueadero",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -490,14 +669,18 @@ fun ParqueaderoItem(
                         AsyncImage(
                             model = url,
                             contentDescription = "Foto parqueadero",
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Crop
                         )
                     } else {
                         Image(
                             painter = painterResource(R.drawable.parqueadero1),
                             contentDescription = "Sin foto",
-                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp)),
                             contentScale = ContentScale.Crop
                         )
                     }
