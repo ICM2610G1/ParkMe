@@ -38,12 +38,16 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
-import com.example.parkme.utils.CloudinaryUploader
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 @Composable
 fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modifier) {
@@ -80,7 +84,6 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         val espaciosDisponibles = 15 - fotosUris.value.size
-
         val urisPermitidas = uris.take(espaciosDisponibles)
 
         if (uris.size > espaciosDisponibles) {
@@ -461,6 +464,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     .filter { it.isNotEmpty() }
                     .joinToString(",")
 
+                // Guardamos ambas palabras para máxima compatibilidad
                 val parqueaderoBase = hashMapOf(
                     "operatorId" to uid,
                     "name" to name.value,
@@ -474,6 +478,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     "weekAvailability" to diasString,
                     "slot" to (slot.value.toIntOrNull() ?: 0),
                     "fotos" to emptyList<String>(),
+                    "photos" to emptyList<String>(),
                     "latitud" to (ubicacion.value?.latitude ?: 0.0),
                     "longitud" to (ubicacion.value?.longitude ?: 0.0),
                     "direccion" to direccion.value
@@ -485,29 +490,44 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                         if (totalFotos == 0) {
                             mensaje.value = " Parqueadero creado"
                             subiendo.value = false
+                            navController.popBackStack()
                             return@addOnSuccessListener
                         }
-                        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
+
+                        val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.IO)
                         scope.launch {
-                            val fotosSubidas = mutableListOf<String>()
-                            fotosUris.value.forEach { uri ->
-                                val url = CloudinaryUploader.uploadImage(context, uri)
-                                if (url != null) fotosSubidas.add(url)
-                            }
-                            if (fotosSubidas.size == totalFotos) {
-                                docRef.update("fotos", fotosSubidas)
-                                    .addOnSuccessListener {
+                            try {
+                                val storageRef = FirebaseStorage.getInstance().reference
+                                val fotosSubidas = mutableListOf<String>()
+
+                                fotosUris.value.forEach { uri ->
+                                    val fileName = UUID.randomUUID().toString() + ".jpg"
+                                    val imageRef = storageRef.child("parqueaderos/$fileName")
+                                    imageRef.putFile(uri).await()
+                                    val downloadUrl = imageRef.downloadUrl.await()
+                                    fotosSubidas.add(downloadUrl.toString())
+                                }
+
+                                withContext(Dispatchers.Main) {
+                                    // Actualizamos ambas palabras para evitar errores
+                                    docRef.update(mapOf(
+                                        "fotos" to fotosSubidas,
+                                        "photos" to fotosSubidas
+                                    )).addOnSuccessListener {
                                         mensaje.value = "Parqueadero creado con fotos"
                                         subiendo.value = false
                                         navController.popBackStack()
                                     }
-                                    .addOnFailureListener { e ->
-                                        mensaje.value = "Error guardando fotos: ${e.message}"
-                                        subiendo.value = false
-                                    }
-                            } else {
-                                mensaje.value = "Algunas fotos no se subieron"
-                                subiendo.value = false
+                                        .addOnFailureListener { e ->
+                                            mensaje.value = "Error guardando fotos: ${e.message}"
+                                            subiendo.value = false
+                                        }
+                                }
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    mensaje.value = "Error subiendo fotos a Firebase: ${e.message}"
+                                    subiendo.value = false
+                                }
                             }
                         }
                     }
@@ -637,7 +657,8 @@ fun EditParkingVisual(
                     val dias = listOf("L", "M", "M", "J", "V", "S", "D")
                     diasSeleccionados.value = dias.map { weekAvail.contains(it) }
 
-                    val fotosFirestore = doc.get("fotos")
+                    // Lee cualquier formato antiguo o nuevo
+                    val fotosFirestore = doc.get("photos") ?: doc.get("fotos")
                     if (fotosFirestore is List<*>) {
                         fotosUrls.value = fotosFirestore.filterIsInstance<String>()
                     }
@@ -999,22 +1020,37 @@ fun EditParkingVisual(
                         mensaje, subiendo, navController
                     )
                 } else {
-                    val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
+                    val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.IO)
                     scope.launch {
-                        val fotosSubidas = mutableListOf<String>()
-                        fotosUris.value.forEach { uri ->
-                            val url = CloudinaryUploader.uploadImage(context, uri)
-                            if (url != null) fotosSubidas.add(url)
+                        try {
+                            val storageRef = FirebaseStorage.getInstance().reference
+                            val fotosSubidas = mutableListOf<String>()
+
+                            fotosUris.value.forEach { uri ->
+                                val fileName = UUID.randomUUID().toString() + ".jpg"
+                                val imageRef = storageRef.child("parqueaderos/$fileName")
+                                imageRef.putFile(uri).await()
+                                val downloadUrl = imageRef.downloadUrl.await()
+                                fotosSubidas.add(downloadUrl.toString())
+                            }
+                            val todasLasFotos = fotosUrls.value + fotosSubidas
+
+                            withContext(Dispatchers.Main) {
+                                saveParkingDetails(
+                                    db, parkingId, name.value , pricePerHour.value, pricePerMin.value,
+                                    fixedPrice.value, terms.value, electricCharges.value,
+                                    hourStart.value, hourFinish.value, diasString,
+                                    slot.value.toIntOrNull() ?: 0,
+                                    todasLasFotos, ubicacion.value, direccion,
+                                    mensaje, subiendo, navController
+                                )
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                mensaje.value = "Error subiendo fotos a Firebase: ${e.message}"
+                                subiendo.value = false
+                            }
                         }
-                        val todasLasFotos = fotosUrls.value + fotosSubidas
-                        saveParkingDetails(
-                            db, parkingId, name.value , pricePerHour.value, pricePerMin.value,
-                            fixedPrice.value, terms.value, electricCharges.value,
-                            hourStart.value, hourFinish.value, diasString,
-                            slot.value.toIntOrNull() ?: 0,
-                            todasLasFotos, ubicacion.value, direccion,
-                            mensaje, subiendo, navController
-                        )
                     }
                 }
             },
@@ -1057,7 +1093,7 @@ fun EditParkingVisual(
         if (mensaje.value.isNotEmpty()) {
             Text(
                 text = mensaje.value,
-                color = if (mensaje.value.startsWith("P")) Color.Green else Color.Red,
+                color = if (mensaje.value.startsWith("P") || mensaje.value.startsWith("C")) Color.Green else Color.Red,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
@@ -1176,6 +1212,7 @@ fun saveParkingDetails(
     subiendo: MutableState<Boolean>,
     navController: NavController?
 ) {
+    // Guardamos en ambos nombres para que tus otras pantallas siempre lo encuentren
     val datos = hashMapOf(
         "name" to name,
         "pricePerHour" to pricePerHour,
@@ -1188,6 +1225,7 @@ fun saveParkingDetails(
         "weekAvailability" to weekAvailability,
         "slot" to slot,
         "fotos" to fotos,
+        "photos" to fotos,
         "latitud" to (ubicacion?.latitude ?: 0.0),
         "longitud" to (ubicacion?.longitude ?: 0.0),
         "direccion" to direccion.value

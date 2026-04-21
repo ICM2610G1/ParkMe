@@ -380,12 +380,6 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                         fontSize = 14.sp,
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
-                                    Text(
-                                        text = "Toca para calificar la experiencia",
-                                        color = Color.Gray,
-                                        fontSize = 10.sp,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    )
                                 }
                             }
                         }
@@ -425,15 +419,22 @@ fun HomeOperator(navController: NavController) {
     val parqueaderos =
         remember { mutableStateOf<List<Pair<String, Map<String, Any>>>>(emptyList()) }
 
-    LaunchedEffect(uid) {
-        db.collection("parqueaderos")
-            .whereEqualTo("operadorId", uid)
-            .get()
-            .addOnSuccessListener { result ->
-                parqueaderos.value = result.documents.map { doc ->
-                    doc.id to (doc.data ?: emptyMap())
+    DisposableEffect(uid) {
+        val listener = db.collection("parqueaderos")
+            .whereEqualTo("operatorId", uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+
+                if (snapshot != null) {
+                    parqueaderos.value = snapshot.documents.map { doc ->
+                        doc.id to (doc.data ?: emptyMap())
+                    }
                 }
             }
+
+        onDispose {
+            listener.remove()
+        }
     }
 
     Scaffold(
