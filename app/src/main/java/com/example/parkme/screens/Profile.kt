@@ -16,8 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SupportAgent
 import androidx.compose.material3.Button
@@ -25,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -34,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
@@ -56,6 +59,9 @@ import com.example.parkme.viewmodel.AppViewModel
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     var itemSeleccionado by remember { mutableIntStateOf(2) }
+
+    var mostrarSoporte by remember { mutableStateOf(false) }
+
     val context = LocalContext.current
 
     val authState by viewModel.authState.collectAsState()
@@ -209,7 +215,9 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             Icon(
                                 Icons.Default.SupportAgent,
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clickable { mostrarSoporte = true }
                             )
                             Text("Soporte", fontSize = 10.sp, textAlign = TextAlign.Center)
                         }
@@ -220,9 +228,11 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Message,
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp).clickable {
-                                    navController.navigate(chatRoute)
-                                }
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clickable {
+                                        navController.navigate(chatRoute)
+                                    }
                             )
                             Text("Mensajes", fontSize = 10.sp, textAlign = TextAlign.Center)
                         }
@@ -244,6 +254,75 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                 modifier = Modifier.padding(bottom = 24.dp)
             ) {
                 Text("Cerrar Sesión", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        if (mostrarSoporte) {
+            Dialog(onDismissRequest = { mostrarSoporte = false }) {
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color.White,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            IconButton(
+                                onClick = { mostrarSoporte = false },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Cerrar",
+                                    tint = Color.Gray
+                                )
+                            }
+                        }
+
+                        Icon(
+                            imageVector = Icons.Default.SupportAgent,
+                            contentDescription = "Soporte",
+                            tint = colorResource(id = R.color.blue),
+                            modifier = Modifier.size(64.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Para soporte o ayuda, puedes comunicarte a:",
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center,
+                            color = Color.DarkGray
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "parkme.company@gmail.com",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(R.color.blue),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "(Respuesta en 3 días hábiles)",
+                            fontSize = 13.sp,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
             }
         }
     }
