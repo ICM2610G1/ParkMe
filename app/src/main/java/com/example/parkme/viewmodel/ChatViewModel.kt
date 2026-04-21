@@ -24,6 +24,29 @@ class ChatViewModel : ViewModel() {
     private val _chatRooms = MutableStateFlow<List<ChatRoom>>(emptyList())
     val chatRooms: StateFlow<List<ChatRoom>> = _chatRooms.asStateFlow()
 
+    private val _chatPartnerName = MutableStateFlow<String>("User")
+    val chatPartnerName: StateFlow<String> = _chatPartnerName.asStateFlow()
+
+    fun loadChatPartnerName(chatId: String, esOperador: Boolean) {
+        db.collection("chats").document(chatId).get().addOnSuccessListener { doc ->
+            val room = doc.toObject(ChatRoom::class.java)
+            if (room != null) {
+                if (esOperador) {
+                    db.collection("users").document(room.userId).get().addOnSuccessListener { userDoc ->
+                        val name = userDoc.getString("name") ?: "Usuario"
+                        val lastName = userDoc.getString("lastName") ?: ""
+                        _chatPartnerName.value = "$name $lastName".trim()
+                    }
+                } else {
+                    _chatPartnerName.value = room.parkingName
+                }
+            }
+        }.addOnFailureListener {
+            _chatPartnerName.value = "Chat"
+        }
+    }
+
+
     fun iniciarChatRoom(reserva: Reservation) {
         val chatRoom = ChatRoom(
             id = reserva.id,
