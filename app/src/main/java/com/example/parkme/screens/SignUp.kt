@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,13 +60,23 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var selectedRole by remember { mutableStateOf("Usuario") }
-    val authState by viewModel.authState.collectAsState()
 
+    val authState by viewModel.authState.collectAsState()
+    val context = LocalContext.current
+    var isRegistering by remember { mutableStateOf(false) }
+
+    LaunchedEffect(authState.isAuthenticated) {
+        if (authState.isAuthenticated && isRegistering) {
+            viewModel.saveBiometricCredentials(context, email, password)
+            isRegistering = false
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
             .background(color = colorResource(R.color.back))
             .fillMaxSize()
+            .imePadding()
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -87,13 +100,13 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                 )
             }
         }
+
         stickyHeader {
             Row {
                 Text("Crea tu", color = colorResource(R.color.black), fontWeight = FontWeight.Bold)
                 Text(" Cuenta", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
             }
         }
-
 
         item {
             Column(
@@ -112,13 +125,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     value = name,
                     onValueChange = { name = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            "Ingrese su nombre/s",
-                            color = colorResource(R.color.grisB),
-                            fontSize = 14.sp
-                        )
-                    },
+                    placeholder = { Text("Ingrese su nombre/s", color = colorResource(R.color.grisB), fontSize = 14.sp) },
                     shape = RoundedCornerShape(50),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.LightGray,
@@ -141,13 +148,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     value = lastName,
                     onValueChange = { lastName = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            "Ingrese sus apellidos",
-                            color = colorResource(R.color.grisB),
-                            fontSize = 14.sp
-                        )
-                    },
+                    placeholder = { Text("Ingrese sus apellidos", color = colorResource(R.color.grisB), fontSize = 14.sp) },
                     shape = RoundedCornerShape(50),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.LightGray,
@@ -171,13 +172,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     onValueChange = { phone = it },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    placeholder = {
-                        Text(
-                            "+57 3XX-XXX XXXX",
-                            color = colorResource(R.color.grisB),
-                            fontSize = 14.sp
-                        )
-                    },
+                    placeholder = { Text("+57 3XX-XXX XXXX", color = colorResource(R.color.grisB), fontSize = 14.sp) },
                     shape = RoundedCornerShape(50),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.LightGray,
@@ -201,13 +196,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     onValueChange = { email = it },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    placeholder = {
-                        Text(
-                            "Dirección de correo electrónico",
-                            color = colorResource(R.color.grisB),
-                            fontSize = 14.sp
-                        )
-                    },
+                    placeholder = { Text("Dirección de correo electrónico", color = colorResource(R.color.grisB), fontSize = 14.sp) },
                     shape = RoundedCornerShape(50),
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.LightGray,
@@ -230,13 +219,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     value = password,
                     onValueChange = { password = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            "Ingrese su contraseña",
-                            color = colorResource(R.color.grisB),
-                            fontSize = 14.sp
-                        )
-                    },
+                    placeholder = { Text("Ingrese su contraseña", color = colorResource(R.color.grisB), fontSize = 14.sp) },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     trailingIcon = {
@@ -271,13 +254,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = {
-                        Text(
-                            "Confirme su contraseña",
-                            color = colorResource(R.color.grisB),
-                            fontSize = 14.sp
-                        )
-                    },
+                    placeholder = { Text("Confirme su contraseña", color = colorResource(R.color.grisB), fontSize = 14.sp) },
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     trailingIcon = {
@@ -345,6 +322,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     contentColor = colorResource(R.color.white)
                 ),
                 onClick = {
+                    isRegistering = true
                     viewModel.register(
                         email,
                         password,
@@ -358,7 +336,10 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                 enabled = !authState.isLoading,
             ) {
                 if (authState.isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
                 } else {
                     Text("Continuar", modifier = Modifier.padding(vertical = 8.dp))
                 }

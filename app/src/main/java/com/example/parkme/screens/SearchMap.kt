@@ -137,31 +137,47 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         position = CameraPosition.fromLatLngZoom(targetLocation, 16f)
     }
 
-    LaunchedEffect(hasLocationPermission) {
+
+    DisposableEffect(hasLocationPermission) {
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                for (location in locationResult.locations) {
+                    myLocation = LatLng(location.latitude, location.longitude)
+                    currentSpeed = location.speed * 3.6f // Velocidad en km/h
+                }
+            }
+        }
+
         if (hasLocationPermission) {
             try {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
                     if (location != null) {
                         myLocation = LatLng(location.latitude, location.longitude)
-
                         if (SearchMapLocationHolder.searchedLocation == null) {
                             cameraPositionState.position =
                                 CameraPosition.fromLatLngZoom(myLocation, 16f)
                         }
                     }
                 }
+
+                val locationRequest = com.google.android.gms.location.LocationRequest.Builder(
+                    com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
+                    3000
+                ).setMinUpdateDistanceMeters(2f)
+                    .build()
+
+                fusedLocationClient.requestLocationUpdates(
+                    locationRequest,
+                    locationCallback,
+                    android.os.Looper.getMainLooper()
+                )
+
             } catch (e: SecurityException) {
                 Log.e("MAPS_DEBUG", "Error obteniendo la ubicación por GPS: ${e.message}")
             }
         }
-        val locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                for (location in locationResult.locations) {
-                    val newLatLng = LatLng(location.latitude, location.longitude)
-                    myLocation = newLatLng
-                    currentSpeed = location.speed * 3.6f
-                }
-            }
+        onDispose {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
         }
     }
     val allParkingLots by viewModel.parkingLots.collectAsState()
@@ -784,3 +800,4 @@ suspend fun fetchRouteFromGoogle(
         return@withContext null
     }
 }
+

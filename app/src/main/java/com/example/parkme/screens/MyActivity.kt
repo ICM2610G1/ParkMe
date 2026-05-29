@@ -665,7 +665,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                     Text(
                                         text = "$ ${ganancias.toInt()}",
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.Green,
+                                        color = colorResource(R.color.verdepasto),
                                         fontSize = 15.sp
                                     )
                                 }

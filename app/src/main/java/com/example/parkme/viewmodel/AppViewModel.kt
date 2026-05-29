@@ -44,11 +44,7 @@ class AppViewModel : ViewModel() {
         if (currentUser != null) {
             viewModelScope.launch {
                 try {
-                    val doc = firestore
-                        .collection("users")
-                        .document(currentUser.uid)
-                        .get()
-                        .await()
+                    val doc = firestore.collection("users").document(currentUser.uid).get().await()
 
                     val role = doc.getString("role") ?: "Usuario"
                     val isVerified = doc.getBoolean("isVerified") ?: false
@@ -106,8 +102,7 @@ class AppViewModel : ViewModel() {
                 )
             } catch (e: Exception) {
                 _authState.value = AuthState(
-                    errorMessage = mapFirebaseError(e.message),
-                    isCheckingSession = false
+                    errorMessage = mapFirebaseError(e.message), isCheckingSession = false
                 )
             }
         }
@@ -167,13 +162,12 @@ class AppViewModel : ViewModel() {
             }
         }
     }
+
     fun verifyUser() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             try {
-                firestore.collection("users").document(uid)
-                    .update("isVerified", true)
-                    .await()
+                firestore.collection("users").document(uid).update("isVerified", true).await()
 
                 _authState.value = _authState.value.copy(
                     isVerified = true
@@ -213,6 +207,7 @@ class AppViewModel : ViewModel() {
             else -> "Error: $message"
         }
     }
+
     fun rateParkingLot(parkingLotId: String, reservationId: String, newRating: Float) {
         viewModelScope.launch {
             try {
@@ -242,6 +237,7 @@ class AppViewModel : ViewModel() {
             }
         }
     }
+
     fun fetchParkingLots() {
 
         firestore.collection("parqueaderos").addSnapshotListener { snapshot, error ->
@@ -256,32 +252,46 @@ class AppViewModel : ViewModel() {
                         val id = doc.id
 
                         val name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre"
-                        val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
+                        val operatorId =
+                            doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
 
                         val lat = (doc.get("latitud") as? Number)?.toDouble() ?: 0.0
                         val lng = (doc.get("longitud") as? Number)?.toDouble() ?: 0.0
 
-                        var pricePerMin = doc.getString("pricePerMin") ?: doc.getString("precioMinuto") ?: "0"
-                        var pricePerHour = doc.getString("pricePerHour") ?: doc.getString("precioHora") ?: "0"
-                        var fixedPrice = doc.getString("fixedPrice") ?: doc.getString("tarifaFija") ?: "0"
+                        var pricePerMin =
+                            doc.getString("pricePerMin") ?: doc.getString("precioMinuto") ?: "0"
+                        var pricePerHour =
+                            doc.getString("pricePerHour") ?: doc.getString("precioHora") ?: "0"
+                        var fixedPrice =
+                            doc.getString("fixedPrice") ?: doc.getString("tarifaFija") ?: "0"
 
                         if (!pricePerMin.startsWith("$")) pricePerMin = "$$pricePerMin"
                         if (!pricePerHour.startsWith("$")) pricePerHour = "$$pricePerHour"
                         if (!fixedPrice.startsWith("$")) fixedPrice = "$$fixedPrice"
 
-                        val terms = doc.getString("terms") ?: doc.getString("terminos") ?: "Sin términos"
-                        val hourStart = doc.getString("hourStart") ?: doc.getString("horaApertura") ?: ""
-                        val hourFinish = doc.getString("hourFinish") ?: doc.getString("horaCierre") ?: ""
-                        val weekAvailability = doc.getString("weekAvailability") ?: doc.getString("disponibilidad") ?: ""
+                        val terms =
+                            doc.getString("terms") ?: doc.getString("terminos") ?: "Sin términos"
+                        val hourStart =
+                            doc.getString("hourStart") ?: doc.getString("horaApertura") ?: ""
+                        val hourFinish =
+                            doc.getString("hourFinish") ?: doc.getString("horaCierre") ?: ""
+                        val weekAvailability =
+                            doc.getString("weekAvailability") ?: doc.getString("disponibilidad")
+                            ?: ""
 
-                        val slot = (doc.get("slot") as? Number)?.toInt() ?: (doc.get("cupos") as? Number)?.toInt() ?: 0
+                        val slot = (doc.get("slot") as? Number)?.toInt()
+                            ?: (doc.get("cupos") as? Number)?.toInt() ?: 0
 
                         val electricCharges = doc.getBoolean("electricCharges") ?: false
 
-                        val rate = (doc.get("rate") as? Number)?.toFloat() ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
+                        val rate = (doc.get("rate") as? Number)?.toFloat()
+                            ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
                         val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
                         val direccion = doc.getString("direccion") ?: ""
-                        val rawPhotos = doc.get("photos") ?: doc.get("fotos") ?: doc.get("imageUrl") ?: doc.get("imageUrls")
+                        val rawPhotos =
+                            doc.get("photos") ?: doc.get("fotos") ?: doc.get("imageUrl") ?: doc.get(
+                                "imageUrls"
+                            )
                         val photos = when (rawPhotos) {
                             is List<*> -> rawPhotos.filterIsInstance<String>()
                             is String -> if (rawPhotos.isNotBlank()) listOf(rawPhotos) else emptyList()
@@ -318,6 +328,7 @@ class AppViewModel : ViewModel() {
             }
         }
     }
+
     fun fetchUserReservations() {
         val uid = auth.currentUser?.uid
         if (uid == null) {
@@ -329,27 +340,38 @@ class AppViewModel : ViewModel() {
             try {
                 Log.d("RESERVAS_DEBUG", "Buscando reservas para el usuario: $uid")
 
-                val result = firestore.collection("reservas").whereEqualTo("userId", uid).get().await()
-                Log.d("RESERVAS_DEBUG", "Documentos encontrados en Firebase: ${result.documents.size}")
+                val result =
+                    firestore.collection("reservas").whereEqualTo("userId", uid).get().await()
+                Log.d(
+                    "RESERVAS_DEBUG", "Documentos encontrados en Firebase: ${result.documents.size}"
+                )
 
                 val reservas = result.documents.mapNotNull { doc ->
                     try {
                         val id = doc.id
 
-                        val parkingId = doc.getString("parkingId") ?: doc.getString("idParqueadero") ?: ""
-                        val parkingName = doc.getString("parkingName") ?: doc.getString("nombreParqueadero") ?: "Parqueadero"
+                        val parkingId =
+                            doc.getString("parkingId") ?: doc.getString("idParqueadero") ?: ""
+                        val parkingName =
+                            doc.getString("parkingName") ?: doc.getString("nombreParqueadero")
+                            ?: "Parqueadero"
                         val userId = doc.getString("userId") ?: ""
                         val placa = doc.getString("placa") ?: ""
-                        val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
-                        val startTime = doc.getString("startTime") ?: doc.getString("horaInicio") ?: ""
+                        val operatorId =
+                            doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
+                        val startTime =
+                            doc.getString("startTime") ?: doc.getString("horaInicio") ?: ""
                         val endTime = doc.getString("endTime") ?: doc.getString("horaFin") ?: ""
                         val status = doc.getString("status") ?: doc.getString("estado") ?: "Activa"
 
-                        val totalPrice = (doc.get("totalPrice") as? Number)?.toDouble()
-                            ?: (doc.get("precioTotal") as? Number)?.toDouble() ?: 0.0
+                        val totalPrice = (doc.get("totalPrice") as? Number)?.toDouble() ?: (doc.get(
+                            "precioTotal"
+                        ) as? Number)?.toDouble() ?: 0.0
                         val isRated = doc.getBoolean("isRated") ?: false
 
-                        Log.d("RESERVAS_DEBUG", "Reserva leída correctamente: $parkingName - $placa")
+                        Log.d(
+                            "RESERVAS_DEBUG", "Reserva leída correctamente: $parkingName - $placa"
+                        )
 
                         Reservation(
                             id = id,
@@ -370,11 +392,17 @@ class AppViewModel : ViewModel() {
                     }
                 }
 
-                Log.d("RESERVAS_DEBUG", "Total de reservas válidas a mostrar en la lista: ${reservas.size}")
+                Log.d(
+                    "RESERVAS_DEBUG",
+                    "Total de reservas válidas a mostrar en la lista: ${reservas.size}"
+                )
                 _userReservations.value = reservas
 
             } catch (e: Exception) {
-                Log.e("RESERVAS_DEBUG", "Error conectando con Firebase para las reservas: ${e.message}")
+                Log.e(
+                    "RESERVAS_DEBUG",
+                    "Error conectando con Firebase para las reservas: ${e.message}"
+                )
             }
         }
     }
@@ -388,8 +416,7 @@ class AppViewModel : ViewModel() {
     fun fetchOperatorActivity() {
         val uid = auth.currentUser?.uid ?: return
 
-        firestore.collection("parqueaderos")
-            .whereEqualTo("operatorId", uid)
+        firestore.collection("parqueaderos").whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
 
@@ -399,17 +426,19 @@ class AppViewModel : ViewModel() {
                             ParkingLot(
                                 id = doc.id,
                                 operatorId = doc.getString("operatorId") ?: "",
-                                name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre",
+                                name = doc.getString("name") ?: doc.getString("nombre")
+                                ?: "Sin nombre",
                                 slot = (doc.get("slot") as? Number)?.toInt() ?: 0
                             )
-                        } catch (e: Exception) { null }
+                        } catch (e: Exception) {
+                            null
+                        }
                     }
                     _operatorParkingLots.value = lots
                 }
             }
 
-        firestore.collection("reservas")
-            .whereEqualTo("operatorId", uid)
+        firestore.collection("reservas").whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
 
@@ -429,11 +458,31 @@ class AppViewModel : ViewModel() {
                                 totalPrice = (doc.get("totalPrice") as? Number)?.toDouble() ?: 0.0,
                                 isRated = doc.getBoolean("isRated") ?: false
                             )
-                        } catch (e: Exception) { null }
+                        } catch (e: Exception) {
+                            null
+                        }
                     }
                     _operatorReservations.value = res.sortedByDescending { it.startTime }
                 }
             }
+    }
+
+    fun getSavedBiometricEmail(context: android.content.Context): String {
+        val sharedPrefs = context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
+        return sharedPrefs.getString("savedEmail", "") ?: ""
+    }
+
+    fun getSavedBiometricPass(context: android.content.Context): String {
+        val sharedPrefs = context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
+        return sharedPrefs.getString("savedPass", "") ?: ""
+    }
+
+    fun saveBiometricCredentials(context: android.content.Context, email: String, pass: String) {
+        val sharedPrefs = context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
+        sharedPrefs.edit()
+            .putString("savedEmail", email)
+            .putString("savedPass", pass)
+            .apply()
     }
 
 }
