@@ -143,7 +143,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
                     myLocation = LatLng(location.latitude, location.longitude)
-                    currentSpeed = location.speed * 3.6f // Velocidad en km/h
+                    currentSpeed = location.speed * 3.6f
                 }
             }
         }

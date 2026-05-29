@@ -1,5 +1,6 @@
 package com.example.parkme.viewmodel
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.parkme.models.ChatMessage
@@ -7,16 +8,15 @@ import com.example.parkme.models.ChatRoom
 import com.example.parkme.models.Reservation
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import android.net.Uri
-import com.google.firebase.storage.FirebaseStorage
 import java.util.UUID
 
 class ChatViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
-
 
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
@@ -26,6 +26,31 @@ class ChatViewModel : ViewModel() {
 
     private val _chatPartnerName = MutableStateFlow<String>("User")
     val chatPartnerName: StateFlow<String> = _chatPartnerName.asStateFlow()
+
+    private val _currentChatRoom = MutableStateFlow<ChatRoom?>(null)
+    val currentChatRoom: StateFlow<ChatRoom?> = _currentChatRoom.asStateFlow()
+
+    fun listenCurrentChatRoom(chatId: String) {
+        db.collection("chats").document(chatId).addSnapshotListener { snapshot, error ->
+            if (snapshot != null && snapshot.exists()) {
+                _currentChatRoom.value = snapshot.toObject(ChatRoom::class.java)
+            }
+        }
+    }
+
+    fun toggleLocationSharing(chatId: String, isSharing: Boolean) {
+        db.collection("chats").document(chatId)
+            .set(mapOf("sharingLocation" to isSharing), SetOptions.merge())
+    }
+
+    fun updateUserLocation(userId: String, lat: Double, lng: Double) {
+        db.collection("users").document(userId).update(
+            mapOf(
+                "latitude" to lat,
+                "longitude" to lng
+            )
+        )
+    }
 
     fun loadChatPartnerName(chatId: String, esOperador: Boolean) {
         db.collection("chats").document(chatId).get().addOnSuccessListener { doc ->
@@ -46,7 +71,6 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-
     fun iniciarChatRoom(reserva: Reservation) {
         val chatRoom = ChatRoom(
             id = reserva.id,
@@ -56,18 +80,16 @@ class ChatViewModel : ViewModel() {
         )
 
         db.collection("chats").document(reserva.id)
-            .set(chatRoom, com.google.firebase.firestore.SetOptions.merge())
+            .set(chatRoom, SetOptions.merge())
             .addOnSuccessListener { Log.i("ChatViewModel", "Sala de chat asegurada") }
             .addOnFailureListener { e -> Log.e("ChatViewModel", "Error al crear sala", e) }
     }
-
 
     fun fetchMyChats(userId: String, isOperador: Boolean) {
         val campoBusqueda = if (isOperador) "operatorId" else "userId"
 
         db.collection("chats")
             .whereEqualTo(campoBusqueda, userId)
-
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("ChatViewModel", "Error al escuchar chat rooms", error)
@@ -79,7 +101,6 @@ class ChatViewModel : ViewModel() {
                 }
             }
     }
-
 
     fun listenForMessages(chatId: String) {
         db.collection("chats").document(chatId).collection("messages")
@@ -141,7 +162,7 @@ class ChatViewModel : ViewModel() {
                             db.collection("chats").document(chatId)
                                 .update(
                                     mapOf(
-                                        "lastMessage" to "📷 Imagen enviada",
+                                        "lastMessage" to "Imagen enviada",
                                         "timestamp" to System.currentTimeMillis()
                                     )
                                 )

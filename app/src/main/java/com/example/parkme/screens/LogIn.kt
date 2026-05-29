@@ -51,11 +51,7 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
     var linkedEmail by remember { mutableStateOf(viewModel.getSavedBiometricEmail(context)) }
     var linkedPass by remember { mutableStateOf(viewModel.getSavedBiometricPass(context)) }
 
-    LaunchedEffect(linkedEmail) {
-        if (linkedEmail.isEmpty()) {
-            showSheet = true
-        }
-    }
+
 
     LaunchedEffect(authState.isAuthenticated) {
         if (authState.isAuthenticated && showSheet) {
@@ -212,16 +208,13 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
                 Text("Regístrate", fontWeight = FontWeight.Bold)
             }
         }
-
-        if (linkedEmail.isNotEmpty()) {
-            TextButton(
-                onClick = { showSheet = true },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
-            ) {
-                Text("Cambiar cuenta principal", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
-            }
+        TextButton(
+            onClick = { showSheet = true },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+        ) {
+            val textoBoton = if (linkedEmail.isNotEmpty()) "Cambiar cuenta principal" else "Configurar Biometría"
+            Text(textoBoton, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
         }
-
         if (showSheet) {
             ModalBottomSheet(
                 onDismissRequest = {

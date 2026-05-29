@@ -39,7 +39,8 @@ enum class AppScreens {
     ChatCli,
     MapPicker,
     ChatListCli,
-    ChatListOp
+    ChatListOp,
+    TrackUserMap
 }
 
 @Composable
@@ -114,7 +115,8 @@ fun Navigation() {
                 ChatScreen(
                     chatId = reservaId,
                     miUserId = currentUserUid,
-                    esOperador = false
+                    esOperador = false,
+                    navController = navController
                 )
             }
         }
@@ -127,7 +129,8 @@ fun Navigation() {
                 ChatScreen(
                     chatId = reservaId,
                     miUserId = currentUserUid,
-                    esOperador = true
+                    esOperador = true,
+                    navController = navController
                 )
             }
         }
@@ -139,13 +142,16 @@ fun Navigation() {
         composable(AppScreens.ChatListOp.name) {
             ChatListScreen(navController = navController, esOperador = true)
         }
+
         composable("${AppScreens.EditParking.name}/{parkingId}") { backStackEntry ->
             val parkingId = backStackEntry.arguments?.getString("parkingId") ?: ""
             EditParkingVisual(parkingId = parkingId, navController = navController)
         }
+
         composable(AppScreens.CreateParking.name) {
             CreateParkingVisual(navController = navController)
         }
+
         composable(AppScreens.MapPicker.name) { backStackEntry ->
             val previousBackStack = navController.previousBackStackEntry
             MapPickerScreen(
@@ -154,6 +160,11 @@ fun Navigation() {
                     previousBackStack?.savedStateHandle?.set("latLng", latLng)
                 }
             )
+        }
+
+        composable("${AppScreens.TrackUserMap.name}/{chatId}") { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+            TrackUserMapScreen(navController = navController, chatId = chatId)
         }
     }
 

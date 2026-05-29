@@ -6,5 +6,6 @@ data class ChatRoom(
     val userId: String = "",
     val operatorId: String = "",
     val lastMessage: String = "Chat iniciado",
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val sharingLocation: Boolean = false
 )
