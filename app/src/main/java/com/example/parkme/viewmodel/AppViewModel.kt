@@ -14,6 +14,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import android.annotation.SuppressLint
+import android.content.Context
+import android.os.Looper
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 
 data class AuthState(
     val isLoading: Boolean = false,
@@ -484,5 +493,45 @@ class AppViewModel : ViewModel() {
             .putString("savedPass", pass)
             .apply()
     }
+    private var fusedLocationClient: FusedLocationProviderClient? = null
+    private var locationCallback: LocationCallback? = null
+
+    @SuppressLint("MissingPermission")
+    fun startTrackingUserLocation(context: Context, userId: String) {
+        if (fusedLocationClient == null) {
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(context.applicationContext)
+        }
+
+        if (locationCallback != null) return
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { loc ->
+                    firestore.collection("users").document(userId).update(
+                        mapOf(
+                            "latitude" to loc.latitude,
+                            "longitude" to loc.longitude
+                        )
+                    ).addOnSuccessListener {
+                        Log.d("MAPS_DEBUG", "Enviando Ubi desde AppViewModel: ${loc.latitude}")
+                    }
+                }
+            }
+        }
+
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
+            .setMinUpdateDistanceMeters(0f)
+            .build()
+
+        fusedLocationClient?.requestLocationUpdates(request, locationCallback!!, Looper.getMainLooper())
+    }
+
+    fun stopTrackingUserLocation() {
+        locationCallback?.let {
+            fusedLocationClient?.removeLocationUpdates(it)
+        }
+        locationCallback = null
+    }
+
 
 }

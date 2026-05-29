@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.models.ChatMessage
 import com.example.parkme.navigation.AppScreens
+import com.example.parkme.viewmodel.AppViewModel
 import com.example.parkme.viewmodel.ChatViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -50,6 +51,7 @@ fun ChatScreen(
     miUserId: String,
     esOperador: Boolean,
     navController: NavController,
+    appViewModel: AppViewModel, // <--- Recibimos el AppViewModel global
     chatViewModel: ChatViewModel = viewModel()
 ) {
     val messages by chatViewModel.messages.collectAsState()
@@ -57,7 +59,6 @@ fun ChatScreen(
     val currentChat by chatViewModel.currentChatRoom.collectAsState()
 
     val context = LocalContext.current
-    val locationProvider = remember { LocationServices.getFusedLocationProviderClient(context) }
 
     var hasLocationPermission by remember {
         mutableStateOf(
@@ -67,8 +68,16 @@ fun ChatScreen(
 
     var localIsSharing by remember { mutableStateOf(false) }
 
+    // Reacciona a Firebase: Si está activado, enciende el GPS en AppViewModel
     LaunchedEffect(currentChat?.sharingLocation) {
-        localIsSharing = currentChat?.sharingLocation ?: false
+        val isSharing = currentChat?.sharingLocation ?: false
+        localIsSharing = isSharing
+
+        if (isSharing && !esOperador && hasLocationPermission) {
+            appViewModel.startTrackingUserLocation(context, miUserId)
+        } else if (!isSharing && !esOperador) {
+            appViewModel.stopTrackingUserLocation()
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -77,6 +86,12 @@ fun ChatScreen(
             hasLocationPermission = isGranted
             localIsSharing = isGranted
             chatViewModel.toggleLocationSharing(chatId, isGranted)
+
+            if (isGranted) {
+                appViewModel.startTrackingUserLocation(context, miUserId)
+            } else {
+                appViewModel.stopTrackingUserLocation()
+            }
         }
     )
 
@@ -84,35 +99,6 @@ fun ChatScreen(
         chatViewModel.listenForMessages(chatId)
         chatViewModel.loadChatPartnerName(chatId, esOperador)
         chatViewModel.listenCurrentChatRoom(chatId)
-    }
-
-    DisposableEffect(currentChat?.sharingLocation) {
-        var locationCallback: LocationCallback? = null
-
-        if (currentChat?.sharingLocation == true && !esOperador) {
-            val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
-                .setMinUpdateDistanceMeters(5f).build()
-
-            locationCallback = object : LocationCallback() {
-                override fun onLocationResult(result: LocationResult) {
-                    result.lastLocation?.let { loc ->
-                        chatViewModel.updateUserLocation(miUserId, loc.latitude, loc.longitude)
-                    }
-                }
-            }
-
-            if (hasLocationPermission) {
-                locationProvider.requestLocationUpdates(
-                    locationRequest,
-                    locationCallback,
-                    Looper.getMainLooper()
-                )
-            }
-        }
-
-        onDispose {
-            locationCallback?.let { locationProvider.removeLocationUpdates(it) }
-        }
     }
 
     val estadoCompartirUI = if (esOperador) {
@@ -135,6 +121,11 @@ fun ChatScreen(
                         permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                     } else {
                         chatViewModel.toggleLocationSharing(chatId, isSharing)
+                        if (isSharing) {
+                            appViewModel.startTrackingUserLocation(context, miUserId)
+                        } else {
+                            appViewModel.stopTrackingUserLocation()
+                        }
                     }
                 },
                 onViewLocation = {
@@ -166,7 +157,6 @@ fun ChatScreen(
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatTopBar(

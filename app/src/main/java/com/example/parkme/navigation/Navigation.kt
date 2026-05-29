@@ -116,7 +116,8 @@ fun Navigation() {
                     chatId = reservaId,
                     miUserId = currentUserUid,
                     esOperador = false,
-                    navController = navController
+                    navController = navController,
+                    appViewModel = viewModel
                 )
             }
         }
@@ -130,7 +131,8 @@ fun Navigation() {
                     chatId = reservaId,
                     miUserId = currentUserUid,
                     esOperador = true,
-                    navController = navController
+                    navController = navController,
+                    appViewModel = viewModel
                 )
             }
         }
