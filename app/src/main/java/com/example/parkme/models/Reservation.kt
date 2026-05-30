@@ -12,5 +12,6 @@ data class Reservation(
     val endTime: String = "",
     val status: String = "Activa",
     val totalPrice: Double = 0.0,
-    val isRated: Boolean = false
+    val isRated: Boolean = false,
+    val sharingLocation: Boolean = false
 )

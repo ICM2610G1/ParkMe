@@ -1,5 +1,9 @@
 package com.example.parkme.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,8 +22,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,18 +33,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.parkme.R
+import com.example.parkme.models.Reservation
 import com.example.parkme.navigation.AppScreens
 import com.example.parkme.viewmodel.AppViewModel
+import com.example.parkme.viewmodel.ChatViewModel
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel()) {
 
-    val chatViewModel: com.example.parkme.viewmodel.ChatViewModel = viewModel()
+    val chatViewModel: ChatViewModel = viewModel()
+    val context = LocalContext.current
+    val db = FirebaseFirestore.getInstance()
+
+    var hasLocationPermission by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted -> hasLocationPermission = isGranted }
+    )
 
     var itemSeleccionado by remember { mutableIntStateOf(1) }
     val reservasRaw by viewModel.userReservations.collectAsState()
@@ -63,11 +83,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                     containerColor = Color.Transparent
                 ) {
                     NavigationBarItem(
-                        icon = {
-                            Icon(
-                                Icons.Default.Home, contentDescription = "Inicio"
-                            )
-                        },
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
                         label = { Text("Inicio", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 0,
                         onClick = {
@@ -82,11 +98,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                     )
 
                     NavigationBarItem(
-                        icon = {
-                            Icon(
-                                Icons.AutoMirrored.Filled.List, contentDescription = "Actividad"
-                            )
-                        },
+                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Actividad") },
                         label = { Text("Actividad", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 1,
                         onClick = { itemSeleccionado = 1 },
@@ -98,11 +110,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                     )
 
                     NavigationBarItem(
-                        icon = {
-                            Icon(
-                                Icons.Default.Person, contentDescription = "Perfil"
-                            )
-                        },
+                        icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 2,
                         onClick = {
@@ -199,11 +207,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(140.dp)
-                                            .clip(
-                                                RoundedCornerShape(
-                                                    topStart = 24.dp, topEnd = 24.dp
-                                                )
-                                            )
+                                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                                     )
                                 } else {
                                     Image(
@@ -213,11 +217,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(140.dp)
-                                            .clip(
-                                                RoundedCornerShape(
-                                                    topStart = 24.dp, topEnd = 24.dp
-                                                )
-                                            )
+                                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                                     )
                                 }
                                 Row(
@@ -299,15 +299,9 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                                     navController.navigate(AppScreens.SearchMap.name)
                                                 }
                                             },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = colorResource(
-                                                    R.color.blue
-                                                )
-                                            ),
+                                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                                             shape = RoundedCornerShape(50),
-                                            contentPadding = PaddingValues(
-                                                horizontal = 16.dp, vertical = 8.dp
-                                            )
+                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                                         ) {
                                             Text(
                                                 "Reservar\nde nuevo",
@@ -325,21 +319,52 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                                     chatViewModel.iniciarChatRoom(reservaReciente)
                                                     navController.navigate(AppScreens.ChatListCli.name)
                                                 },
-                                                colors = ButtonDefaults.buttonColors(
-                                                    containerColor = colorResource(
-                                                        R.color.blue
-                                                    )
-                                                ),
+                                                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                                                 shape = RoundedCornerShape(50),
-                                                contentPadding = PaddingValues(
-                                                    horizontal = 16.dp, vertical = 8.dp
-                                                )
+                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                            ) {
+                                                Text("Iniciar Chat", textAlign = TextAlign.Center, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                            }
+
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            var localSharingState by remember(reservaReciente.sharingLocation) {
+                                                mutableStateOf(reservaReciente.sharingLocation)
+                                            }
+
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(50))
+                                                    .background(if (localSharingState) Color(0xFFE8F5E9) else Color(0xFFF5F5F5))
+                                                    .padding(horizontal = 12.dp, vertical = 4.dp)
                                             ) {
                                                 Text(
-                                                    "Iniciar Chat",
-                                                    textAlign = TextAlign.Center,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Bold
+                                                    text = if (localSharingState) "Compartiendo" else "Compartir Ubi.",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = if (localSharingState) Color(0xFF2E7D32) else Color.DarkGray
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Switch(
+                                                    checked = localSharingState,
+                                                    onCheckedChange = { isSharing ->
+                                                        if (isSharing && !hasLocationPermission) {
+                                                            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                                        } else {
+                                                            localSharingState = isSharing
+
+                                                            db.collection("reservas").document(reservaReciente.id)
+                                                                .update("sharingLocation", isSharing)
+                                                            if (isSharing) {
+                                                                viewModel.startTrackingUserLocation(context, reservaReciente.userId)
+                                                            } else {
+                                                                viewModel.stopTrackingUserLocation()
+                                                            }
+                                                        }
+                                                    },
+                                                    colors = SwitchDefaults.colors(checkedTrackColor = Color.Green),
+                                                    modifier = Modifier.scale(0.8f)
                                                 )
                                             }
                                         }
@@ -431,15 +456,9 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                             navController.navigate(AppScreens.SearchMap.name)
                                         }
                                     },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = colorResource(
-                                            R.color.blue
-                                        )
-                                    ),
+                                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                                     shape = RoundedCornerShape(50),
-                                    contentPadding = PaddingValues(
-                                        horizontal = 16.dp, vertical = 8.dp
-                                    ),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                     modifier = Modifier.padding(start = 12.dp)
                                 ) {
 
@@ -464,12 +483,36 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
 
 @Composable
 fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = viewModel()) {
+    val db = FirebaseFirestore.getInstance()
+    val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
     var itemSeleccionado by remember { mutableIntStateOf(1) }
     val parkingLots by viewModel.operatorParkingLots.collectAsState()
-    val reservations by viewModel.operatorReservations.collectAsState()
+
+    var liveReservations by remember { mutableStateOf<List<Reservation>>(emptyList()) }
+    val chatViewModel: ChatViewModel = viewModel()
 
     LaunchedEffect(Unit) {
         viewModel.fetchOperatorActivity()
+    }
+
+    DisposableEffect(uid) {
+        if (uid.isEmpty()) return@DisposableEffect onDispose {}
+
+        val listener = db.collection("reservas")
+            .whereEqualTo("operatorId", uid)
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    val list = snapshot.documents.map { doc ->
+                        val res = doc.toObject(Reservation::class.java) ?: Reservation()
+                        res.copy(id = doc.id)
+                    }
+                    liveReservations = list
+                }
+            }
+        onDispose {
+            listener.remove()
+        }
     }
 
     Scaffold(
@@ -485,11 +528,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                     containerColor = Color.Transparent
                 ) {
                     NavigationBarItem(
-                        icon = {
-                            Icon(
-                                Icons.Default.Home, contentDescription = "Inicio"
-                            )
-                        },
+                        icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
                         label = { Text("Inicio", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 0,
                         onClick = {
@@ -504,11 +543,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                     )
 
                     NavigationBarItem(
-                        icon = {
-                            Icon(
-                                Icons.AutoMirrored.Filled.List, contentDescription = "Actividad"
-                            )
-                        },
+                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Actividad") },
                         label = { Text("Actividad", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 1,
                         onClick = { itemSeleccionado = 1 },
@@ -520,11 +555,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                     )
 
                     NavigationBarItem(
-                        icon = {
-                            Icon(
-                                Icons.Default.Person, contentDescription = "Perfil"
-                            )
-                        },
+                        icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil", fontWeight = FontWeight.Bold) },
                         selected = itemSeleccionado == 2,
                         onClick = {
@@ -593,7 +624,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(parkingLots) { lot ->
-                        val lotReservations = reservations.filter { it.parkingId == lot.id }
+                        val lotReservations = liveReservations.filter { it.parkingId == lot.id }
                         val activeReservations =
                             lotReservations.filter { it.status == "Activa" || it.status == "Activo" }
                         val ocupados = activeReservations.size
@@ -625,9 +656,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        "Cupos disponibles:", fontSize = 15.sp, color = Color.Black
-                                    )
+                                    Text("Cupos disponibles:", fontSize = 15.sp, color = Color.Black)
                                     Text(
                                         text = "$cuposDisponibles/${lot.slot}",
                                         fontWeight = FontWeight.Bold,
@@ -638,8 +667,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
 
                                 Spacer(modifier = Modifier.height(6.dp))
 
-                                val prog =
-                                    if (lot.slot > 0) ocupados.toFloat() / lot.slot.toFloat() else 0f
+                                val prog = if (lot.slot > 0) ocupados.toFloat() / lot.slot.toFloat() else 0f
                                 LinearProgressIndicator(
                                     progress = { prog },
                                     modifier = Modifier
@@ -657,11 +685,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(
-                                        "Ganancias históricas:",
-                                        fontSize = 15.sp,
-                                        color = Color.Black
-                                    )
+                                    Text("Ganancias históricas:", fontSize = 15.sp, color = Color.Black)
                                     Text(
                                         text = "$ ${ganancias.toInt()}",
                                         fontWeight = FontWeight.Bold,
@@ -672,28 +696,19 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                Text(
-                                    "Servicios recientes", fontSize = 14.sp, color = Color.DarkGray
-                                )
+                                Text("Servicios recientes", fontSize = 14.sp, color = Color.DarkGray)
 
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 if (lotReservations.isEmpty()) {
-                                    Text(
-                                        "Aún no tienes servicios registrados",
-                                        color = Color.Gray,
-                                        fontSize = 13.sp
-                                    )
+                                    Text("Aún no tienes servicios registrados", color = Color.Gray, fontSize = 13.sp)
                                 } else {
-                                    val recentServices =
-                                        lotReservations.sortedByDescending { it.startTime }.take(3)
+                                    val recentServices = lotReservations.sortedByDescending { it.startTime }.take(3)
                                     recentServices.forEach { reserva ->
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .border(
-                                                    1.5.dp, Color.Gray, RoundedCornerShape(16.dp)
-                                                )
+                                                .border(1.5.dp, Color.Gray, RoundedCornerShape(16.dp))
                                                 .padding(12.dp)
                                         ) {
                                             Column {
@@ -714,17 +729,44 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                                     horizontalArrangement = Arrangement.SpaceBetween,
                                                     modifier = Modifier.fillMaxWidth()
                                                 ) {
-                                                    Text(
-                                                        text = "Estado: ${reserva.status}",
-                                                        color = Color.Black,
-                                                        fontSize = 14.sp
-                                                    )
+                                                    Text(text = "Estado: ${reserva.status}", color = Color.Black, fontSize = 14.sp)
                                                     Text(
                                                         text = "$ ${reserva.totalPrice.toInt()}",
                                                         color = if (reserva.status == "Activa") colorResource(R.color.rojooscuro) else colorResource(R.color.verdepasto),
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 14.sp
                                                     )
+                                                }
+
+                                                if (reserva.status == "Activa" || reserva.status == "Activo") {
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+
+                                                        Button(
+                                                            onClick = {
+                                                                if (reserva.sharingLocation) {
+                                                                    navController.navigate("${AppScreens.TrackUserMap.name}/${reserva.id}")
+                                                                }
+                                                            },
+                                                            enabled = reserva.sharingLocation,
+                                                            colors = ButtonDefaults.buttonColors(
+                                                                containerColor = Color(0xFF4CAF50),
+                                                                disabledContainerColor = Color(0xFFE0E0E0)
+                                                            ),
+                                                            modifier = Modifier.weight(1f).height(40.dp),
+                                                            contentPadding = PaddingValues(0.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = if (reserva.sharingLocation) "Ver Mapa" else "Sin GPS",
+                                                                color = if (reserva.sharingLocation) Color.White else Color.Gray,
+                                                                fontSize = 13.sp,
+                                                                fontWeight = FontWeight.Bold
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -739,7 +781,6 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
         }
     }
 }
-
 @Composable
 @Preview
 fun Activitypreview() {
