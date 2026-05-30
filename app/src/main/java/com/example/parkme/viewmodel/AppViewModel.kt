@@ -24,6 +24,9 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.firebase.messaging.FirebaseMessaging
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class AuthState(
     val isLoading: Boolean = false,
@@ -396,6 +399,8 @@ class AppViewModel : ViewModel() {
                         }
                     }
 
+                    checkAndUpdateExpiredReservations(reservas)
+
                     _userReservations.value = reservas
                 }
             }
@@ -456,6 +461,9 @@ class AppViewModel : ViewModel() {
                             null
                         }
                     }
+
+                    checkAndUpdateExpiredReservations(res)
+
                     _operatorReservations.value = res.sortedByDescending { it.startTime }
                 }
             }
@@ -530,6 +538,41 @@ class AppViewModel : ViewModel() {
                 Log.d("FCM", "Token FCM guardado exitosamente para el usuario $uid")
             } catch (e: Exception) {
                 Log.e("FCM", "Error al obtener o guardar el token FCM", e)
+            }
+        }
+    }
+
+    private fun checkAndUpdateExpiredReservations(reservations: List<Reservation>) {
+        val dateFormatFull = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+        val currentTime = java.util.Date()
+
+        val hoy = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(currentTime)
+
+        reservations.forEach { reserva ->
+            if (reserva.status == "Activa" || reserva.status == "Activo") {
+                try {
+                    val end = if (reserva.endTime.length > 5) {
+                        dateFormatFull.parse(reserva.endTime)
+                    } else {
+                        dateFormatFull.parse("$hoy ${reserva.endTime}")
+                    }
+
+                    if (end != null && currentTime.after(end)) {
+                        firestore.collection("reservas").document(reserva.id)
+                            .update(
+                                mapOf(
+                                    "status" to "Finalizada",
+                                    "sharingLocation" to false
+                                )
+                            ).addOnSuccessListener {
+                                if (auth.currentUser?.uid == reserva.userId) {
+                                    stopTrackingUserLocation()
+                                }
+                            }
+                    }
+                } catch (e: Exception) {
+                    Log.e("RESERVAS", "Error parseando fecha ${reserva.id}: ${e.message}")
+                }
             }
         }
     }

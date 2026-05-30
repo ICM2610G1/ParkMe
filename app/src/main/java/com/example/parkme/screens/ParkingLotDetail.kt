@@ -207,19 +207,24 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                                 isSubmitting = true
                                 mensajeReserva = ""
 
+                                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                val hoy = sdf.format(java.util.Date())
+
+                                val llegadaFull = "$hoy $horaLlegada"
+                                val salidaFull = "$hoy $horaSalida"
+
                                 val nuevaReserva = Reservation(
                                     parkingId = parking.id,
                                     parkingName = parking.name,
                                     userId = uid,
                                     operatorId = parking.operatorId,
                                     placa = placa,
-                                    startTime = horaLlegada,
-                                    endTime = horaSalida,
+                                    startTime = llegadaFull,
+                                    endTime = salidaFull,
                                     status = "Activa"
                                 )
 
-                                reserveSlot(
-                                    reserva = nuevaReserva,
+                                reserveSlot(      reserva = nuevaReserva,
                                     maxSlots = parking.slot,
                                     onSuccess = {
                                         isSubmitting = false
@@ -229,9 +234,9 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                                     onError = { e ->
                                         isSubmitting = false
                                         mensajeReserva = "Error: ${e.message}"
-                                    }
-                                )
+                                    } )
                             }
+
                         )
                     }
                 } else {
@@ -294,6 +299,12 @@ fun ReservationBottomBox(
             return@LaunchedEffect
         }
 
+
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val hoy = sdf.format(java.util.Date())
+        val llegadaFull = "$hoy $horaLlegada"
+        val salidaFull = "$hoy $horaSalida"
+
         FirebaseFirestore.getInstance().collection("reservas")
             .whereEqualTo("parkingId", parking.id)
             .whereEqualTo("status", "Activa")
@@ -301,11 +312,13 @@ fun ReservationBottomBox(
             .addOnSuccessListener { snapshot ->
                 var reservasSuperpuestas = 0
                 for (doc in snapshot.documents) {
-                    val rStart = doc.getString("startTime") ?: ""
-                    val rEnd = doc.getString("endTime") ?: ""
+                    var rStart = doc.getString("startTime") ?: ""
+                    var rEnd = doc.getString("endTime") ?: ""
 
+                    if (rStart.length <= 5) rStart = "$hoy $rStart"
+                    if (rEnd.length <= 5) rEnd = "$hoy $rEnd"
 
-                    if (horaLlegada < rEnd && horaSalida > rStart) {
+                    if (llegadaFull < rEnd && salidaFull > rStart) {
                         reservasSuperpuestas++
                     }
                 }
@@ -422,6 +435,9 @@ fun reserveSlot(
 ) {
     val db = FirebaseFirestore.getInstance()
 
+    val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+    val hoy = sdf.format(java.util.Date())
+
     db.collection("reservas")
         .whereEqualTo("parkingId", reserva.parkingId)
         .whereEqualTo("status", "Activa")
@@ -429,8 +445,12 @@ fun reserveSlot(
         .addOnSuccessListener { snapshot ->
             var reservasSuperpuestas = 0
             for (doc in snapshot.documents) {
-                val rStart = doc.getString("startTime") ?: ""
-                val rEnd = doc.getString("endTime") ?: ""
+                var rStart = doc.getString("startTime") ?: ""
+                var rEnd = doc.getString("endTime") ?: ""
+
+                if (rStart.length <= 5 && rStart.isNotEmpty()) rStart = "$hoy $rStart"
+                if (rEnd.length <= 5 && rEnd.isNotEmpty()) rEnd = "$hoy $rEnd"
+
                 if (reserva.startTime < rEnd && reserva.endTime > rStart) {
                     reservasSuperpuestas++
                 }
