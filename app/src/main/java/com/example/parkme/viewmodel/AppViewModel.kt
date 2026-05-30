@@ -23,6 +23,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.firebase.messaging.FirebaseMessaging
 
 data class AuthState(
     val isLoading: Boolean = false,
@@ -60,6 +61,8 @@ class AppViewModel : ViewModel() {
                     val name = doc.getString("name") ?: ""
                     val lastName = doc.getString("lastName") ?: ""
 
+                    saveDeviceToken(currentUser.uid)
+
                     _authState.value = AuthState(
                         isAuthenticated = true,
                         userRole = role,
@@ -94,6 +97,7 @@ class AppViewModel : ViewModel() {
                 val user = result.user ?: throw Exception("Usuario nulo")
 
                 user.getIdToken(true).await()
+                saveDeviceToken(user.uid)
 
                 val doc = firestore.collection("users").document(user.uid).get().await()
                 val role = doc.getString("role") ?: "Usuario"
@@ -152,6 +156,8 @@ class AppViewModel : ViewModel() {
                 )
 
                 firestore.collection("users").document(user.uid).set(userMap).await()
+                saveDeviceToken(user.uid)
+
 
                 _authState.value = AuthState(
                     isAuthenticated = true,
@@ -477,29 +483,31 @@ class AppViewModel : ViewModel() {
     }
 
     fun getSavedBiometricEmail(context: android.content.Context): String {
-        val sharedPrefs = context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
+        val sharedPrefs =
+            context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
         return sharedPrefs.getString("savedEmail", "") ?: ""
     }
 
     fun getSavedBiometricPass(context: android.content.Context): String {
-        val sharedPrefs = context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
+        val sharedPrefs =
+            context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
         return sharedPrefs.getString("savedPass", "") ?: ""
     }
 
     fun saveBiometricCredentials(context: android.content.Context, email: String, pass: String) {
-        val sharedPrefs = context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
-        sharedPrefs.edit()
-            .putString("savedEmail", email)
-            .putString("savedPass", pass)
-            .apply()
+        val sharedPrefs =
+            context.getSharedPreferences("ParkMePrefs", android.content.Context.MODE_PRIVATE)
+        sharedPrefs.edit().putString("savedEmail", email).putString("savedPass", pass).apply()
     }
+
     private var fusedLocationClient: FusedLocationProviderClient? = null
     private var locationCallback: LocationCallback? = null
 
     @SuppressLint("MissingPermission")
     fun startTrackingUserLocation(context: Context, userId: String) {
         if (fusedLocationClient == null) {
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(context.applicationContext)
+            fusedLocationClient =
+                LocationServices.getFusedLocationProviderClient(context.applicationContext)
         }
 
         if (locationCallback != null) return
@@ -509,8 +517,7 @@ class AppViewModel : ViewModel() {
                 result.lastLocation?.let { loc ->
                     firestore.collection("users").document(userId).update(
                         mapOf(
-                            "latitude" to loc.latitude,
-                            "longitude" to loc.longitude
+                            "latitude" to loc.latitude, "longitude" to loc.longitude
                         )
                     ).addOnSuccessListener {
                         Log.d("MAPS_DEBUG", "Enviando Ubi desde AppViewModel: ${loc.latitude}")
@@ -520,10 +527,11 @@ class AppViewModel : ViewModel() {
         }
 
         val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
-            .setMinUpdateDistanceMeters(0f)
-            .build()
+            .setMinUpdateDistanceMeters(0f).build()
 
-        fusedLocationClient?.requestLocationUpdates(request, locationCallback!!, Looper.getMainLooper())
+        fusedLocationClient?.requestLocationUpdates(
+            request, locationCallback!!, Looper.getMainLooper()
+        )
     }
 
     fun stopTrackingUserLocation() {
@@ -533,5 +541,18 @@ class AppViewModel : ViewModel() {
         locationCallback = null
     }
 
+
+    private fun saveDeviceToken(uid: String) {
+        viewModelScope.launch {
+            try {
+                val token = FirebaseMessaging.getInstance().token.await()
+                firestore.collection("users").document(uid).update("fcmToken", token).await()
+
+                Log.d("FCM", "Token FCM guardado exitosamente para el usuario $uid")
+            } catch (e: Exception) {
+                Log.e("FCM", "Error al obtener o guardar el token FCM", e)
+            }
+        }
+    }
 
 }
