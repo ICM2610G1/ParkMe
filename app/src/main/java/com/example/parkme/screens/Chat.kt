@@ -1,7 +1,5 @@
 package com.example.parkme.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,25 +18,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.models.ChatMessage
-import com.example.parkme.navigation.AppScreens
 import com.example.parkme.viewmodel.AppViewModel
 import com.example.parkme.viewmodel.ChatViewModel
-
 
 @Composable
 fun ChatScreen(
@@ -51,80 +44,16 @@ fun ChatScreen(
 ) {
     val messages by chatViewModel.messages.collectAsState()
     val partnerName by chatViewModel.chatPartnerName.collectAsState()
-    val currentChat by chatViewModel.currentChatRoom.collectAsState()
-
-    val context = LocalContext.current
-
-    var hasLocationPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    var localIsSharing by remember { mutableStateOf(false) }
-
-    LaunchedEffect(currentChat?.sharingLocation) {
-        val isSharing = currentChat?.sharingLocation ?: false
-        localIsSharing = isSharing
-
-        if (isSharing && !esOperador && hasLocationPermission) {
-            appViewModel.startTrackingUserLocation(context, miUserId)
-        } else if (!isSharing && !esOperador) {
-            appViewModel.stopTrackingUserLocation()
-        }
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted ->
-            hasLocationPermission = isGranted
-            localIsSharing = isGranted
-            chatViewModel.toggleLocationSharing(chatId, isGranted)
-
-            if (isGranted) {
-                appViewModel.startTrackingUserLocation(context, miUserId)
-            } else {
-                appViewModel.stopTrackingUserLocation()
-            }
-        }
-    )
 
     LaunchedEffect(chatId) {
         chatViewModel.listenForMessages(chatId)
         chatViewModel.loadChatPartnerName(chatId, esOperador)
-        chatViewModel.listenCurrentChatRoom(chatId)
-    }
-
-    val estadoCompartirUI = if (esOperador) {
-        currentChat?.sharingLocation == true
-    } else {
-        localIsSharing
     }
 
     Scaffold(
         containerColor = colorResource(R.color.back),
         topBar = {
-            ChatTopBar(
-                nombreDestinatario = partnerName,
-                esOperador = esOperador,
-                sharingLocation = estadoCompartirUI,
-                onToggleShare = { isSharing ->
-
-                    if (isSharing && !hasLocationPermission) {
-                        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                    } else {
-                        chatViewModel.toggleLocationSharing(chatId, isSharing)
-                        if (isSharing) {
-                            appViewModel.startTrackingUserLocation(context, miUserId)
-                        } else {
-                            appViewModel.stopTrackingUserLocation()
-                        }
-                    }
-                },
-                onViewLocation = {
-                    navController.navigate("${AppScreens.TrackUserMap.name}/$chatId")
-                }
-            )
+            ChatTopBar(nombreDestinatario = partnerName)
         },
         bottomBar = {
             ChatBottomBar(
@@ -150,15 +79,10 @@ fun ChatScreen(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatTopBar(
-    nombreDestinatario: String,
-    esOperador: Boolean,
-    sharingLocation: Boolean,
-    onToggleShare: (Boolean) -> Unit,
-    onViewLocation: () -> Unit
-) {
+fun ChatTopBar(nombreDestinatario: String) {
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -188,46 +112,6 @@ fun ChatTopBar(
                         color = colorResource(R.color.white).copy(alpha = 0.8f),
                         fontSize = 12.sp
                     )
-                }
-            }
-        },
-        actions = {
-            if (!esOperador) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text(
-                        "Compartir Ubi.",
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Switch(
-                        checked = sharingLocation,
-                        onCheckedChange = { onToggleShare(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedTrackColor = Color.Green
-                        ),
-                        modifier = Modifier.scale(0.8f)
-                    )
-                }
-            } else {
-                if (sharingLocation) {
-                    Button(
-                        onClick = onViewLocation,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Green.copy(alpha = 0.9f)
-                        ),
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Text(
-                            "Ver ubicación",
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp
-                        )
-                    }
                 }
             }
         },
@@ -267,9 +151,7 @@ fun ChatBottomBar(onSendMessage: (String) -> Unit, onSendImage: (Uri) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 4.dp)
             ) {
-                IconButton(onClick = {
-                    galleryLauncher.launch("image/*")
-                }) {
+                IconButton(onClick = { galleryLauncher.launch("image/*") }) {
                     Icon(
                         Icons.Default.CameraAlt,
                         contentDescription = "Galería",
