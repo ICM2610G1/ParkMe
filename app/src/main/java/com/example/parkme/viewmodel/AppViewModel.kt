@@ -351,75 +351,54 @@ class AppViewModel : ViewModel() {
             return
         }
 
-        viewModelScope.launch {
-            try {
-                Log.d("RESERVAS_DEBUG", "Buscando reservas para el usuario: $uid")
-
-                val result =
-                    firestore.collection("reservas").whereEqualTo("userId", uid).get().await()
-                Log.d(
-                    "RESERVAS_DEBUG", "Documentos encontrados en Firebase: ${result.documents.size}"
-                )
-
-                val reservas = result.documents.mapNotNull { doc ->
-                    try {
-                        val id = doc.id
-
-                        val parkingId =
-                            doc.getString("parkingId") ?: doc.getString("idParqueadero") ?: ""
-                        val parkingName =
-                            doc.getString("parkingName") ?: doc.getString("nombreParqueadero")
-                            ?: "Parqueadero"
-                        val userId = doc.getString("userId") ?: ""
-                        val placa = doc.getString("placa") ?: ""
-                        val operatorId =
-                            doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
-                        val startTime =
-                            doc.getString("startTime") ?: doc.getString("horaInicio") ?: ""
-                        val endTime = doc.getString("endTime") ?: doc.getString("horaFin") ?: ""
-                        val status = doc.getString("status") ?: doc.getString("estado") ?: "Activa"
-
-                        val totalPrice = (doc.get("totalPrice") as? Number)?.toDouble() ?: (doc.get(
-                            "precioTotal"
-                        ) as? Number)?.toDouble() ?: 0.0
-                        val isRated = doc.getBoolean("isRated") ?: false
-
-                        Log.d(
-                            "RESERVAS_DEBUG", "Reserva leída correctamente: $parkingName - $placa"
-                        )
-
-                        Reservation(
-                            id = id,
-                            parkingId = parkingId,
-                            operatorId = operatorId,
-                            parkingName = parkingName,
-                            userId = userId,
-                            placa = placa,
-                            startTime = startTime,
-                            endTime = endTime,
-                            status = status,
-                            totalPrice = totalPrice,
-                            isRated = isRated
-                        )
-                    } catch (e: Exception) {
-                        Log.e("RESERVAS_DEBUG", "Error armando la reserva ${doc.id}: ${e.message}")
-                        null
-                    }
+        firestore.collection("reservas").whereEqualTo("userId", uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("RESERVAS_DEBUG", "Error conectando con Firebase: ${error.message}")
+                    return@addSnapshotListener
                 }
 
-                Log.d(
-                    "RESERVAS_DEBUG",
-                    "Total de reservas válidas a mostrar en la lista: ${reservas.size}"
-                )
-                _userReservations.value = reservas
+                if (snapshot != null) {
+                    val reservas = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            val id = doc.id
+                            val parkingId = doc.getString("parkingId") ?: doc.getString("idParqueadero") ?: ""
+                            val parkingName = doc.getString("parkingName") ?: doc.getString("nombreParqueadero") ?: "Parqueadero"
+                            val userId = doc.getString("userId") ?: ""
+                            val placa = doc.getString("placa") ?: ""
+                            val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
+                            val startTime = doc.getString("startTime") ?: doc.getString("horaInicio") ?: ""
+                            val endTime = doc.getString("endTime") ?: doc.getString("horaFin") ?: ""
+                            val status = doc.getString("status") ?: doc.getString("estado") ?: "Activa"
 
-            } catch (e: Exception) {
-                Log.e(
-                    "RESERVAS_DEBUG",
-                    "Error conectando con Firebase para las reservas: ${e.message}"
-                )
+                            val totalPrice = (doc.get("totalPrice") as? Number)?.toDouble() ?: (doc.get("precioTotal") as? Number)?.toDouble() ?: 0.0
+                            val isRated = doc.getBoolean("isRated") ?: false
+
+                            val sharingLocation = doc.getBoolean("sharingLocation") ?: false
+
+                            Reservation(
+                                id = id,
+                                parkingId = parkingId,
+                                operatorId = operatorId,
+                                parkingName = parkingName,
+                                userId = userId,
+                                placa = placa,
+                                startTime = startTime,
+                                endTime = endTime,
+                                status = status,
+                                totalPrice = totalPrice,
+                                isRated = isRated,
+                                sharingLocation = sharingLocation
+                            )
+                        } catch (e: Exception) {
+                            Log.e("RESERVAS_DEBUG", "Error armando la reserva ${doc.id}: ${e.message}")
+                            null
+                        }
+                    }
+
+                    _userReservations.value = reservas
+                }
             }
-        }
     }
 
     private val _operatorParkingLots = MutableStateFlow<List<ParkingLot>>(emptyList())
@@ -441,8 +420,7 @@ class AppViewModel : ViewModel() {
                             ParkingLot(
                                 id = doc.id,
                                 operatorId = doc.getString("operatorId") ?: "",
-                                name = doc.getString("name") ?: doc.getString("nombre")
-                                ?: "Sin nombre",
+                                name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre",
                                 slot = (doc.get("slot") as? Number)?.toInt() ?: 0
                             )
                         } catch (e: Exception) {
@@ -471,7 +449,8 @@ class AppViewModel : ViewModel() {
                                 endTime = doc.getString("endTime") ?: "",
                                 status = doc.getString("status") ?: "Activa",
                                 totalPrice = (doc.get("totalPrice") as? Number)?.toDouble() ?: 0.0,
-                                isRated = doc.getBoolean("isRated") ?: false
+                                isRated = doc.getBoolean("isRated") ?: false,
+                                sharingLocation = doc.getBoolean("sharingLocation") ?: false
                             )
                         } catch (e: Exception) {
                             null
