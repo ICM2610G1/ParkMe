@@ -1,32 +1,84 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
+import { setGlobalOptions } from "firebase-functions/v2";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
-
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
+admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+export const sendChatNotification = onDocumentCreated("chats/{chatId}/messages/{messageId}", async (event) => {
+    const messageData = event.data?.data();
+    if (!messageData) return;
+
+    const chatId = event.params.chatId;
+    const senderId = messageData.senderId;
+    let messageText = messageData.text;
+
+    // Manejo para cuando se envía una imagen sin texto
+    if (messageData.imageUrl && (!messageText || messageText === "")) {
+        messageText = "📷 Imagen";
+    }
+
+    try {
+        // 1. Obtener la sala de chat para saber quiénes participan
+        const chatRoomRef = admin.firestore().collection("chats").doc(chatId);
+        const chatRoomDoc = await chatRoomRef.get();
+        
+        if (!chatRoomDoc.exists) {
+            logger.error(`La sala de chat ${chatId} no existe`);
+            return;
+        }
+
+        const chatRoomData = chatRoomDoc.data();
+        const userId = chatRoomData?.userId;
+        const operatorId = chatRoomData?.operatorId;
+
+        // 2. Determinar quién es el receptor (el que NO es el senderId)
+        let receiverId = "";
+        if (senderId === userId) {
+            receiverId = operatorId; // El usuario envió, el operador recibe
+        } else if (senderId === operatorId) {
+            receiverId = userId;     // El operador envió, el usuario recibe
+        } else {
+            logger.error("El senderId no coincide ni con el usuario ni con el operador de esta sala.");
+            return;
+        }
+
+        // 3. Buscar el token FCM del receptor en tu colección de usuarios
+        const receiverDoc = await admin.firestore().collection("users").doc(receiverId).get();
+        const receiverData = receiverDoc.data();
+
+        if (!receiverData || !receiverData.fcmToken) {
+            logger.info(`El receptor ${receiverId} no tiene un fcmToken guardado. No se puede enviar la notificación.`);
+            return;
+        }
+
+        // 4. (Opcional) Obtener el nombre del remitente para que aparezca en el título
+        const senderDoc = await admin.firestore().collection("users").doc(senderId).get();
+        let senderTitle = senderDoc.data()?.name || "Nuevo mensaje";
+        
+        // Si el remitente es un operador, podrías preferir usar el nombre del parqueadero
+        if (senderId === operatorId && chatRoomData?.parkingName) {
+            senderTitle = chatRoomData.parkingName;
+        }
+
+        // 5. Construir y enviar la notificación
+        const payload = {
+            token: receiverData.fcmToken,
+            notification: {
+                title: senderTitle,
+                body: messageText,
+            },
+            data: {
+                chatId: chatId, // Para que la app sepa qué chat abrir al tocar la notificación
+                click_action: "OPEN_CHAT_ACTIVITY" 
+            }
+        };
+
+        await admin.messaging().send(payload);
+        logger.info(`Notificación enviada exitosamente a ${receiverId}`);
+
+    } catch (error) {
+        logger.error("Error al procesar la notificación de chat:", error);
+    }
+});
