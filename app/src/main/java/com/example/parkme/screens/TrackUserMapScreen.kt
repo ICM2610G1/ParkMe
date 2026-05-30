@@ -23,6 +23,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.maps.android.SphericalUtil
@@ -61,6 +62,9 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
         onDispose { sensorManager.unregisterListener(sensorListener) }
     }
 
+    val lightMapStyle = remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap) }
+    val darkMapStyle = remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap) }
+    val currentMapStyle = if (isDarkMode) darkMapStyle else lightMapStyle
 
     val carRotation = remember(routePoints, clientLocation, parkingLocation) {
         if (clientLocation != null) {
@@ -197,10 +201,12 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
-                    properties = MapProperties(isMyLocationEnabled = false),
+                    properties = MapProperties(
+                        isMyLocationEnabled = false,
+                        mapStyleOptions = currentMapStyle
+                    ),
                     onMapLoaded = { isMapLoaded = true }
                 ) {
-
 
                     Marker(
                         state = clientMarkerState,
