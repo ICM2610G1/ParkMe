@@ -124,6 +124,33 @@ class AppViewModel : ViewModel() {
         }
     }
 
+    fun verifyAndSaveBiometric(
+        context: android.content.Context,
+        email: String,
+        pass: String,
+        onSuccess: () -> Unit
+    ) {
+        _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
+        viewModelScope.launch {
+            try {
+                auth.signInWithEmailAndPassword(email, pass).await()
+
+                saveBiometricCredentials(context, email, pass)
+
+                auth.signOut()
+
+                _authState.value = _authState.value.copy(isLoading = false, errorMessage = null)
+                onSuccess()
+
+            } catch (e: Exception) {
+                _authState.value = _authState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Credenciales incorrectas o error de conexión"
+                )
+            }
+        }
+    }
+
     fun register(
         email: String,
         password: String,

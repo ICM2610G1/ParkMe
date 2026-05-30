@@ -51,20 +51,6 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
     var linkedEmail by remember { mutableStateOf(viewModel.getSavedBiometricEmail(context)) }
     var linkedPass by remember { mutableStateOf(viewModel.getSavedBiometricPass(context)) }
 
-
-
-    LaunchedEffect(authState.isAuthenticated) {
-        if (authState.isAuthenticated && showSheet) {
-            viewModel.saveBiometricCredentials(context, sheetEmail, sheetPassword)
-
-            linkedEmail = sheetEmail
-            linkedPass = sheetPassword
-            showSheet = false
-            sheetEmail = ""
-            sheetPassword = ""
-        }
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -215,6 +201,7 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
             val textoBoton = if (linkedEmail.isNotEmpty()) "Cambiar cuenta principal" else "Configurar Biometría"
             Text(textoBoton, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
         }
+
         if (showSheet) {
             ModalBottomSheet(
                 onDismissRequest = {
@@ -299,7 +286,15 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
-                        onClick = { viewModel.login(sheetEmail, sheetPassword) },
+                        onClick = {
+                            viewModel.verifyAndSaveBiometric(context, sheetEmail, sheetPassword) {
+                                linkedEmail = sheetEmail
+                                linkedPass = sheetPassword
+                                showSheet = false
+                                sheetEmail = ""
+                                sheetPassword = ""
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !authState.isLoading,
                         colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue))
