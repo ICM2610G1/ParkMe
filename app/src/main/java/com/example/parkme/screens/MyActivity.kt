@@ -340,7 +340,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                                     .padding(horizontal = 12.dp, vertical = 4.dp)
                                             ) {
                                                 Text(
-                                                    text = if (localSharingState) "Compartiendo" else "Compartir Ubi.",
+                                                    text = if (localSharingState) "Compartiendo" else "Ubicación",
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = if (localSharingState) Color(0xFF2E7D32) else Color.DarkGray
@@ -363,7 +363,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                                             }
                                                         }
                                                     },
-                                                    colors = SwitchDefaults.colors(checkedTrackColor = Color.Green),
+                                                    colors = SwitchDefaults.colors(checkedTrackColor = Color.Green, uncheckedTrackColor = Color.Gray),
                                                     modifier = Modifier.scale(0.8f)
                                                 )
                                             }
