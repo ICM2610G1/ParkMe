@@ -57,6 +57,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
+    implementation("com.google.firebase:firebase-messaging:23.4.1")
     implementation(libs.googleid)
 
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
