@@ -1,6 +1,10 @@
 package com.example.parkme.screens
 
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Location
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,12 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import com.example.parkme.R
+import com.example.parkme.lightSensor
+import com.example.parkme.sensorManager
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.maps.android.SphericalUtil
 import com.google.maps.android.compose.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,8 +39,56 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
 
     var lastRouteFetchedLocation by remember { mutableStateOf<LatLng?>(null) }
+    var isMapLoaded by remember { mutableStateOf(false) }
 
-    val cameraPositionState = rememberCameraPositionState()
+    var isDarkMode by remember { mutableStateOf(false) }
+    val sensorListener = remember {
+        object : SensorEventListener {
+            override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
+            override fun onSensorChanged(event: SensorEvent?) {
+                if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
+                    val lux = event.values[0]
+                    isDarkMode = lux < 2000
+                }
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        lightSensor?.let {
+            sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+        onDispose { sensorManager.unregisterListener(sensorListener) }
+    }
+
+
+    val carRotation = remember(routePoints, clientLocation, parkingLocation) {
+        if (clientLocation != null) {
+            if (!routePoints.isNullOrEmpty() && routePoints!!.size > 1) {
+                SphericalUtil.computeHeading(clientLocation!!, routePoints!![1]).toFloat()
+            } else if (parkingLocation != null) {
+                SphericalUtil.computeHeading(clientLocation!!, parkingLocation!!).toFloat()
+            } else {
+                0f
+            }
+        } else {
+            0f
+        }
+    }
+
+    val carBitmap = remember(isDarkMode) {
+        resizeMapIcon(
+            context,
+            resId = if (isDarkMode) R.drawable.whitecar else R.drawable.blackcar,
+            widthDp = 35,
+            heightDp = 70
+        )
+    }
+
+    val bogota = LatLng(4.60971, -74.08175)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(bogota, 13f)
+    }
 
     val clientMarkerState = rememberMarkerState()
 
@@ -48,11 +104,7 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                     val lat = userDoc.getDouble("latitude")
                     val lng = userDoc.getDouble("longitude")
                     if (lat != null && lng != null) {
-                        val newLocation = LatLng(lat, lng)
-
-                        clientLocation = newLocation
-
-                        clientMarkerState.position = newLocation
+                        clientLocation = LatLng(lat, lng)
                     }
                 }
             }
@@ -68,6 +120,25 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
 
         onDispose {
             userListener?.remove()
+        }
+    }
+
+    LaunchedEffect(clientLocation) {
+        clientLocation?.let {
+            clientMarkerState.position = it
+        }
+    }
+
+    LaunchedEffect(clientLocation, isMapLoaded) {
+        if (isMapLoaded && clientLocation != null) {
+            try {
+                cameraPositionState.animate(
+                    update = CameraUpdateFactory.newLatLngZoom(clientLocation!!, 16f),
+                    durationMs = 800
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -87,30 +158,23 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                     currentClient.latitude, currentClient.longitude,
                     resultadoDistancia
                 )
-                resultadoDistancia[0] > 1
+                resultadoDistancia[0] > 30f
             }
 
             if (debeRecalcularRuta) {
                 lastRouteFetchedLocation = currentClient
 
-                val applicationInfo = context.packageManager.getApplicationInfo(
-                    context.packageName, PackageManager.GET_META_DATA
-                )
-                val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
+                try {
+                    val applicationInfo = context.packageManager.getApplicationInfo(
+                        context.packageName, PackageManager.GET_META_DATA
+                    )
+                    val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
 
-                routePoints = fetchRouteFromGoogle(currentClient, currentParking, apiKey)
+                    routePoints = fetchRouteFromGoogle(currentClient, currentParking, apiKey)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
-        }
-    }
-
-    LaunchedEffect(routePoints) {
-        if (!routePoints.isNullOrEmpty() && lastRouteFetchedLocation == null) {
-            val boundsBuilder = LatLngBounds.Builder()
-            routePoints!!.forEach { boundsBuilder.include(it) }
-            val bounds = boundsBuilder.build()
-            cameraPositionState.animate(
-                update = CameraUpdateFactory.newLatLngBounds(bounds, 150), durationMs = 1200
-            )
         }
     }
 
@@ -133,13 +197,17 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
-                    properties = MapProperties(isMyLocationEnabled = false)
+                    properties = MapProperties(isMyLocationEnabled = false),
+                    onMapLoaded = { isMapLoaded = true }
                 ) {
+
 
                     Marker(
                         state = clientMarkerState,
                         title = "Cliente",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                        icon = BitmapDescriptorFactory.fromBitmap(carBitmap),
+                        anchor = androidx.compose.ui.geometry.Offset(0.5f, 0.5f),
+                        rotation = carRotation
                     )
 
                     parkingLocation?.let {
