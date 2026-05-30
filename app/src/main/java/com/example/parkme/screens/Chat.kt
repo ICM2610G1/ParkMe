@@ -3,7 +3,6 @@ package com.example.parkme.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -39,11 +38,7 @@ import com.example.parkme.models.ChatMessage
 import com.example.parkme.navigation.AppScreens
 import com.example.parkme.viewmodel.AppViewModel
 import com.example.parkme.viewmodel.ChatViewModel
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
+
 
 @Composable
 fun ChatScreen(
@@ -51,7 +46,7 @@ fun ChatScreen(
     miUserId: String,
     esOperador: Boolean,
     navController: NavController,
-    appViewModel: AppViewModel, // <--- Recibimos el AppViewModel global
+    appViewModel: AppViewModel,
     chatViewModel: ChatViewModel = viewModel()
 ) {
     val messages by chatViewModel.messages.collectAsState()
@@ -68,7 +63,6 @@ fun ChatScreen(
 
     var localIsSharing by remember { mutableStateOf(false) }
 
-    // Reacciona a Firebase: Si está activado, enciende el GPS en AppViewModel
     LaunchedEffect(currentChat?.sharingLocation) {
         val isSharing = currentChat?.sharingLocation ?: false
         localIsSharing = isSharing
@@ -115,7 +109,6 @@ fun ChatScreen(
                 esOperador = esOperador,
                 sharingLocation = estadoCompartirUI,
                 onToggleShare = { isSharing ->
-                    localIsSharing = isSharing
 
                     if (isSharing && !hasLocationPermission) {
                         permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)

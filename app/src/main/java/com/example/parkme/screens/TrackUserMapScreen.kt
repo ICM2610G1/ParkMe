@@ -1,5 +1,7 @@
 package com.example.parkme.screens
+
 import android.content.pm.PackageManager
+import android.location.Location
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -15,6 +17,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.maps.android.compose.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,23 +25,34 @@ import com.google.maps.android.compose.*
 fun TrackUserMapScreen(navController: NavController, chatId: String) {
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
+
     var clientLocation by remember { mutableStateOf<LatLng?>(null) }
     var parkingLocation by remember { mutableStateOf<LatLng?>(null) }
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
 
+    var lastRouteFetchedLocation by remember { mutableStateOf<LatLng?>(null) }
+
     val cameraPositionState = rememberCameraPositionState()
 
-    LaunchedEffect(chatId) {
+    val clientMarkerState = rememberMarkerState()
+
+    DisposableEffect(chatId) {
+        var userListener: ListenerRegistration? = null
+
         db.collection("reservas").document(chatId).get().addOnSuccessListener { resDoc ->
             val userId = resDoc.getString("userId") ?: ""
             val parkingId = resDoc.getString("parkingId") ?: ""
 
-            db.collection("users").document(userId).addSnapshotListener { userDoc, _ ->
+            userListener = db.collection("users").document(userId).addSnapshotListener { userDoc, _ ->
                 if (userDoc != null && userDoc.exists()) {
                     val lat = userDoc.getDouble("latitude")
                     val lng = userDoc.getDouble("longitude")
                     if (lat != null && lng != null) {
-                        clientLocation = LatLng(lat, lng)
+                        val newLocation = LatLng(lat, lng)
+
+                        clientLocation = newLocation
+
+                        clientMarkerState.position = newLocation
                     }
                 }
             }
@@ -51,29 +65,51 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                 }
             }
         }
+
+        onDispose {
+            userListener?.remove()
+        }
     }
 
     LaunchedEffect(clientLocation, parkingLocation) {
-        if (clientLocation != null && parkingLocation != null) {
-            val applicationInfo = context.packageManager.getApplicationInfo(
-                context.packageName, PackageManager.GET_META_DATA
-            )
-            val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
-            routePoints = fetchRouteFromGoogle(clientLocation!!, parkingLocation!!, apiKey)
+        val currentClient = clientLocation
+        val currentParking = parkingLocation
+
+        if (currentClient != null && currentParking != null) {
+            val lastLocation = lastRouteFetchedLocation
+
+            val debeRecalcularRuta = if (lastLocation == null) {
+                true
+            } else {
+                val resultadoDistancia = FloatArray(1)
+                Location.distanceBetween(
+                    lastLocation.latitude, lastLocation.longitude,
+                    currentClient.latitude, currentClient.longitude,
+                    resultadoDistancia
+                )
+                resultadoDistancia[0] > 1
+            }
+
+            if (debeRecalcularRuta) {
+                lastRouteFetchedLocation = currentClient
+
+                val applicationInfo = context.packageManager.getApplicationInfo(
+                    context.packageName, PackageManager.GET_META_DATA
+                )
+                val apiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY") ?: ""
+
+                routePoints = fetchRouteFromGoogle(currentClient, currentParking, apiKey)
+            }
         }
     }
 
     LaunchedEffect(routePoints) {
-        if (!routePoints.isNullOrEmpty()) {
+        if (!routePoints.isNullOrEmpty() && lastRouteFetchedLocation == null) {
             val boundsBuilder = LatLngBounds.Builder()
             routePoints!!.forEach { boundsBuilder.include(it) }
             val bounds = boundsBuilder.build()
             cameraPositionState.animate(
                 update = CameraUpdateFactory.newLatLngBounds(bounds, 150), durationMs = 1200
-            )
-        } else if (clientLocation != null) {
-            cameraPositionState.animate(
-                update = CameraUpdateFactory.newLatLngZoom(clientLocation!!, 15f), durationMs = 1000
             )
         }
     }
@@ -99,13 +135,13 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                     cameraPositionState = cameraPositionState,
                     properties = MapProperties(isMyLocationEnabled = false)
                 ) {
-                    clientLocation?.let {
-                        Marker(
-                            state = MarkerState(position = it),
-                            title = "Cliente",
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
-                        )
-                    }
+
+                    Marker(
+                        state = clientMarkerState,
+                        title = "Cliente",
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+                    )
+
                     parkingLocation?.let {
                         Marker(
                             state = MarkerState(position = it),
@@ -113,6 +149,7 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                         )
                     }
+
                     if (!routePoints.isNullOrEmpty()) {
                         Polyline(
                             points = routePoints!!, color = Color.Blue, width = 12f, geodesic = true
