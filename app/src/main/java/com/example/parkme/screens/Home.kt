@@ -335,7 +335,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                         items(userReservations) { reservation ->
                             val reservationParkingLot =
                                 allParkingLots.find { it.id == reservation.parkingId }
-                            val savedAddress = reservationParkingLot?.adress // Se mantiene 'adress' según el modelo
+                            val savedAddress = reservationParkingLot?.address
                             var displayAddress by remember(reservation.parkingId, savedAddress) {
                                 mutableStateOf(
                                     if (!savedAddress.isNullOrBlank()) savedAddress
