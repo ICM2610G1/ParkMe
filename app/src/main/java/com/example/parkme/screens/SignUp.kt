@@ -333,46 +333,55 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     )
                     Text("Operador")
                 }
-                if (selectedRole == "Operador") {
-                    Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Button(
+                        onClick = { imagePickerLauncher.launch("image/*") },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = colorResource(R.color.blue),
+                            contentColor = Color.White
+                        )
                     ) {
-                        Button(
-                            onClick = { imagePickerLauncher.launch("image/*") },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.blue),
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(if (imageUri == null) "Seleccionar Foto de Perfil *" else "Cambiar Foto")
-                        }
-
-                        if (imageUri != null) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            ElevatedCard(
-                                modifier = Modifier.size(250.dp),
-                                shape = RoundedCornerShape(125.dp)
-                            ) {
-                                AsyncImage(
-                                    model = imageUri,
-                                    contentDescription = "Foto de perfil del Operador",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
+                        val buttonText = if (imageUri != null) {
+                            "Cambiar Foto"
+                        } else if (selectedRole == "Operador") {
+                            "Seleccionar Foto de Perfil *"
                         } else {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "La foto de perfil es obligatoria.",
-                                color = Color.Gray,
-                                fontSize = 12.sp
+                            "Seleccionar Foto de Perfil (Opcional)"
+                        }
+                        Text(text = buttonText)
+                    }
+
+                    if (imageUri != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        ElevatedCard(
+                            modifier = Modifier.size(250.dp),
+                            shape = RoundedCornerShape(125.dp)
+                        ) {
+                            AsyncImage(
+                                model = imageUri,
+                                contentDescription = "Foto de perfil del Operador",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = if (selectedRole == "Operador")
+                                "La foto de perfil es obligatoria."
+                            else
+                                "Puedes añadir una foto para personalizar tu perfil.",
+                            color = Color.Gray,
+                            fontSize = 12.sp
+                        )
                     }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
