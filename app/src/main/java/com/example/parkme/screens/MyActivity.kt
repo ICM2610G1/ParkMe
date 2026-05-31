@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -70,8 +72,10 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
         viewModel.fetchUserReservations()
         viewModel.fetchParkingLots()
     }
+
     Scaffold(
-        modifier = Modifier.background(color = colorResource(R.color.back)), bottomBar = {
+        modifier = Modifier.background(color = colorResource(R.color.back)),
+        bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 35.dp, topEnd = 35.dp),
@@ -79,9 +83,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                 contentColor = colorResource(R.color.black),
                 shadowElevation = 8.dp
             ) {
-                NavigationBar(
-                    containerColor = Color.Transparent
-                ) {
+                NavigationBar(containerColor = Color.Transparent) {
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
                         label = { Text("Inicio", fontWeight = FontWeight.Bold) },
@@ -131,72 +133,62 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                 .background(color = colorResource(R.color.back))
                 .padding(paddingValues)
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.Start
         ) {
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
+                    .padding(top = 16.dp, bottom = 24.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
                     contentDescription = "Logo de la app",
-                    modifier = Modifier
-                        .width(160.dp)
-                        .height(95.dp),
+                    modifier = Modifier.width(130.dp).height(80.dp),
                     contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .height(70.dp)
-                        .width(2.dp)
-                        .background(Color.Black)
-                )
+                Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Mi\nActividad",
                     color = colorResource(R.color.black),
-                    fontSize = 28.sp,
+                    fontSize = 25.sp,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 32.sp,
+                    lineHeight = 28.sp,
                     textAlign = TextAlign.Start
                 )
             }
-            Spacer(modifier = Modifier.height(30.dp))
-            Text(
-                text = "Todos tus parqueos",
-                color = colorResource(R.color.black),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+
             if (reservasUsuario.isEmpty()) {
-                Box(
-                    Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-                ) {
-                    Text("Aún no tienes actividad registrada", color = Color.Gray)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Aún no tienes actividad registrada", color = Color.Gray, fontSize = 16.sp)
                 }
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 20.dp)
+                    contentPadding = PaddingValues(bottom = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
                         val reservaReciente = reservasUsuario.first()
-                        val parqueaderoReciente =
-                            allParkingLots.find { it.id == reservaReciente.parkingId }
+                        val parqueaderoReciente = allParkingLots.find { it.id == reservaReciente.parkingId }
                         val primeraFoto = parqueaderoReciente?.photos?.firstOrNull()
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(24.dp))
-                                .border(2.dp, Color.Gray, RoundedCornerShape(24.dp))
-                                .background(Color.Transparent)
-                                .padding(bottom = 16.dp)
+
+                        Text(
+                            text = "Actividad Reciente",
+                            color = colorResource(R.color.black),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
                             Column {
                                 if (primeraFoto != null) {
@@ -204,129 +196,112 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                         model = primeraFoto,
                                         contentDescription = "Foto del parqueo",
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(140.dp)
-                                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                        modifier = Modifier.fillMaxWidth().height(160.dp)
                                     )
                                 } else {
                                     Image(
-                                        painter = painterResource(id = R.drawable.default2),
+                                        painter = painterResource(id = R.drawable.default1),
                                         contentDescription = "Sin foto",
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(140.dp)
-                                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+                                        modifier = Modifier.fillMaxWidth().height(160.dp)
                                     )
                                 }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
+
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Text(
-                                            reservaReciente.parkingName,
+                                            text = reservaReciente.parkingName,
                                             fontWeight = FontWeight.ExtraBold,
-                                            fontSize = 20.sp,
-                                            color = Color.Black
+                                            fontSize = 22.sp,
+                                            color = Color.Black,
+                                            modifier = Modifier.weight(1f)
                                         )
-                                        Text(
-                                            text = "${reservaReciente.startTime} - ${reservaReciente.status}",
-                                            fontSize = 16.sp,
-                                            color = Color.DarkGray
-                                        )
-                                        Text(
-                                            text = "${parqueaderoReciente?.pricePerHour ?: "$0"} por hora",
-                                            fontSize = 16.sp,
-                                            color = Color.DarkGray
-                                        )
-                                        if (!reservaReciente.isRated) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                modifier = Modifier
-                                                    .padding(top = 8.dp)
-                                                    .clickable {
-                                                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                            "rateParkingId",
-                                                            reservaReciente.parkingId
-                                                        )
-                                                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                            "rateReservationId", reservaReciente.id
-                                                        )
-                                                        navController.navigate(AppScreens.RateParkingLot.name)
-                                                    }) {
-                                                Icon(
-                                                    Icons.Outlined.Star,
-                                                    contentDescription = "Calificar",
-                                                    tint = colorResource(R.color.blue),
-                                                    modifier = Modifier.size(24.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Text(
-                                                    "Calificar",
-                                                    fontSize = 18.sp,
-                                                    color = colorResource(R.color.blue),
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            }
-                                        } else {
+                                        Surface(
+                                            color = if (reservaReciente.status == "Activa" || reservaReciente.status == "Activo") Color(0xFFE3F2FD) else Color(0xFFF5F5F5),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
                                             Text(
-                                                "★ Calificado",
-                                                color = Color.Gray,
+                                                text = reservaReciente.status,
+                                                color = if (reservaReciente.status == "Activa" || reservaReciente.status == "Activo") colorResource(R.color.blue) else Color.Gray,
                                                 fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(top = 8.dp)
+                                                fontSize = 12.sp,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                             )
                                         }
                                     }
 
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(text = "Ingreso: ${reservaReciente.startTime}", fontSize = 15.sp, color = Color.DarkGray)
+                                    Text(text = "Tarifa: ${parqueaderoReciente?.pricePerHour ?: "$0"} / hora", fontSize = 15.sp, color = Color.DarkGray)
 
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Spacer(modifier = Modifier.height(16.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        if (!reservaReciente.isRated) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.clickable {
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reservaReciente.parkingId)
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("rateReservationId", reservaReciente.id)
+                                                    navController.navigate(AppScreens.RateParkingLot.name)
+                                                }
+                                            ) {
+                                                Icon(Icons.Outlined.Star, contentDescription = "Calificar", tint = colorResource(R.color.blue), modifier = Modifier.size(24.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Calificar", fontSize = 16.sp, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+                                            }
+                                        } else {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Filled.Star, contentDescription = "Calificado", tint = Color.Gray, modifier = Modifier.size(18.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Calificado", color = Color.Gray, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+
                                         Button(
                                             onClick = {
                                                 if (parqueaderoReciente != null) {
-                                                    navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                        "ubicacionBuscada",
-                                                        parqueaderoReciente.location
-                                                    )
-                                                    navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                        "preSelectedParkingId",
-                                                        parqueaderoReciente.id
-                                                    )
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoReciente.location)
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoReciente.id)
                                                     navController.navigate(AppScreens.SearchMap.name)
                                                 }
                                             },
                                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                                            shape = RoundedCornerShape(50),
-                                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                            shape = RoundedCornerShape(50)
                                         ) {
-                                            Text(
-                                                "Reservar\nde nuevo",
-                                                textAlign = TextAlign.Center,
-                                                fontSize = 14.sp,
-                                                lineHeight = 18.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
+                                            Text("Reservar de nuevo", fontWeight = FontWeight.Bold)
                                         }
+                                    }
 
-                                        if (reservaReciente.status == "Activa") {
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Button(
+                                    if (reservaReciente.status == "Activa" || reservaReciente.status == "Activo") {
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        HorizontalDivider(color = Color(0xFFEEEEEE))
+                                        Spacer(modifier = Modifier.height(12.dp))
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            OutlinedButton(
                                                 onClick = {
                                                     chatViewModel.initChatRoom(reservaReciente)
                                                     navController.navigate(AppScreens.ChatListCli.name)
                                                 },
-                                                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                                                 shape = RoundedCornerShape(50),
-                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                                                colors = ButtonDefaults.outlinedButtonColors(contentColor = colorResource(R.color.blue)),
+                                                border = BorderStroke(1.dp, colorResource(R.color.blue))
                                             ) {
-                                                Text("Iniciar Chat", textAlign = TextAlign.Center, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                                Text("Abrir Chat", fontWeight = FontWeight.Bold)
                                             }
-
-                                            Spacer(modifier = Modifier.height(8.dp))
 
                                             var localSharingState by remember(reservaReciente.sharingLocation) {
                                                 mutableStateOf(reservaReciente.sharingLocation)
@@ -353,17 +328,12 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                                             permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                                                         } else {
                                                             localSharingState = isSharing
-
-                                                            db.collection("reservas").document(reservaReciente.id)
-                                                                .update("sharingLocation", isSharing)
-                                                            if (isSharing) {
-                                                                viewModel.startTrackingUserLocation(context, reservaReciente.userId)
-                                                            } else {
-                                                                viewModel.stopTrackingUserLocation()
-                                                            }
+                                                            db.collection("reservas").document(reservaReciente.id).update("sharingLocation", isSharing)
+                                                            if (isSharing) viewModel.startTrackingUserLocation(context, reservaReciente.userId)
+                                                            else viewModel.stopTrackingUserLocation()
                                                         }
                                                     },
-                                                    colors = SwitchDefaults.colors(checkedTrackColor = Color.Green, uncheckedTrackColor = Color.Gray),
+                                                    colors = SwitchDefaults.colors(checkedTrackColor = Color(0xFF4CAF50), uncheckedTrackColor = Color.Gray),
                                                     modifier = Modifier.scale(0.8f)
                                                 )
                                             }
@@ -372,111 +342,81 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                 }
                             }
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
+
+                        if (reservasUsuario.size > 1) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Historial",
+                                color = colorResource(R.color.black),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                        }
                     }
 
                     val restoReservas = reservasUsuario.drop(1)
                     items(restoReservas) { reserva ->
                         val parqueoData = allParkingLots.find { it.id == reserva.parkingId }
-
-                        Column {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = reserva.parkingName,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp,
-                                        color = Color.Black
-                                    )
-                                    Text(
-                                        text = "${reserva.startTime} - ${reserva.status}",
-                                        fontSize = 16.sp,
-                                        color = Color.DarkGray
-                                    )
-                                    Text(
-                                        text = "${parqueoData?.pricePerHour ?: "$0"} por hora",
-                                        fontSize = 16.sp,
-                                        color = Color.DarkGray
-                                    )
+                                    Text(text = reserva.parkingName, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                                    Text(text = "${reserva.startTime} - ${reserva.status}", fontSize = 14.sp, color = Color.DarkGray)
+
                                     if (!reserva.isRated) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(top = 8.dp).clickable {
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateReservationId", reserva.id)
+                                                navController.navigate(AppScreens.RateParkingLot.name)
+                                            }
+                                        ) {
+                                            Icon(Icons.Outlined.Star, contentDescription = "Calificar", tint = colorResource(R.color.blue), modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Calificar", color = colorResource(R.color.blue), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    } else {
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             modifier = Modifier.padding(top = 8.dp)
                                         ) {
-                                            Icon(
-                                                Icons.Outlined.Star,
-                                                contentDescription = "Calificar",
-                                                tint = colorResource(R.color.blue),
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                            Text(
-                                                text = "Calificar experiencia",
-                                                color = colorResource(R.color.blue),
-                                                fontSize = 15.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier
-                                                    .padding(top = 8.dp)
-                                                    .clickable {
-                                                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                            "rateParkingId", reserva.parkingId
-                                                        )
-                                                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                            "rateReservationId", reserva.id
-                                                        )
-                                                        navController.navigate(AppScreens.RateParkingLot.name)
-                                                    })
-
+                                            Icon(Icons.Filled.Star, contentDescription = "Calificado", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Calificado", color = Color.Gray, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                                         }
-                                    } else {
-                                        Text(
-                                            "★ Calificado",
-                                            color = Color.Gray,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(top = 8.dp)
-                                        )
                                     }
-
                                 }
 
                                 Button(
                                     onClick = {
                                         if (parqueoData != null) {
-                                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                "ubicacionBuscada", parqueoData.location
-                                            )
-                                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                                "preSelectedParkingId", parqueoData.id
-                                            )
+                                            navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueoData.location)
+                                            navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueoData.id)
                                             navController.navigate(AppScreens.SearchMap.name)
                                         }
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.1f)),
                                     shape = RoundedCornerShape(50),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                    modifier = Modifier.padding(start = 12.dp)
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
-
-                                    Text(
-                                        "Reservar\nde nuevo",
-                                        textAlign = TextAlign.Center,
-                                        fontSize = 14.sp,
-                                        lineHeight = 18.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    Text("Volver", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
                                 }
                             }
-                            HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
                         }
                     }
                 }
             }
-
         }
     }
 }
@@ -498,25 +438,21 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
 
     DisposableEffect(uid) {
         if (uid.isEmpty()) return@DisposableEffect onDispose {}
-
-        val listener = db.collection("reservas")
-            .whereEqualTo("operatorId", uid)
+        val listener = db.collection("reservas").whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, _ ->
                 if (snapshot != null) {
-                    val list = snapshot.documents.map { doc ->
+                    liveReservations = snapshot.documents.map { doc ->
                         val res = doc.toObject(Reservation::class.java) ?: Reservation()
                         res.copy(id = doc.id)
                     }
-                    liveReservations = list
                 }
             }
-        onDispose {
-            listener.remove()
-        }
+        onDispose { listener.remove() }
     }
 
     Scaffold(
-        modifier = Modifier.background(color = colorResource(R.color.back)), bottomBar = {
+        modifier = Modifier.background(color = colorResource(R.color.back)),
+        bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 35.dp, topEnd = 35.dp),
@@ -524,9 +460,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                 contentColor = colorResource(R.color.black),
                 shadowElevation = 8.dp
             ) {
-                NavigationBar(
-                    containerColor = Color.Transparent
-                ) {
+                NavigationBar(containerColor = Color.Transparent) {
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
                         label = { Text("Inicio", fontWeight = FontWeight.Bold) },
@@ -541,7 +475,6 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                             unselectedIconColor = Color.Black
                         )
                     )
-
                     NavigationBarItem(
                         icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Actividad") },
                         label = { Text("Actividad", fontWeight = FontWeight.Bold) },
@@ -553,7 +486,6 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                             unselectedIconColor = Color.Black
                         )
                     )
-
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil", fontWeight = FontWeight.Bold) },
@@ -577,31 +509,24 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                 .padding(paddingValues)
                 .statusBarsPadding()
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.Start
         ) {
-
             Row(
-                verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 24.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
                     contentDescription = "Logo de la app",
-                    modifier = Modifier
-                        .width(130.dp)
-                        .height(80.dp),
+                    modifier = Modifier.width(130.dp).height(80.dp),
                     contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(
-                    modifier = Modifier
-                        .height(60.dp)
-                        .width(2.dp)
-                        .background(Color.Black)
-                )
+                Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Mi\nActividad",
+                    text = "Panel de\nActividad",
                     color = colorResource(R.color.black),
                     fontSize = 25.sp,
                     fontWeight = FontWeight.Bold,
@@ -611,8 +536,6 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
             if (parkingLots.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("No tienes parqueaderos ni actividad aún", color = Color.Gray)
@@ -621,34 +544,24 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
                     items(parkingLots) { lot ->
                         val lotReservations = liveReservations.filter { it.parkingId == lot.id }
-                        val activeReservations =
-                            lotReservations.filter { it.status == "Activa" || it.status == "Activo" }
+                        val activeReservations = lotReservations.filter { it.status == "Activa" || it.status == "Activo" }
                         val ocupados = activeReservations.size
                         val cuposDisponibles = maxOf(0, lot.slot - ocupados)
-
-                        val completedReservations =
-                            lotReservations.filter { it.status == "Completada" || it.status == "Completado" || it.status == "Finalizada" }
+                        val completedReservations = lotReservations.filter { it.status == "Completada" || it.status == "Completado" || it.status == "Finalizada" }
                         val ganancias = completedReservations.sumOf { it.totalPrice }
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(2.dp, Color.Gray, RoundedCornerShape(24.dp))
-                                .background(Color.Transparent, RoundedCornerShape(24.dp))
-                                .padding(16.dp)
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
-                            Column {
-                                Text(
-                                    text = lot.name,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    color = Color.Black
-                                )
-
+                            Column(modifier = Modifier.padding(20.dp)) {
+                                Text(text = lot.name, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black)
                                 Spacer(modifier = Modifier.height(16.dp))
 
                                 Row(
@@ -656,121 +569,120 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Cupos disponibles:", fontSize = 15.sp, color = Color.Black)
+                                    Text("Cupos disponibles", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
                                     Text(
                                         text = "$cuposDisponibles/${lot.slot}",
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.ExtraBold,
                                         color = colorResource(R.color.blue),
-                                        fontSize = 15.sp
+                                        fontSize = 16.sp
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.height(6.dp))
-
+                                Spacer(modifier = Modifier.height(8.dp))
                                 val prog = if (lot.slot > 0) ocupados.toFloat() / lot.slot.toFloat() else 0f
                                 LinearProgressIndicator(
                                     progress = { prog },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(6.dp)
-                                        .clip(RoundedCornerShape(50)),
+                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)),
                                     color = colorResource(R.color.blue),
-                                    trackColor = Color.LightGray
+                                    trackColor = Color(0xFFEEEEEE)
                                 )
 
                                 Spacer(modifier = Modifier.height(16.dp))
-
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Ganancias históricas:", fontSize = 15.sp, color = Color.Black)
+                                    Text("Ganancias históricas", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
                                     Text(
                                         text = "$ ${ganancias.toInt()}",
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.ExtraBold,
                                         color = colorResource(R.color.verdepasto),
-                                        fontSize = 15.sp
+                                        fontSize = 16.sp
                                     )
                                 }
 
+                                Spacer(modifier = Modifier.height(20.dp))
+                                HorizontalDivider(color = Color(0xFFEEEEEE))
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                Text("Servicios recientes", fontSize = 14.sp, color = Color.DarkGray)
+                                Text("Servicios activos", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                                Spacer(modifier = Modifier.height(12.dp))
 
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                if (lotReservations.isEmpty()) {
-                                    Text("Aún no tienes servicios registrados", color = Color.Gray, fontSize = 13.sp)
+                                if (activeReservations.isEmpty()) {
+                                    Text("No hay vehículos actualmente", color = Color.Gray, fontSize = 13.sp)
                                 } else {
-                                    val recentServices = lotReservations.sortedByDescending { it.startTime }.take(3)
+                                    val recentServices = activeReservations.sortedByDescending { it.startTime }
                                     recentServices.forEach { reserva ->
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .border(1.5.dp, Color.Gray, RoundedCornerShape(16.dp))
-                                                .padding(12.dp)
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                            shape = RoundedCornerShape(16.dp),
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
+                                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                                         ) {
-                                            Column {
-                                                Text(
-                                                    text = "Vehículo Placa: ${reserva.licensePlate.ifEmpty { "N/A" }}",
-                                                    color = Color.Black,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                                Spacer(modifier = Modifier.height(2.dp))
-                                                Text(
-                                                    text = "Ingreso: ${reserva.startTime}",
-                                                    color = if (reserva.status == "Activa") colorResource(R.color.amarillodorado) else colorResource(R.color.blue),
-                                                    fontSize = 13.sp
-                                                )
-                                                Spacer(modifier = Modifier.height(2.dp))
-                                                Row(
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    modifier = Modifier.fillMaxWidth()
-                                                ) {
-                                                    Text(text = "Estado: ${reserva.status}", color = Color.Black, fontSize = 14.sp)
+                                            Column(modifier = Modifier.padding(16.dp)) {
+                                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                                    Text(
+                                                        text = "Placa: ${reserva.licensePlate.ifEmpty { "N/A" }}",
+                                                        color = Color.Black,
+                                                        fontSize = 16.sp,
+                                                        fontWeight = FontWeight.ExtraBold
+                                                    )
                                                     Text(
                                                         text = "$ ${reserva.totalPrice.toInt()}",
-                                                        color = if (reserva.status == "Activa") colorResource(R.color.rojooscuro) else colorResource(R.color.verdepasto),
+                                                        color = colorResource(R.color.rojooscuro),
                                                         fontWeight = FontWeight.Bold,
-                                                        fontSize = 14.sp
+                                                        fontSize = 15.sp
                                                     )
                                                 }
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(text = "Ingreso: ${reserva.startTime}", color = Color.Gray, fontSize = 13.sp)
 
-                                                if (reserva.status == "Activa" || reserva.status == "Activo") {
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Row(
-                                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                        modifier = Modifier.fillMaxWidth()
+                                                Spacer(modifier = Modifier.height(12.dp))
+
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Button(
+                                                        onClick = {
+                                                            chatViewModel.initChatRoom(reserva)
+                                                            navController.navigate(AppScreens.ChatListCli.name)
+                                                        },
+                                                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                                        modifier = Modifier.weight(1f).height(42.dp),
+                                                        contentPadding = PaddingValues(0.dp),
+                                                        shape = RoundedCornerShape(12.dp)
                                                     ) {
+                                                        Text("Abrir Chat", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                                    }
 
-                                                        Button(
-                                                            onClick = {
-                                                                if (reserva.sharingLocation) {
-                                                                    navController.navigate("${AppScreens.TrackUserMap.name}/${reserva.id}")
-                                                                }
-                                                            },
-                                                            enabled = reserva.sharingLocation,
-                                                            colors = ButtonDefaults.buttonColors(
-                                                                containerColor = Color(0xFF4CAF50),
-                                                                disabledContainerColor = Color(0xFFE0E0E0)
-                                                            ),
-                                                            modifier = Modifier.weight(1f).height(40.dp),
-                                                            contentPadding = PaddingValues(0.dp)
-                                                        ) {
-                                                            Text(
-                                                                text = if (reserva.sharingLocation) "Ver Mapa" else "Sin GPS",
-                                                                color = if (reserva.sharingLocation) Color.White else Color.Gray,
-                                                                fontSize = 13.sp,
-                                                                fontWeight = FontWeight.Bold
-                                                            )
-                                                        }
+                                                    Button(
+                                                        onClick = {
+                                                            if (reserva.sharingLocation) {
+                                                                navController.navigate("${AppScreens.TrackUserMap.name}/${reserva.id}")
+                                                            }
+                                                        },
+                                                        enabled = reserva.sharingLocation,
+                                                        colors = ButtonDefaults.buttonColors(
+                                                            containerColor = Color(0xFF4CAF50),
+                                                            disabledContainerColor = Color(0xFFE0E0E0)
+                                                        ),
+                                                        modifier = Modifier.weight(1f).height(42.dp),
+                                                        contentPadding = PaddingValues(0.dp),
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = if (reserva.sharingLocation) "Ver Mapa" else "Sin GPS",
+                                                            color = if (reserva.sharingLocation) Color.White else Color.Gray,
+                                                            fontSize = 14.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
                                                     }
                                                 }
                                             }
                                         }
-                                        Spacer(modifier = Modifier.height(8.dp))
                                     }
                                 }
                             }
