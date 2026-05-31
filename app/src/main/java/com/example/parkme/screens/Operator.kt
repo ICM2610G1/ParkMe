@@ -9,17 +9,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -27,14 +34,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.parkme.R
@@ -53,7 +64,6 @@ import java.util.UUID
 @Composable
 fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modifier) {
     val pillShape = RoundedCornerShape(50)
-    val cardShape = RoundedCornerShape(24)
     val backStackEntry = navController.currentBackStackEntry
 
     val scrollState = rememberScrollState()
@@ -141,255 +151,190 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             .background(color = colorResource(R.color.back))
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Image(
                 painter = painterResource(id = R.drawable.logoparkme),
                 contentDescription = "Logo de la app",
-                modifier = Modifier
-                    .width(130.dp)
-                    .height(80.dp),
+                modifier = Modifier.width(110.dp).height(65.dp),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Box(modifier = Modifier
-                .height(60.dp)
-                .width(2.dp)
-                .background(Color.Black))
+            Box(modifier = Modifier.height(45.dp).width(2.dp).background(Color.Black))
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Crear\nparqueadero",
                 color = colorResource(R.color.black),
-                fontSize = 25.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 28.sp,
-                textAlign = TextAlign.Start
+                lineHeight = 24.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = name.value,
-            onValueChange = { name.value = it },
-            label = { Text("Nombre del parqueadero", fontSize = 12.sp) },
-            shape = RoundedCornerShape(50.dp),
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colorResource(R.color.grisClaro),
-                unfocusedBorderColor = Color.Gray
+        Spacer(modifier = Modifier.height(24.dp))
+        FormSection("Información General", Icons.Default.Home) {
+            ModernTextField(
+                value = name.value,
+                onValueChange = { name.value = it },
+                label = "Nombre del parqueadero"
             )
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedTextField(
-                value = pricePerHour.value,
-                onValueChange = { pricePerHour.value = it },
-                label = { Text("$ Precio por hora", fontSize = 12.sp) },
-                shape = RoundedCornerShape(50.dp),
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorResource(R.color.grisClaro),
-                    unfocusedBorderColor = Color.Gray
-                )
+            Spacer(Modifier.height(12.dp))
+            ModernTextField(
+                value = slot.value,
+                onValueChange = { slot.value = it },
+                label = "Cupos disponibles",
+                keyboardType = KeyboardType.Number
             )
-            OutlinedTextField(
-                value = pricePerMin.value,
-                onValueChange = { pricePerMin.value = it },
-                label = { Text("$ Precio por minuto", fontSize = 12.sp) },
-                shape = RoundedCornerShape(50.dp),
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorResource(R.color.grisClaro),
-                    unfocusedBorderColor = Color.Gray
-                )
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = slot.value,
-            onValueChange = { slot.value = it },
-            label = { Text("Cupos disponibles", fontSize = 12.sp) },
-            shape = RoundedCornerShape(50.dp),
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colorResource(R.color.grisClaro),
-                unfocusedBorderColor = Color.Gray
-            )
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        LabelAndRight(
-            label = "Cargador EV",
-            right = {
-                CircleCheckClickable(
-                    checked = electricCharges.value,
-                    onClick = { electricCharges.value = !electricCharges.value }
-                )
-            }
-        )
-
-        LabelAndRight(
-            label = "Tarifa plena",
-            right = {
-                OutlinedTextField(
-                    value = fixedPrice.value,
-                    onValueChange = { fixedPrice.value = it },
-                    label = { Text("$ Tarifa", fontSize = 12.sp) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(50.dp),
-                    modifier = Modifier
-                        .width(140.dp)
-                        .height(56.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = colorResource(R.color.grisClaro),
-                        unfocusedBorderColor = Color.Gray
-                    )
-                )
-            }
-        )
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showTermsDialog = true },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = colorResource(R.color.azulruta).copy(alpha = 0.05f)
-            ),
-            border = BorderStroke(1.dp, colorResource(R.color.azulruta).copy(alpha = 0.2f))
-        ) {
+            Spacer(Modifier.height(8.dp))
             Row(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                Text("Estación de carga EV", fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.SemiBold)
+                Switch(
+                    checked = electricCharges.value,
+                    onCheckedChange = { electricCharges.value = it },
+                    colors = SwitchDefaults.colors(checkedTrackColor = colorResource(R.color.blue))
+                )
+            }
+        }
+
+        FormSection("Tarifas (Obligatorio)", Icons.Default.Star) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ModernTextField(
+                    value = pricePerHour.value,
+                    onValueChange = { pricePerHour.value = it },
+                    label = "$ Precio por hora",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Number
+                )
+                ModernTextField(
+                    value = pricePerMin.value,
+                    onValueChange = { pricePerMin.value = it },
+                    label = "$ Precio por min",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Number
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            ModernTextField(
+                value = fixedPrice.value,
+                onValueChange = { fixedPrice.value = it },
+                label = "$ Tarifa plena (Día completo)",
+                keyboardType = KeyboardType.Number
+            )
+        }
+
+
+        FormSection("Horarios de Atención", Icons.Default.DateRange) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = { showOpeningDialog = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Reglas",
-                        tint = colorResource(R.color.azulruta),
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Reglas del parqueadero",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Toca para ingresar o editar las normas",
-                            fontSize = 13.sp,
-                            color = Color.Gray,
-                            lineHeight = 16.sp
-                        )
-                    }
+                    Text("Apertura:\n${hourStart.value}", textAlign = TextAlign.Center)
                 }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Card(
-                    shape = RoundedCornerShape(50),
-                    colors = CardDefaults.cardColors(containerColor = colorResource(R.color.azulruta))
+                OutlinedButton(
+                    onClick = { showClosingDialog = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
                 ) {
-                    Text(
-                        text = "Ingresar",
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                    Text("Cierre:\n${hourFinish.value}", textAlign = TextAlign.Center)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Text("Días de servicio", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 8.dp))
+
+            val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                dayLabels.forEachIndexed { index, letter ->
+                    DayToggle(
+                        letter = letter,
+                        isSelected = selectedDays.value[index],
+                        onClick = {
+                            val newList = selectedDays.value.toMutableList()
+                            newList[index] = !newList[index]
+                            selectedDays.value = newList
+                            backStackEntry?.savedStateHandle?.set("days", ArrayList(newList))
+                        }
                     )
                 }
             }
         }
 
-        if (showTermsDialog) {
-            AlertDialog(
-                onDismissRequest = { showTermsDialog = false },
-                title = { Text("Reglas del parqueadero") },
-                text = {
-                    OutlinedTextField(
-                        value = terms.value,
-                        onValueChange = { terms.value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp),
-                        label = { Text("Escribe las reglas aquí") }
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = { showTermsDialog = false }) { Text("Listo") }
-                }
-            )
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .background(colorResource(R.color.grisClaro), cardShape)
-                .padding(20.dp)
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Fotos del parqueadero", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("${photoUris.value.size}/15", color = Color.Gray)
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 4.dp, end = 4.dp)
-                ) {
-                    items(photoUris.value) { uri ->
-                        SelectedImage(
-                            model = uri,
-                            onDelete = {
-                                val newList = photoUris.value.toMutableList()
-                                newList.remove(uri)
-                                photoUris.value = newList
-                            }
-                        )
+        FormSection("Detalles y Multimedia", Icons.Default.List) {
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable { showTermsDialog = true },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F7FA)),
+                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+            ) {
+                Row(Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, contentDescription = null, tint = colorResource(R.color.blue))
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Reglas del parqueadero", fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(if (terms.value.isEmpty()) "Toca para añadir reglas" else "Reglas añadidas", fontSize = 12.sp, color = Color.Gray)
                     }
+                    Text("Editar", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            }
 
-                    if (photoUris.value.size < 15) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .border(2.dp, Color.Black, RoundedCornerShape(12.dp))
-                                    .clickable { launcher.launch("image/*") },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Filled.Add, contentDescription = "Agregar foto", modifier = Modifier.size(44.dp))
+            Spacer(Modifier.height(12.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable { navController.navigate(AppScreens.MapPicker.name) { launchSingleTop = true } },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (location.value != null) Color(0xFFE8F5E9) else Color(0xFFF5F7FA)),
+                border = BorderStroke(1.dp, if (location.value != null) Color(0xFFA5D6A7) else Color(0xFFE0E0E0))
+            ) {
+                Row(Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = if (location.value != null) Color(0xFF2E7D32) else Color.Gray)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(if (location.value != null) "Ubicación fijada" else "Ubicación en el mapa", fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(if (location.value != null) address.value else "Toca para abrir el mapa", fontSize = 12.sp, color = Color.Gray, maxLines = 1)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Fotos", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("${photoUris.value.size}/15", color = Color.Gray, fontSize = 12.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
+                items(photoUris.value) { uri ->
+                    SelectedImage(
+                        model = uri,
+                        onDelete = {
+                            val newList = photoUris.value.toMutableList()
+                            newList.remove(uri)
+                            photoUris.value = newList
+                        }
+                    )
+                }
+                if (photoUris.value.size < 15) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .border(1.5.dp, colorResource(R.color.blue), RoundedCornerShape(12.dp))
+                                .background(colorResource(R.color.blue).copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                .clickable { launcher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Filled.Add, contentDescription = "Añadir", tint = colorResource(R.color.blue))
+                                Text("Añadir", color = colorResource(R.color.blue), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -397,114 +342,13 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        Button(
-            onClick = {
-                navController.navigate(AppScreens.MapPicker.name) {
-                    launchSingleTop = true
-                }
-            },
-            shape = pillShape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (location.value != null) colorResource(R.color.blue) else colorResource(R.color.grisClaro)
-            ),
-            modifier = Modifier
-                .fillMaxWidth(0.72f)
-                .align(Alignment.CenterHorizontally)
-        ) {
-            Text(
-                if (location.value != null) "Ubicación agregada" else "Agregar Ubicación",
-                color = if (location.value != null) Color.White else Color.DarkGray,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        if (location.value != null && address.value.isNotBlank()) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = address.value,
-                fontSize = 14.sp,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        LabelAndRight(
-            label = "Hora de apertura",
-            right = {
-                Box(modifier = Modifier.clickable { showOpeningDialog = true }) {
-                    TimePill(hourStart.value)
-                }
-            }
-        )
-        LabelAndRight(
-            label = "Hora de cierre",
-            right = {
-                Box(modifier = Modifier.clickable { showClosingDialog = true }) {
-                    TimePill(hourFinish.value)
-                }
-            }
-        )
-
-        if (showOpeningDialog) {
-            TimeEditDialog(
-                title = "Hora de apertura",
-                currentTime = hourStart.value,
-                onConfirm = { hourStart.value = it; showOpeningDialog = false },
-                onDismiss = { showOpeningDialog = false }
-            )
-        }
-        if (showClosingDialog) {
-            TimeEditDialog(
-                title = "Hora de cierre",
-                currentTime = hourFinish.value,
-                onConfirm = { hourFinish.value = it; showClosingDialog = false },
-                onDismiss = { showClosingDialog = false }
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            dayLabels.forEach { d -> DayLetter(d) }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            selectedDays.value.forEachIndexed { index, seleccionado ->
-                CircleCheckClickable(
-                    checked = seleccionado,
-                    onClick = {
-                        val newList = selectedDays.value.toMutableList()
-                        newList[index] = !seleccionado
-                        selectedDays.value = newList
-                        backStackEntry?.savedStateHandle?.set("days", ArrayList(newList))
-                    }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(24.dp))
 
         Button(
             enabled = !isUploading.value,
             onClick = {
-                if (uid.isEmpty()) {
-                    message.value = "Usuario no autenticado"
-                    return@Button
-                }
-                if (location.value == null) {
-                    message.value = "Debes agregar una ubicación en el mapa"
-                    return@Button
-                }
+                if (uid.isEmpty()) { message.value = "Usuario no autenticado"; return@Button }
+                if (location.value == null) { message.value = "Debes agregar una ubicación en el mapa"; return@Button }
 
                 isUploading.value = true
 
@@ -535,7 +379,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     .addOnSuccessListener { docRef ->
                         val totalPhotos = photoUris.value.size
                         if (totalPhotos == 0) {
-                            message.value = " Parqueadero creado"
+                            message.value = "Parqueadero creado con éxito"
                             isUploading.value = false
                             navController.popBackStack()
                             return@addOnSuccessListener
@@ -556,15 +400,12 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                                 }
 
                                 withContext(Dispatchers.Main) {
-                                    docRef.update(mapOf(
-                                        "fotos" to uploadedPhotos,
-                                        "photos" to uploadedPhotos
-                                    )).addOnSuccessListener {
-                                        message.value = "Parqueadero creado con fotos"
-                                        isUploading.value = false
-                                        navController.popBackStack()
-                                    }
-                                        .addOnFailureListener { e ->
+                                    docRef.update(mapOf("fotos" to uploadedPhotos, "photos" to uploadedPhotos))
+                                        .addOnSuccessListener {
+                                            message.value = "Parqueadero creado con fotos"
+                                            isUploading.value = false
+                                            navController.popBackStack()
+                                        }.addOnFailureListener { e ->
                                             message.value = "Error guardando fotos: ${e.message}"
                                             isUploading.value = false
                                         }
@@ -583,37 +424,52 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     }
             },
             shape = pillShape,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(0.6f)
-                .height(54.dp),
+            modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxWidth(0.8f).height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue))
         ) {
             if (isUploading.value) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text("Crear", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Crear Parqueadero", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
         }
 
         if (message.value.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
             Text(
                 text = message.value,
-                color = if (message.value.startsWith("P")) Color.Green else Color.Red,
+                color = if (message.value.startsWith("P") || message.value.startsWith("C")) Color(0xFF2E7D32) else Color.Red,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(30.dp))
+    }
+
+    if (showTermsDialog) {
+        RulesDialog(
+            initialRules = terms.value,
+            onDismiss = { showTermsDialog = false },
+            onSave = { updatedRules ->
+                terms.value = updatedRules
+                showTermsDialog = false
+            }
+        )
+    }
+    if (showOpeningDialog) {
+        TimeEditDialog("Hora de apertura", hourStart.value, { hourStart.value = it; showOpeningDialog = false }, { showOpeningDialog = false })
+    }
+    if (showClosingDialog) {
+        TimeEditDialog("Hora de cierre", hourFinish.value, { hourFinish.value = it; showClosingDialog = false }, { showClosingDialog = false })
     }
 }
+
 
 @Composable
 fun EditParkingVisual(
     parkingId: String = "", navController: NavController? = null, modifier: Modifier = Modifier
 ) {
     val pillShape = RoundedCornerShape(50)
-    val cardShape = RoundedCornerShape(24)
     val scrollState = rememberScrollState()
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
@@ -650,7 +506,6 @@ fun EditParkingVisual(
                 android.widget.Toast.LENGTH_LONG
             ).show()
         }
-
         photoUris.value = photoUris.value + allowedUris
     }
 
@@ -705,7 +560,6 @@ fun EditParkingVisual(
                     if (firestorePhotos is List<*>) {
                         photoUrls.value = firestorePhotos.filterIsInstance<String>()
                     }
-
                     isLoading.value = false
                 }
                 .addOnFailureListener {
@@ -718,224 +572,208 @@ fun EditParkingVisual(
     }
 
     if (isLoading.value) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+        Box(Modifier.fillMaxSize().background(colorResource(R.color.back)), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = colorResource(R.color.blue))
         }
         return
     }
+
+    var showTermsDialog by remember { mutableStateOf(false) }
+    var showOpeningDialog by remember { mutableStateOf(false) }
+    var showClosingDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .background(color = colorResource(R.color.back))
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Image(
                 painter = painterResource(id = R.drawable.logoparkme),
                 contentDescription = "Logo de la app",
-                modifier = Modifier
-                    .width(130.dp)
-                    .height(80.dp),
+                modifier = Modifier.width(110.dp).height(65.dp),
                 contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.width(12.dp))
-            Box(
-                modifier = Modifier
-                    .height(50.dp)
-                    .width(2.dp)
-                    .background(Color.Black)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
+            Box(modifier = Modifier.height(45.dp).width(2.dp).background(Color.Black))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Editar\nparqueadero",
                 color = colorResource(R.color.black),
-                fontSize = 25.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 28.sp,
-                textAlign = TextAlign.Start
+                lineHeight = 24.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-        OutlinedTextField(
-            value = name.value,
-            onValueChange = { name.value = it },
-            label = { Text("Nombre del parqueadero", fontSize = 12.sp) },
-            shape = RoundedCornerShape(50.dp),
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colorResource(R.color.grisClaro),
-                unfocusedBorderColor = Color.Gray
+        Spacer(modifier = Modifier.height(24.dp))
+
+        FormSection("Información General", Icons.Default.Home) {
+            ModernTextField(
+                value = name.value,
+                onValueChange = { name.value = it },
+                label = "Nombre del parqueadero"
             )
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedTextField(
-                value = pricePerHour.value,
-                onValueChange = { pricePerHour.value = it },
-                label = { Text("$ Precio por hora", fontSize = 12.sp) },
-                shape = RoundedCornerShape(50.dp),
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorResource(R.color.grisClaro),
-                    unfocusedBorderColor = Color.Gray
-                )
+            Spacer(Modifier.height(12.dp))
+            ModernTextField(
+                value = slot.value,
+                onValueChange = { slot.value = it },
+                label = "Cupos disponibles",
+                keyboardType = KeyboardType.Number
             )
-            OutlinedTextField(
-                value = pricePerMin.value,
-                onValueChange = { pricePerMin.value = it },
-                label = { Text("$ Precio por minuto", fontSize = 12.sp) },
-                shape = RoundedCornerShape(50.dp),
-                modifier = Modifier.weight(1f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colorResource(R.color.grisClaro),
-                    unfocusedBorderColor = Color.Gray
-                )
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = slot.value,
-            onValueChange = { slot.value = it },
-            label = { Text("Cupos disponibles", fontSize = 12.sp) },
-            shape = RoundedCornerShape(50.dp),
-            modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colorResource(R.color.grisClaro),
-                unfocusedBorderColor = Color.Gray
-            )
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        LabelAndRight(
-            label = "Cargador EV",
-            right = {
-                CircleCheckClickable(
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Estación de carga EV", fontSize = 15.sp, color = Color.DarkGray, fontWeight = FontWeight.SemiBold)
+                Switch(
                     checked = electricCharges.value,
-                    onClick = { electricCharges.value = !electricCharges.value }
+                    onCheckedChange = { electricCharges.value = it },
+                    colors = SwitchDefaults.colors(checkedTrackColor = colorResource(R.color.blue))
                 )
             }
-        )
+        }
 
-        LabelAndRight(
-            label = "Tarifa plena",
-            right = {
-                OutlinedTextField(
-                    value = fixedPrice.value,
-                    onValueChange = { fixedPrice.value = it },
-                    label = { Text("$ Tarifa", fontSize = 12.sp) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(50.dp),
-                    modifier = Modifier
-                        .width(140.dp)
-                        .height(56.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = colorResource(R.color.grisClaro),
-                        unfocusedBorderColor = Color.Gray
-                    )
+        FormSection("Tarifas", Icons.Default.Star) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                ModernTextField(
+                    value = pricePerHour.value,
+                    onValueChange = { pricePerHour.value = it },
+                    label = "$ Precio por hora",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Number
+                )
+                ModernTextField(
+                    value = pricePerMin.value,
+                    onValueChange = { pricePerMin.value = it },
+                    label = "$ Precio por min",
+                    modifier = Modifier.weight(1f),
+                    keyboardType = KeyboardType.Number
                 )
             }
-        )
-
-        var showTermsDialog by remember { mutableStateOf(false) }
-
-        LabelAndRight(
-            label = "Reglas del parqueadero",
-            right = {
-                Button(
-                    onClick = { showTermsDialog = true },
-                    shape = pillShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.grisClaro)),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Text("Ingresar", color = Color.Blue, fontWeight = FontWeight.Bold)
-                }
-            }
-        )
-        if (showTermsDialog) {
-            AlertDialog(
-                onDismissRequest = { showTermsDialog = false },
-                title = { Text("Reglas del parqueadero") },
-                text = {
-                    OutlinedTextField(
-                        value = terms.value,
-                        onValueChange = { terms.value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp),
-                        label = { Text("Escribe las reglas aquí") }
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = { showTermsDialog = false }) { Text("Listo") }
-                }
+            Spacer(Modifier.height(12.dp))
+            ModernTextField(
+                value = fixedPrice.value,
+                onValueChange = { fixedPrice.value = it },
+                label = "$ Tarifa plena (Día completo)",
+                keyboardType = KeyboardType.Number
             )
         }
 
-        Spacer(Modifier.height(14.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .background(colorResource(R.color.grisClaro), cardShape)
-                .padding(20.dp)
-        ) {
-            Column {
-                val totalPhotos = photoUrls.value.size + photoUris.value.size
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        FormSection("Horarios de Atención", Icons.Default.DateRange) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = { showOpeningDialog = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
                 ) {
-                    Text("Fotos del parqueadero", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("$totalPhotos/15", color = Color.Gray)
+                    Text("Apertura:\n${hourStart.value}", textAlign = TextAlign.Center)
                 }
-
-                Spacer(Modifier.height(16.dp))
-
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 4.dp, end = 4.dp)
+                OutlinedButton(
+                    onClick = { showClosingDialog = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black)
                 ) {
-                    items(photoUrls.value) { url ->
-                        SelectedImage(
-                            model = url,
-                            onDelete = { photoUrls.value = photoUrls.value.filter { it != url } }
-                        )
-                    }
-                    items(photoUris.value) { uri ->
-                        SelectedImage(
-                            model = uri,
-                            onDelete = { photoUris.value = photoUris.value.filter { it != uri } }
-                        )
-                    }
+                    Text("Cierre:\n${hourFinish.value}", textAlign = TextAlign.Center)
+                }
+            }
 
-                    if (totalPhotos < 15) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .border(2.dp, Color.Black, RoundedCornerShape(12.dp))
-                                    .clickable { launcher.launch("image/*") },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Filled.Add, contentDescription = "Agregar foto", modifier = Modifier.size(44.dp))
+            Spacer(Modifier.height(16.dp))
+            Text("Días de servicio", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(bottom = 8.dp))
+
+            val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                dayLabels.forEachIndexed { index, letter ->
+                    DayToggle(
+                        letter = letter,
+                        isSelected = selectedDays.value[index],
+                        onClick = {
+                            val newList = selectedDays.value.toMutableList()
+                            newList[index] = !newList[index]
+                            selectedDays.value = newList
+                        }
+                    )
+                }
+            }
+        }
+
+        FormSection("Detalles y Multimedia", Icons.Default.List) {
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable { showTermsDialog = true },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F7FA)),
+                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+            ) {
+                Row(Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Info, contentDescription = null, tint = colorResource(R.color.blue))
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Reglas del parqueadero", fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(if (terms.value.isEmpty()) "Toca para añadir reglas" else "Reglas añadidas", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Text("Editar", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable { navController?.navigate(AppScreens.MapPicker.name) },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = if (location.value != null) Color(0xFFE8F5E9) else Color(0xFFF5F7FA)),
+                border = BorderStroke(1.dp, if (location.value != null) Color(0xFFA5D6A7) else Color(0xFFE0E0E0))
+            ) {
+                Row(Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = if (location.value != null) Color(0xFF2E7D32) else Color.Gray)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(if (location.value != null) "Ubicación fijada" else "Ubicación en el mapa", fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(if (location.value != null) address.value else "Toca para abrir el mapa", fontSize = 12.sp, color = Color.Gray, maxLines = 1)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            val totalPhotos = photoUrls.value.size + photoUris.value.size
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("Fotos", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text("$totalPhotos/15", color = Color.Gray, fontSize = 12.sp)
+            }
+            Spacer(Modifier.height(8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
+                items(photoUrls.value) { url ->
+                    SelectedImage(
+                        model = url,
+                        onDelete = { photoUrls.value = photoUrls.value.filter { it != url } }
+                    )
+                }
+                items(photoUris.value) { uri ->
+                    SelectedImage(
+                        model = uri,
+                        onDelete = { photoUris.value = photoUris.value.filter { it != uri } }
+                    )
+                }
+                if (totalPhotos < 15) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .border(1.5.dp, colorResource(R.color.blue), RoundedCornerShape(12.dp))
+                                .background(colorResource(R.color.blue).copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                                .clickable { launcher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Filled.Add, contentDescription = "Añadir", tint = colorResource(R.color.blue))
+                                Text("Añadir", color = colorResource(R.color.blue), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -943,108 +781,12 @@ fun EditParkingVisual(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        Button(
-            onClick = { navController?.navigate(AppScreens.MapPicker.name) },
-            shape = pillShape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (location.value != null) colorResource(R.color.blue) else colorResource(R.color.grisClaro)
-            ),
-            modifier = Modifier
-                .fillMaxWidth(0.72f)
-                .align(Alignment.CenterHorizontally)
-        ) {
-            Text(
-                if (location.value != null) "Ubicación agregada" else "Agregar Ubicación",
-                color = if (location.value != null) Color.White else Color.DarkGray,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        if (location.value != null && address.value.isNotBlank()) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = address.value,
-                fontSize = 14.sp,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        var showOpeningDialog by remember { mutableStateOf(false) }
-        var showClosingDialog by remember { mutableStateOf(false) }
-
-        LabelAndRight(
-            label = "Hora de apertura",
-            right = {
-                Box(modifier = Modifier.clickable { showOpeningDialog = true }) {
-                    TimePill(hourStart.value)
-                }
-            }
-        )
-        LabelAndRight(
-            label = "Hora de cierre",
-            right = {
-                Box(modifier = Modifier.clickable { showClosingDialog = true }) {
-                    TimePill(hourFinish.value)
-                }
-            }
-        )
-
-        if (showOpeningDialog) {
-            TimeEditDialog(
-                title = "Hora de apertura",
-                currentTime = hourStart.value,
-                onConfirm = { hourStart.value = it; showOpeningDialog = false },
-                onDismiss = { showOpeningDialog = false }
-            )
-        }
-        if (showClosingDialog) {
-            TimeEditDialog(
-                title = "Hora de cierre",
-                currentTime = hourFinish.value,
-                onConfirm = { hourFinish.value = it; showClosingDialog = false },
-                onDismiss = { showClosingDialog = false }
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        val dayLabels = listOf("L", "M", "M", "J", "V", "S", "D")
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            dayLabels.forEach { d -> DayLetter(d) }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            selectedDays.value.forEachIndexed { index, seleccionado ->
-                CircleCheckClickable(
-                    checked = seleccionado,
-                    onClick = {
-                        val newList = selectedDays.value.toMutableList()
-                        newList[index] = !seleccionado
-                        selectedDays.value = newList
-                    }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(24.dp))
 
         Button(
             enabled = !isUploading.value,
             onClick = {
-                if (parkingId.isEmpty()) {
-                    message.value = "ID de parqueadero inválido"
-                    return@Button
-                }
+                if (parkingId.isEmpty()) { message.value = "ID de parqueadero inválido"; return@Button }
                 isUploading.value = true
 
                 val daysString = selectedDays.value
@@ -1052,8 +794,8 @@ fun EditParkingVisual(
                     .filter { it.isNotEmpty() }
                     .joinToString(",")
 
-                val totalPhotos = photoUris.value.size
-                if (totalPhotos == 0) {
+                val totalPh = photoUris.value.size
+                if (totalPh == 0) {
                     saveParkingDetails(
                         db, parkingId, name.value, pricePerHour.value, pricePerMin.value,
                         fixedPrice.value, terms.value, electricCharges.value,
@@ -1080,7 +822,7 @@ fun EditParkingVisual(
 
                             withContext(Dispatchers.Main) {
                                 saveParkingDetails(
-                                    db, parkingId, name.value , pricePerHour.value, pricePerMin.value,
+                                    db, parkingId, name.value, pricePerHour.value, pricePerMin.value,
                                     fixedPrice.value, terms.value, electricCharges.value,
                                     hourStart.value, hourFinish.value, daysString,
                                     slot.value.toIntOrNull() ?: 0,
@@ -1098,127 +840,129 @@ fun EditParkingVisual(
                 }
             },
             shape = pillShape,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(0.6f)
-                .height(54.dp),
+            modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxWidth(0.8f).height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue))
         ) {
             if (isUploading.value) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text("Guardar", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("Guardar Cambios", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
         }
-        Spacer(Modifier.height(16.dp))
+
+        Spacer(Modifier.height(12.dp))
 
         Button(
             enabled = !isUploading.value,
-            onClick = {
-                deleteParking(db, parkingId, message, isUploading, navController)
-            },
+            onClick = { deleteParking(db, parkingId, message, isUploading, navController) },
             shape = pillShape,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .fillMaxWidth(0.6f)
-                .height(54.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxWidth(0.8f).height(54.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
         ) {
             if (isUploading.value) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text("Eliminar", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                Text("Eliminar Parqueadero", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-
         if (message.value.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
             Text(
                 text = message.value,
-                color = if (message.value.startsWith("P") || message.value.startsWith("C")) Color.Green else Color.Red,
+                color = if (message.value.startsWith("C") || message.value.startsWith("P")) Color(0xFF2E7D32) else Color.Red,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(30.dp))
     }
-}
 
-@Composable
-fun LabelAndRight(label: String, right: @Composable () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(label, fontSize = 16.sp)
-        right()
-    }
-}
-
-@Composable
-fun CircleCheckClickable(checked: Boolean, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier
-            .size(28.dp)
-            .clickable { onClick() },
-        shape = CircleShape,
-        color = Color.Transparent,
-        border = BorderStroke(1.dp, Color.Black)
-    ) {
-        if (checked) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "Check",
-                    modifier = Modifier.size(18.dp)
-                )
+    if (showTermsDialog) {
+        RulesDialog(
+            initialRules = terms.value,
+            onDismiss = { showTermsDialog = false },
+            onSave = { updatedRules ->
+                terms.value = updatedRules
+                showTermsDialog = false
             }
+        )
+    }
+    if (showOpeningDialog) {
+        TimeEditDialog("Hora de apertura", hourStart.value, { hourStart.value = it; showOpeningDialog = false }, { showOpeningDialog = false })
+    }
+    if (showClosingDialog) {
+        TimeEditDialog("Hora de cierre", hourFinish.value, { hourFinish.value = it; showClosingDialog = false }, { showClosingDialog = false })
+    }
+}
+
+@Composable
+fun FormSection(title: String, icon: ImageVector, content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, tint = colorResource(R.color.blue))
+                Spacer(Modifier.width(8.dp))
+                Text(title, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+            }
+            Spacer(Modifier.height(20.dp))
+            content()
         }
     }
 }
 
 @Composable
-fun TimePill(time: String) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = colorResource(R.color.grisClaro),
-        border = BorderStroke(0.dp, Color.Transparent)
+fun ModernTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    keyboardType: KeyboardType = KeyboardType.Text
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label, color = Color.Gray, fontSize = 13.sp) },
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = colorResource(R.color.blue),
+            unfocusedBorderColor = Color(0xFFE0E0E0),
+            focusedContainerColor = Color(0xFFF9F9F9),
+            unfocusedContainerColor = Color(0xFFF9F9F9)
+        ),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        singleLine = true
+    )
+}
+
+@Composable
+fun DayToggle(letter: String, isSelected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(if (isSelected) colorResource(R.color.blue) else Color(0xFFF0F0F0))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
     ) {
         Text(
-            text = time,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-            color = colorResource(R.color.azulruta),
-            fontWeight = FontWeight.Bold
+            text = letter,
+            color = if (isSelected) Color.White else Color.Gray,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp
         )
     }
 }
 
 @Composable
-fun DayLetter(letter: String) {
-    Surface(
-        modifier = Modifier.size(34.dp),
-        shape = CircleShape,
-        color = colorResource(R.color.grisClaro)
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(letter, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-fun TimeEditDialog(
-    title: String,
-    currentTime: String,
-    onConfirm: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
+fun TimeEditDialog(title: String, currentTime: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
-
     val parts = currentTime.split(":")
     val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
     val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
@@ -1292,19 +1036,11 @@ fun saveParkingDetails(
 }
 
 fun deleteParking(
-    db: FirebaseFirestore,
-    parkingId: String,
-    message: MutableState<String>,
-    isUploading: MutableState<Boolean>,
-    navController: NavController?
+    db: FirebaseFirestore, parkingId: String, message: MutableState<String>,
+    isUploading: MutableState<Boolean>, navController: NavController?
 ) {
-    if (parkingId.isEmpty()) {
-        message.value = "ID de parqueadero inválido"
-        return
-    }
-
+    if (parkingId.isEmpty()) { message.value = "ID inválido"; return }
     isUploading.value = true
-
     db.collection("parking lots").document(parkingId).delete()
         .addOnSuccessListener {
             message.value = "Parqueadero eliminado"
@@ -1318,31 +1054,96 @@ fun deleteParking(
 
 @Composable
 fun SelectedImage(model: Any, onDelete: () -> Unit) {
-    Box(
-        modifier = Modifier.size(80.dp),
-        contentAlignment = Alignment.TopEnd
-    ) {
+    Box(modifier = Modifier.size(80.dp), contentAlignment = Alignment.TopEnd) {
         AsyncImage(
             model = model,
-            contentDescription = "Foto seleccionada",
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(12.dp)),
+            contentDescription = "Foto",
+            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop
         )
         IconButton(
             onClick = onDelete,
-            modifier = Modifier
-                .size(24.dp)
-                .padding(4.dp)
-                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            modifier = Modifier.size(24.dp).padding(4.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape)
         ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Eliminar foto",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
+            Icon(Icons.Default.Close, contentDescription = "Eliminar", tint = Color.White, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+fun RulesDialog(
+    initialRules: String,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit
+) {
+    var rulesList by remember { mutableStateOf(initialRules.split("\n").filter { it.isNotBlank() }) }
+    var newRuleText by remember { mutableStateOf("") }
+
+    Dialog(onDismissRequest = { onDismiss() }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(0.9f).fillMaxHeight(0.85f),
+            shape = RoundedCornerShape(24.dp),
+            color = Color.White
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("Reglas del Parqueadero", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Agrega las normas una por una. Los conductores las verán como una lista.", color = Color.Gray, fontSize = 14.sp)
+
+                Spacer(modifier = Modifier.height(20.dp))
+                OutlinedTextField(
+                    value = newRuleText,
+                    onValueChange = { newRuleText = it },
+                    placeholder = { Text("Ej. No dejar objetos de valor...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorResource(R.color.blue), unfocusedBorderColor = Color.Gray
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            if (newRuleText.isNotBlank()) {
+                                rulesList = rulesList + newRuleText.trim()
+                                newRuleText = ""
+                            }
+                        }) {
+                            Icon(Icons.Default.Add, contentDescription = "Agregar", tint = colorResource(R.color.blue))
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (rulesList.isEmpty()) {
+                        item { Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No hay reglas añadidas.", color = Color.LightGray, modifier = Modifier.padding(top = 32.dp)) } }
+                    }
+                    items(rulesList) { rule ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().background(colorResource(R.color.grisClaro), RoundedCornerShape(12.dp)).padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = colorResource(R.color.blue), modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = rule, modifier = Modifier.weight(1f), fontSize = 14.sp, color = Color.DarkGray)
+                            IconButton(onClick = { rulesList = rulesList.filter { it != rule } }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Close, contentDescription = "Eliminar", tint = Color.Red)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.Gray, fontWeight = FontWeight.Bold) }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            var finalRules = rulesList
+                            if (newRuleText.isNotBlank()) { finalRules = finalRules + newRuleText.trim() }
+                            onSave(finalRules.joinToString("\n"))
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)), shape = RoundedCornerShape(50)
+                    ) { Text("Guardar Reglas", color = Color.White, fontWeight = FontWeight.Bold) }
+                }
+            }
         }
     }
 }
