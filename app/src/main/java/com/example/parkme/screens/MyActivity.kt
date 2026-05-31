@@ -648,7 +648,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                                     Button(
                                                         onClick = {
                                                             chatViewModel.initChatRoom(reserva)
-                                                            navController.navigate(AppScreens.ChatListCli.name)
+                                                            navController.navigate(AppScreens.ChatListOp.name)
                                                         },
                                                         colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                                                         modifier = Modifier.weight(1f).height(42.dp),
