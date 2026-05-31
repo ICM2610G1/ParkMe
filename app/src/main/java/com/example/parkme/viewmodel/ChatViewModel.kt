@@ -72,17 +72,36 @@ class ChatViewModel : ViewModel() {
     }
 
     fun initChatRoom(reservation: Reservation) {
-        val chatRoom = ChatRoom(
-            id = reservation.id,
-            parkingName = reservation.parkingName,
-            userId = reservation.userId,
-            operatorId = reservation.operatorId
-        )
+        db.collection("users").document(reservation.userId).get()
+            .addOnSuccessListener { userDoc ->
+                val name = userDoc.getString("name") ?: "Usuario"
+                val lastName = userDoc.getString("lastName") ?: ""
+                val fullUserName = "$name $lastName".trim()
 
-        db.collection("chats").document(reservation.id)
-            .set(chatRoom, SetOptions.merge())
-            .addOnSuccessListener { Log.i("ChatViewModel", "Sala de chat asegurada") }
-            .addOnFailureListener { e -> Log.e("ChatViewModel", "Error al crear sala", e) }
+                val chatRoom = ChatRoom(
+                    id = reservation.id,
+                    parkingName = reservation.parkingName,
+                    userName = fullUserName,
+                    userId = reservation.userId,
+                    operatorId = reservation.operatorId
+                )
+
+                db.collection("chats").document(reservation.id)
+                    .set(chatRoom, SetOptions.merge())
+                    .addOnSuccessListener { Log.i("ChatViewModel", "Sala de chat asegurada con nombre") }
+                    .addOnFailureListener { e -> Log.e("ChatViewModel", "Error al crear sala", e) }
+            }
+            .addOnFailureListener { e ->
+                Log.e("ChatViewModel", "Error al buscar usuario, usando genérico", e)
+                val chatRoom = ChatRoom(
+                    id = reservation.id,
+                    parkingName = reservation.parkingName,
+                    userName = "Usuario",
+                    userId = reservation.userId,
+                    operatorId = reservation.operatorId
+                )
+                db.collection("chats").document(reservation.id).set(chatRoom, SetOptions.merge())
+            }
     }
 
     fun fetchMyChats(userId: String, isOperator: Boolean) {

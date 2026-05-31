@@ -125,6 +125,7 @@ fun ChatListScreen(
                 items(chatRooms) { room ->
                     ChatRoomItem(
                         chatRoom = room,
+                        isOperator = isOperator,
                         onClick = {
                             ReservationHolder.selectedReservationId = room.id
 
@@ -144,7 +145,12 @@ fun ChatListScreen(
 }
 
 @Composable
-fun ChatRoomItem(chatRoom: ChatRoom, onClick: () -> Unit) {
+fun ChatRoomItem(chatRoom: ChatRoom,isOperator: Boolean, onClick: () -> Unit) {
+    val displayName = if (isOperator) {
+        if (chatRoom.userName.isNotBlank()) chatRoom.userName else "Usuario"
+    } else {
+        chatRoom.parkingName
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -176,7 +182,7 @@ fun ChatRoomItem(chatRoom: ChatRoom, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = chatRoom.parkingName,
+                text = displayName,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = colorResource(id = R.color.black),
