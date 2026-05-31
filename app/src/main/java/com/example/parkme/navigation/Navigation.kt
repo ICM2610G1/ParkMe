@@ -97,23 +97,6 @@ fun Navigation() {
                 viewModel = viewModel
             )
         }
-        composable(route = AppScreens.ParkingGallery.name) { backStackEntry ->
-
-            val parking = navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.get<ParkingLot>("parking_data")
-
-            if (parking != null) {
-                ParkingLotDetail(
-                    navController = navController,
-                    parking = parking
-                )
-            } else {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Error al cargar las fotos")
-                }
-            }
-        }
         composable(AppScreens.MyActivity.name) { MyActivity(navController,viewModel) }
         composable(AppScreens.UserProfile.name) { ProfileScreen(navController, viewModel) }
         composable(AppScreens.OperatorProfile.name) { ProfileScreen(navController, viewModel) }

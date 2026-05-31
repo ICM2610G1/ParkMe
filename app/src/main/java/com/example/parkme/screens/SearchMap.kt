@@ -82,10 +82,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
+
 fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+fun formatPriceWithDots(price: String): String {
+    val cleanStr = price.replace(Regex("[^\\d]"), "")
+    val value = cleanStr.toLongOrNull() ?: return price
+    val format = java.text.NumberFormat.getNumberInstance(java.util.Locale("es", "CO"))
+    return "$" + format.format(value)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -370,7 +378,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                 Marker(
                     state = MarkerState(position = parking.location),
                     title = parking.name,
-                    snippet = "Cupos: ${parking.slot} - Precio: ${parking.pricePerHour}",
+                    snippet = "Cupos: ${parking.slot} - Precio: ${formatPriceWithDots(parking.pricePerHour)}",
                     icon = BitmapDescriptorFactory.fromBitmap(pinBitmap),
                     onClick = { selectedForDetails = parking; false })
             }
@@ -511,7 +519,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    text = confirmedParkingLot!!.pricePerHour,
+                                    text = formatPriceWithDots(confirmedParkingLot!!.pricePerHour),
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     color = Color(0xFF2E7D32),
                                     fontWeight = FontWeight.Bold
@@ -530,7 +538,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(50)
                         ) {
-                            Text("Ver Detalles Completos", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("Ver Fotos del Parqueadero", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -595,9 +603,9 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        PriceCard(title = "Minuto", price = p.pricePerMin, modifier = Modifier.weight(1f))
-                        PriceCard(title = "Hora", price = p.pricePerHour, modifier = Modifier.weight(1f))
-                        PriceCard(title = "Fija", price = p.fixedPrice, modifier = Modifier.weight(1f))
+                        PriceCard(title = "Minuto", price = formatPriceWithDots(p.pricePerMin), modifier = Modifier.weight(1f))
+                        PriceCard(title = "Hora", price = formatPriceWithDots(p.pricePerHour), modifier = Modifier.weight(1f))
+                        PriceCard(title = "Fija", price = formatPriceWithDots(p.fixedPrice), modifier = Modifier.weight(1f))
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -619,9 +627,8 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // HORAS (Alineado a la izquierda con ancho fijo pequeño)
                             Column(
-                                modifier = Modifier.width(80.dp),
+                                modifier = Modifier.width(75.dp),
                                 horizontalAlignment = Alignment.Start
                             ) {
                                 Text(text = "Horario", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
@@ -634,23 +641,22 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                 )
                                 Text(
                                     text = "a ${p.hourFinish}",
-                                    fontSize = 14.sp,
-                                    color = Color.DarkGray,
-                                    fontWeight = FontWeight.Medium
+                                    fontSize = 16.sp,
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.ExtraBold
                                 )
                             }
 
-                            // Separador con más espacio
-                            Spacer(modifier = Modifier.width(16.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Box(
                                 modifier = Modifier
                                     .height(48.dp)
                                     .width(1.dp)
                                     .background(Color(0xFFE0E0E0))
                             )
-                            Spacer(modifier = Modifier.width(20.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
-                            // DIAS (Ocupa todo el espacio restante uniformemente)
+
                             Column(
                                 modifier = Modifier.weight(1f),
                                 horizontalAlignment = Alignment.Start
@@ -696,15 +702,13 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         iconColor = if (p.slot > 0) Color.Black else Color.Red
                     )
 
-                    if (p.electricCharges) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        RowInfo(
-                            icon = Icons.Default.Check,
-                            title = "Carga Eléctrica",
-                            detail = "Estación disponible",
-                            iconColor = colorResource(R.color.blue)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    RowInfo(
+                        icon = if (p.electricCharges) Icons.Default.Check else Icons.Default.Close,
+                        title = "Carga Eléctrica",
+                        detail = if (p.electricCharges) "Estación disponible" else "No disponible",
+                        iconColor = if (p.electricCharges) colorResource(R.color.blue) else Color.Red
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -746,8 +750,8 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
 
                         TextButton(
                             onClick = {
-                                navController.currentBackStackEntry?.savedStateHandle?.set("parking_data", p)
-                                navController.navigate("ParkingGallery")
+                                ParkingLotHolder.selected = p
+                                navController.navigate(AppScreens.ParkingLotDetail.name)
                             },
                             contentPadding = PaddingValues(0.dp)
                         ) {
@@ -757,43 +761,50 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
 
                     Spacer(Modifier.height(12.dp))
 
-// Reemplazamos Row estático por LazyRow para que se pueda hacer scroll horizontal
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (p.photos.isEmpty()) {
-                            // En LazyRow, en lugar de repeat(3), usamos items(3)
-                            items(3) {
+
+                        val previewPhotos = p.photos.take(3)
+
+                        if (previewPhotos.isEmpty()) {
+                            repeat(3) {
                                 Image(
                                     painter = painterResource(id = R.drawable.default1),
                                     contentDescription = "Sin foto",
                                     modifier = Modifier
-                                        .size(100.dp)
+                                        .weight(1f)
+                                        .aspectRatio(1f)
                                         .clip(RoundedCornerShape(12.dp)),
                                     contentScale = ContentScale.Crop
                                 )
                             }
                         } else {
-                            // En LazyRow, usamos items() para iterar sobre la lista.
-                            // Nota: Quité el .take(3) para que la LazyRow tenga sentido y el usuario
-                            // pueda deslizar para ver todas las fotos miniatura aquí mismo.
-                            items(p.photos) { url ->
+                            previewPhotos.forEach { url ->
                                 AsyncImage(
                                     model = url,
                                     contentDescription = "Foto parqueadero",
                                     modifier = Modifier
-                                        .size(100.dp)
+                                        .weight(1f)
+                                        .aspectRatio(1f)
                                         .clip(RoundedCornerShape(12.dp)),
                                     contentScale = ContentScale.Crop
                                 )
+                            }
+
+                            if (previewPhotos.size < 3) {
+                                repeat(3 - previewPhotos.size) {
+                                    Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                                }
                             }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // 🔥 BOTONES OVALADOS (RoundedCornerShape 50)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -867,7 +878,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Hora: ${parking.pricePerHour}",
+                                        text = "Hora: ${formatPriceWithDots(parking.pricePerHour)}",
                                         fontSize = 14.sp,
                                         color = Color.DarkGray
                                     )
@@ -950,8 +961,10 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     )
                 )
                 Spacer(modifier = Modifier.height(24.dp))
+
+                val format = java.text.NumberFormat.getNumberInstance(java.util.Locale("es", "CO"))
                 Text(
-                    "Precio por Hora (Max): $${tempMaxPrice.toInt()}",
+                    "Precio por Hora (Max): $${format.format(tempMaxPrice.toInt())}",
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
@@ -1083,7 +1096,7 @@ fun PriceCard(title: String, price: String, modifier: Modifier = Modifier) {
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color(0xFFE0E0E0)) // Borde gris claro para cuadros blancos
+        border = BorderStroke(1.dp, Color(0xFFE0E0E0))
     ) {
         Column(
             modifier = Modifier.padding(12.dp).fillMaxWidth(),
