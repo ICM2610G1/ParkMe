@@ -1,5 +1,6 @@
 package com.example.parkme.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,10 +38,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
-    var mostrarFormulario by remember { mutableStateOf(false) }
+    var showForm by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
-    var mensajeReserva by remember { mutableStateOf("") }
-    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+    var reservationMessage by remember { mutableStateOf("") }
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -52,7 +54,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(16.dp)
-                    .padding(bottom = if (mostrarFormulario) 380.dp else 100.dp)
+                    .padding(bottom = if (showForm) 380.dp else 100.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.Start
             ) {
@@ -141,21 +143,51 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     }
                 }
 
-                Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(bottom = 12.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .padding(top = 6.dp, end = 12.dp)
-                            .size(6.dp)
-                            .background(Color.Black, CircleShape)
-                    )
-                    Column {
-                        Text("Reglas del parqueadero", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = parking.terms.ifEmpty { "Sin reglas definidas" }, fontSize = 16.sp, color = Color.DarkGray)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("Reglas del parqueadero", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val rulesList = if (parking.terms.isNotBlank()) {
+                    parking.terms.split("\n", ". ").filter { it.isNotBlank() }
+                } else {
+                    listOf("No hay reglas específicas definidas para este lugar.")
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.08f)),
+                    border = BorderStroke(1.dp, colorResource(R.color.blue).copy(alpha = 0.3f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        rulesList.forEach { rule ->
+                            Row(verticalAlignment = Alignment.Top) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = "Regla",
+                                    tint = colorResource(R.color.blue),
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .padding(top = 2.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = rule.trim().replaceFirstChar { it.uppercase() },
+                                    fontSize = 15.sp,
+                                    color = colorResource(R.color.black),
+                                    lineHeight = 22.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                     Text("Fotos", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = colorResource(R.color.black))
@@ -188,54 +220,54 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
             }
 
             Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-                if (mostrarFormulario) {
+                if (showForm) {
                     if (isSubmitting) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(colorResource(R.color.grisClaro), RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-                                .padding(40.dp),
+                                .background(Color.White, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                                .border(1.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+                                .padding(60.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(color = colorResource(R.color.blue))
+                            CircularProgressIndicator(color = colorResource(R.color.azulruta))
                         }
                     } else {
                         ReservationBottomBox(
                             parking = parking,
-                            onCancel = { mostrarFormulario = false },
-                            onConfirm = { placa, horaLlegada, horaSalida ->
+                            onCancel = { showForm = false },
+                            onConfirm = { licensePlate, arrivalTime, departureTime ->
                                 isSubmitting = true
-                                mensajeReserva = ""
+                                reservationMessage = ""
 
-                                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                                val hoy = sdf.format(java.util.Date())
+                                val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                val today = dateFormat.format(java.util.Date())
 
-                                val llegadaFull = "$hoy $horaLlegada"
-                                val salidaFull = "$hoy $horaSalida"
+                                val fullArrivalTime = "$today $arrivalTime"
+                                val fullDepartureTime = "$today $departureTime"
 
-                                val nuevaReserva = Reservation(
+                                val newReservation = Reservation(
                                     parkingId = parking.id,
                                     parkingName = parking.name,
-                                    userId = uid,
+                                    userId = currentUserId,
                                     operatorId = parking.operatorId,
-                                    licensePlate = placa,
-                                    startTime = llegadaFull,
-                                    endTime = salidaFull,
+                                    licensePlate = licensePlate,
+                                    startTime = fullArrivalTime,
+                                    endTime = fullDepartureTime,
                                     status = "Activa"
                                 )
 
-
                                 reserveSlot(
-                                    reserva = nuevaReserva,
+                                    reservation = newReservation,
                                     maxSlots = parking.slot,
                                     onSuccess = {
                                         isSubmitting = false
-                                        mostrarFormulario = false
+                                        showForm = false
                                         navController.navigate(AppScreens.MyActivity.name)
                                     },
                                     onError = { e ->
                                         isSubmitting = false
-                                        mensajeReserva = "Error: ${e.message}"
+                                        reservationMessage = "Error: ${e.message}"
                                     }
                                 )
                             }
@@ -247,7 +279,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                         contentAlignment = Alignment.Center
                     ) {
                         Button(
-                            onClick = { mostrarFormulario = true },
+                            onClick = { showForm = true },
                             modifier = Modifier.fillMaxWidth(0.85f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                             shape = RoundedCornerShape(16.dp)
@@ -258,9 +290,9 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 }
             }
 
-            if (mensajeReserva.isNotEmpty() && !mostrarFormulario) {
+            if (reservationMessage.isNotEmpty() && !showForm) {
                 Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp)) {
-                    Text(text = mensajeReserva, color = Color.Red, fontWeight = FontWeight.Bold)
+                    Text(text = reservationMessage, color = Color.Red, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -271,181 +303,238 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
 fun ReservationBottomBox(
     parking: ParkingLot,
     onCancel: () -> Unit,
-    onConfirm: (placa: String, horaLlegada: String, horaSalida: String) -> Unit
+    onConfirm: (licensePlate: String, arrivalTime: String, departureTime: String) -> Unit
 ) {
-    var placa by remember { mutableStateOf("") }
-    var horaLlegada by remember { mutableStateOf(parking.hourStart) }
-    var horaSalida by remember { mutableStateOf(parking.hourFinish) }
+    var licensePlate by remember { mutableStateOf("") }
+    var arrivalTime by remember { mutableStateOf(parking.hourStart) }
+    var departureTime by remember { mutableStateOf(parking.hourFinish) }
 
-    var mostrarDialogoLlegada by remember { mutableStateOf(false) }
-    var mostrarDialogoSalida by remember { mutableStateOf(false) }
+    var showArrivalDialog by remember { mutableStateOf(false) }
+    var showDepartureDialog by remember { mutableStateOf(false) }
 
-    var cuposDisponibles by remember { mutableIntStateOf(parking.slot) }
-    var mensajeErrorHorario by remember { mutableStateOf("") }
-    var isCheckingDisponibilidad by remember { mutableStateOf(false) }
+    var availableSlots by remember { mutableIntStateOf(parking.slot) }
+    var scheduleErrorMessage by remember { mutableStateOf("") }
+    var isCheckingAvailability by remember { mutableStateOf(false) }
 
-    LaunchedEffect(horaLlegada, horaSalida) {
-        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-        val hoy = sdf.format(java.util.Date())
-        val llegadaFull = "$hoy $horaLlegada"
-        val salidaFull = "$hoy $horaSalida"
+    LaunchedEffect(arrivalTime, departureTime) {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val today = dateFormat.format(java.util.Date())
+        val fullArrivalTime = "$today $arrivalTime"
+        val fullDepartureTime = "$today $departureTime"
 
         FirebaseFirestore.getInstance().collection("reservas")
             .whereEqualTo("parkingId", parking.id)
             .whereEqualTo("status", "Activa")
             .get()
             .addOnSuccessListener { snapshot ->
-                var reservasSuperpuestas = 0
+                var overlappingReservations = 0
                 for (doc in snapshot.documents) {
                     var rStart = doc.getString("startTime") ?: ""
                     var rEnd = doc.getString("endTime") ?: ""
 
-                    if (rStart.length <= 5) rStart = "$hoy $rStart"
-                    if (rEnd.length <= 5) rEnd = "$hoy $rEnd"
+                    if (rStart.length <= 5) rStart = "$today $rStart"
+                    if (rEnd.length <= 5) rEnd = "$today $rEnd"
 
-                    if (llegadaFull < rEnd && salidaFull > rStart) {
-                        reservasSuperpuestas++
+                    if (fullArrivalTime < rEnd && fullDepartureTime > rStart) {
+                        overlappingReservations++
                     }
                 }
 
-                cuposDisponibles = parking.slot - reservasSuperpuestas
+                availableSlots = parking.slot - overlappingReservations
 
-                if (cuposDisponibles <= 0) {
-                    mensajeErrorHorario = "Agotado en este horario, selecciona otro."
+                if (availableSlots <= 0) {
+                    scheduleErrorMessage = "Agotado en este horario, selecciona otro."
                 }
-                isCheckingDisponibilidad = false
+                isCheckingAvailability = false
             }
             .addOnFailureListener {
-                mensajeErrorHorario = "Error al conectar con la base de datos"
-                isCheckingDisponibilidad = false
+                scheduleErrorMessage = "Error al conectar con la base de datos"
+                isCheckingAvailability = false
             }
     }
 
-    if (mostrarDialogoLlegada) {
-        TimeEditDialog("Hora de llegada", horaLlegada, { horaLlegada = it; mostrarDialogoLlegada = false }, { mostrarDialogoLlegada = false })
+    if (showArrivalDialog) {
+        TimeEditDialog("Hora de llegada", arrivalTime, { arrivalTime = it; showArrivalDialog = false }, { showArrivalDialog = false })
     }
-    if (mostrarDialogoSalida) {
-        TimeEditDialog("Hora de salida", horaSalida, { horaSalida = it; mostrarDialogoSalida = false }, { mostrarDialogoSalida = false })
+    if (showDepartureDialog) {
+        TimeEditDialog("Hora de salida", departureTime, { departureTime = it; showDepartureDialog = false }, { showDepartureDialog = false })
     }
 
     Column(
         modifier = Modifier
             .background(
-                color = colorResource(R.color.grisClaro),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                color = Color.White,
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
             )
-            .padding(24.dp)
+            .border(1.dp, Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+            .padding(28.dp)
             .fillMaxWidth()
     ) {
-        Text("Detalles de tu reserva", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        Text(parking.name, fontSize = 14.sp,  color = Color.DarkGray)
-        Spacer(modifier = Modifier.height(16.dp))
+        Text("Detalles de tu reserva", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(parking.name, fontSize = 15.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+
+        Spacer(modifier = Modifier.height(20.dp))
 
         OutlinedTextField(
-            value = placa,
+            value = licensePlate,
             onValueChange = { newValue ->
-                val textoBase = newValue.replace("-", "").uppercase()
-
-                var textoFiltrado = ""
-                for (i in textoBase.indices) {
-                    if (i < 3 && textoBase[i].isLetter()) {
-                        textoFiltrado += textoBase[i]
-                    } else if (i in 3..5 && textoBase[i].isDigit()) {
-                        textoFiltrado += textoBase[i]
+                val baseText = newValue.replace("-", "").uppercase()
+                var filteredText = ""
+                for (i in baseText.indices) {
+                    if (i < 3 && baseText[i].isLetter()) {
+                        filteredText += baseText[i]
+                    } else if (i in 3..5 && baseText[i].isDigit()) {
+                        filteredText += baseText[i]
                     }
                 }
-
-                placa = if (textoFiltrado.length > 3) {
-                    "${textoFiltrado.substring(0, 3)}-${textoFiltrado.substring(3)}"
+                licensePlate = if (filteredText.length > 3) {
+                    "${filteredText.substring(0, 3)}-${filteredText.substring(3)}"
                 } else {
-                    textoFiltrado
+                    filteredText
                 }
             },
-            label = { Text("Placa (Ej: ABC-123)", fontSize = 14.sp) },
-            shape = RoundedCornerShape(50),
+            label = { Text("Placa del vehículo (Ej: ABC-123)", fontSize = 14.sp) },
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = colorResource(R.color.blue),
-                unfocusedBorderColor = Color.Gray
-            )
+                focusedBorderColor = colorResource(R.color.azulruta),
+                focusedLabelColor = colorResource(R.color.azulruta),
+                unfocusedBorderColor = Color.LightGray
+            ),
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = if (licensePlate.length == 7) colorResource(R.color.azulruta) else Color.LightGray
+                )
+            }
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
-        LabelAndRight("Llegada", right = {
-            Box(modifier = Modifier.clickable { mostrarDialogoLlegada = true }) { TimePill(horaLlegada) }
-        })
-        LabelAndRight("Salida", right = {
-            Box(modifier = Modifier.clickable { mostrarDialogoSalida = true }) { TimePill(horaSalida) }
-        })
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { showArrivalDialog = true },
+                colors = CardDefaults.cardColors(containerColor = colorResource(R.color.azulruta).copy(alpha = 0.08f)),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, colorResource(R.color.azulruta).copy(alpha = 0.3f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Llegada", fontSize = 13.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(arrivalTime, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = colorResource(R.color.azulruta))
+                }
+            }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            if (isCheckingDisponibilidad) {
-                Text("Calculando disponibilidad...", color = Color.Gray, fontSize = 13.sp)
-            } else if (mensajeErrorHorario.isNotEmpty()) {
-                Text(mensajeErrorHorario, color = Color.Red, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            } else {
-                Text("Hay $cuposDisponibles cupos en este horario", color = Color(0xFF008000), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { showDepartureDialog = true },
+                colors = CardDefaults.cardColors(containerColor = colorResource(R.color.azulruta).copy(alpha = 0.08f)),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, colorResource(R.color.azulruta).copy(alpha = 0.3f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Salida", fontSize = 13.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(departureTime, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = colorResource(R.color.azulruta))
+                }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (isCheckingAvailability) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)), shape = CircleShape) {
+                    Text("Calculando disponibilidad...", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = Color.Gray, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                }
+            } else if (scheduleErrorMessage.isNotEmpty()) {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)), shape = CircleShape) {
+                    Text(scheduleErrorMessage, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = Color(0xFFC62828), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)), shape = CircleShape) {
+                    Text("¡Hay $availableSlots cupos disponibles!", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = Color(0xFF2E7D32), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
                 onClick = onCancel,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(50)
-            ) { Text("Cancelar", color = Color.White, fontWeight = FontWeight.Bold) }
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEEEEEE)),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) { Text("Cancelar", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
 
             Button(
-                enabled = placa.length == 7 && mensajeErrorHorario.isEmpty() && !isCheckingDisponibilidad,
-                onClick = { onConfirm(placa, horaLlegada, horaSalida) },
-                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(50)
-            ) { Text("Confirmar", color = Color.White, fontWeight = FontWeight.Bold) }
+                enabled = licensePlate.length == 7 && scheduleErrorMessage.isEmpty() && !isCheckingAvailability,
+                onClick = { onConfirm(licensePlate, arrivalTime, departureTime) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorResource(R.color.azulruta),
+                    disabledContainerColor = colorResource(R.color.azulruta).copy(alpha = 0.4f)
+                ),
+                modifier = Modifier
+                    .weight(1.5f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) { Text("Confirmar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
         }
     }
 }
 
 fun reserveSlot(
-    reserva: Reservation,
+    reservation: Reservation,
     maxSlots: Int,
     onSuccess: () -> Unit,
     onError: (Exception) -> Unit
 ) {
     val db = FirebaseFirestore.getInstance()
 
-    val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-    val hoy = sdf.format(java.util.Date())
+    val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+    val today = dateFormat.format(java.util.Date())
 
     db.collection("reservas")
-        .whereEqualTo("parkingId", reserva.parkingId)
+        .whereEqualTo("parkingId", reservation.parkingId)
         .whereEqualTo("status", "Activa")
         .get()
         .addOnSuccessListener { snapshot ->
-            var reservasSuperpuestas = 0
+            var overlappingReservations = 0
             for (doc in snapshot.documents) {
                 var rStart = doc.getString("startTime") ?: ""
                 var rEnd = doc.getString("endTime") ?: ""
 
-                if (rStart.length <= 5 && rStart.isNotEmpty()) rStart = "$hoy $rStart"
-                if (rEnd.length <= 5 && rEnd.isNotEmpty()) rEnd = "$hoy $rEnd"
+                if (rStart.length <= 5 && rStart.isNotEmpty()) rStart = "$today $rStart"
+                if (rEnd.length <= 5 && rEnd.isNotEmpty()) rEnd = "$today $rEnd"
 
-                if (reserva.startTime < rEnd && reserva.endTime > rStart) {
-                    reservasSuperpuestas++
+                if (reservation.startTime < rEnd && reservation.endTime > rStart) {
+                    overlappingReservations++
                 }
             }
 
-            if (reservasSuperpuestas < maxSlots) {
+            if (overlappingReservations < maxSlots) {
                 val reservationRef = db.collection("reservas").document()
-                val reservaFinal = reserva.copy(id = reservationRef.id)
+                val finalReservation = reservation.copy(id = reservationRef.id)
 
-                reservationRef.set(reservaFinal)
+                reservationRef.set(finalReservation)
                     .addOnSuccessListener { onSuccess() }
                     .addOnFailureListener { e -> onError(e) }
             } else {

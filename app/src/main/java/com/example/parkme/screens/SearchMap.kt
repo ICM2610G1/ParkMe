@@ -27,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
@@ -41,6 +42,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -444,57 +446,92 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         ) {
             if (confirmedParkingLot != null) {
                 if (isSearching) {
-                    Text(
-                        text = buildAnnotatedString {
-                            append("Conectando con el ")
-                            withStyle(
-                                style = SpanStyle(
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            color = colorResource(R.color.blue),
+                            modifier = Modifier.size(56.dp),
+                            strokeWidth = 6.dp
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = buildAnnotatedString {
+                                append("Conectando con\n")
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = colorResource(R.color.blue),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 22.sp
+                                    )
+                                ) { append(confirmedParkingLot!!.name) }
+                            },
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.alpha(alphaAnim)
+                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = confirmedParkingLot!!.name,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.1f)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "Cupos: ${confirmedParkingLot!!.slot}",
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                     color = colorResource(R.color.blue),
                                     fontWeight = FontWeight.Bold
                                 )
-                            ) { append("parqueadero seleccionado") }
-                            append("...")
-                        },
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        modifier = Modifier.alpha(alphaAnim)
-                    )
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        color = colorResource(R.color.blue)
-                    )
-                } else {
-                    Text(
-                        text = confirmedParkingLot!!.name,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = "Cupos disponibles: ${confirmedParkingLot!!.slot} | Tarifa: ${confirmedParkingLot!!.pricePerHour}",
-                        fontSize = 16.sp,
-                        color = Color.DarkGray,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                    Button(
-                        onClick = {
-                            ParkingLotHolder.selected = confirmedParkingLot
-                            navController.navigate(AppScreens.ParkingLotDetail.name)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        shape = RoundedCornerShape(50)
-                    ) {
-                        Text(
-                            "Ver Detalles Completos",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = confirmedParkingLot!!.pricePerHour,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    color = Color(0xFF2E7D32),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Button(
+                            onClick = {
+                                ParkingLotHolder.selected = confirmedParkingLot
+                                navController.navigate(AppScreens.ParkingLotDetail.name)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Text("Ver Detalles Completos", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
@@ -505,17 +542,13 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         isSearching = false
                         routePoints = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = if (isSearching) 24.dp else 12.dp),
-                    shape = RoundedCornerShape(50)
+                        .padding(top = 8.dp),
+                    elevation = ButtonDefaults.buttonElevation(0.dp)
                 ) {
-                    Text(
-                        text = "Cancelar conexión",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "Cancelar conexión", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
 
             } else if (selectedForDetails != null) {
@@ -525,57 +558,186 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         .weight(1f, fill = false)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text(
-                        text = p.name,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Cupos disponibles: ${p.slot}",
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.DarkGray
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = p.name,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Black,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (p.slot > 0) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = if (p.slot > 0) "${p.slot} Cupos" else "Lleno",
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                color = if (p.slot > 0) Color(0xFF2E7D32) else Color(0xFFC62828),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text("Tarifas", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Gray)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Tarifas:", fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(
-                        text = "• Por Minuto: ${p.pricePerMin}\n• Por Hora: ${p.pricePerHour}\n• Tarifa Fija: ${p.fixedPrice}",
-                        color = Color.DarkGray
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = "Horario:", fontWeight = FontWeight.Bold, color = Color.Black)
-                    Text(
-                        text = "${p.weekAvailability} | ${p.hourStart} - ${p.hourFinish}",
-                        color = Color.DarkGray
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Carga Eléctrica: ${if (p.electricCharges) "Sí" else "No"}",
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.DarkGray
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Términos y condiciones:",
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                    Text(text = p.terms, fontSize = 12.sp, color = Color.Gray)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        PriceCard(title = "Minuto", price = p.pricePerMin, modifier = Modifier.weight(1f))
+                        PriceCard(title = "Hora", price = p.pricePerHour, modifier = Modifier.weight(1f), highlight = true)
+                        PriceCard(title = "Fija", price = p.fixedPrice, modifier = Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Disponibilidad", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE0E0E0))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1.4f)) {
+                                Text(text = "Días de servicio", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    val diasList = p.weekAvailability.split(",").filter { it.isNotBlank() }
+                                    diasList.take(7).forEach { dia ->
+                                        Box(
+                                            modifier = Modifier
+                                                .background(
+                                                    color = colorResource(R.color.blue).copy(alpha = 0.15f),
+                                                    shape = RoundedCornerShape(6.dp)
+                                                )
+                                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = dia.trim().uppercase(),
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = colorResource(R.color.blue)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .height(40.dp)
+                                    .width(1.dp)
+                                    .background(Color(0xFFE0E0E0))
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+
+                            Column(modifier = Modifier.weight(0.6f)) {
+                                Text(text = "Horas", fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = p.hourStart,
+                                    fontSize = 14.sp,
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                                Text(
+                                    text = "a ${p.hourFinish}",
+                                    fontSize = 13.sp,
+                                    color = Color.DarkGray,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    RowInfo(
+                        icon = if (p.electricCharges) androidx.compose.material.icons.Icons.Default.Check else androidx.compose.material.icons.Icons.Default.Close,
+                        title = "Carga Eléctrica",
+                        detail = if (p.electricCharges) "Disponible para clientes" else "No disponible",
+                        iconColor = if (p.electricCharges) colorResource(R.color.verdepasto) else Color.Gray
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text("Reglas del parqueadero", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val rulesList = if (p.terms.isNotBlank()) p.terms.split("\n", ". ").filter { it.isNotBlank() } else listOf("Sin reglas definidas.")
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.05f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colorResource(R.color.blue).copy(alpha = 0.2f))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rulesList.forEach { rule ->
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Icon(
+                                        imageVector = androidx.compose.material.icons.Icons.Default.Menu,
+                                        contentDescription = null,
+                                        tint = colorResource(R.color.blue),
+                                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = rule.trim().replaceFirstChar { it.uppercase() },
+                                        fontSize = 13.sp,
+                                        color = Color.DarkGray,
+                                        lineHeight = 18.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Button(
                             onClick = { selectedForDetails = null },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                            modifier = Modifier.weight(1f)
-                        ) { Text("Volver", color = Color.White) }
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEEEEEE)),
+                            modifier = Modifier.weight(1f).height(50.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("Volver", color = Color.Black, fontWeight = FontWeight.Bold) }
+
                         Button(
                             onClick = { confirmedParkingLot = p; isSearching = true },
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                            modifier = Modifier.weight(1f)
-                        ) { Text("Aceptar", color = Color.White) }
+                            modifier = Modifier.weight(1.5f).height(50.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("Aceptar y Conectar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
                     }
                 }
+
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -836,3 +998,35 @@ suspend fun fetchRouteFromGoogle(
     }
 }
 
+
+@Composable
+fun PriceCard(title: String, price: String, modifier: Modifier = Modifier, highlight: Boolean = false) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = if (highlight) colorResource(R.color.azulruta) else colorResource(R.color.grisclaro)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = title, fontSize = 12.sp, color = if (highlight) Color.White.copy(alpha = 0.8f) else Color.Gray)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = price, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = if (highlight) Color.White else Color.Black)
+        }
+    }
+}
+
+@Composable
+fun RowInfo(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, detail: String, iconColor: Color = Color.Gray) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(text = title, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
+            Text(text = detail, fontSize = 14.sp, color = Color.Black, fontWeight = FontWeight.Medium)
+        }
+    }
+}
