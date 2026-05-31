@@ -40,6 +40,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -52,9 +54,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.clip
+import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
 import com.example.parkme.viewmodel.AppViewModel
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
@@ -65,6 +72,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     val context = LocalContext.current
 
     val authState by viewModel.authState.collectAsState()
+    val profileImageUrl = authState.profileImageUrl
 
     val isOperator = authState.userRole == "Operador"
 
@@ -74,6 +82,22 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     val chatRoute = if (isOperator) AppScreens.ChatListOp.name else AppScreens.ChatListCli.name
     val roleText = if (isOperator) "Operador" else "Usuario"
 
+    val operatorParkingLots by viewModel.operatorParkingLots.collectAsState()
+    LaunchedEffect(isOperator) {
+        if (isOperator) {
+            viewModel.fetchOperatorActivity()
+        }
+    }
+    val averageRating = remember(operatorParkingLots) {
+        var totalScore = 0.0
+        var totalVotes = 0
+        operatorParkingLots.forEach { lot ->
+            totalScore += (lot.rate * lot.ratingCount)
+            totalVotes += lot.ratingCount
+        }
+        if (totalVotes > 0) totalScore / totalVotes else 0.0
+    }
+    val formattedRating = if (averageRating > 0.0) String.format(Locale.US, "%.1f", averageRating) else "0.0"
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
@@ -145,26 +169,45 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.profile),
-                contentDescription = "perfil",
-                modifier = Modifier
-                    .padding(top = 30.dp, bottom = 8.dp)
-                    .size(160.dp),
-                contentScale = ContentScale.Fit
-            )
-
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Gray,
-                    contentColor = colorResource(R.color.black)
+            if (isOperator && !profileImageUrl.isNullOrEmpty()) {
+                ElevatedCard(
+                    modifier = Modifier
+                        .padding(top = 30.dp, bottom = 8.dp)
+                        .size(160.dp),
+                    shape = CircleShape,
+                    colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
+                ) {
+                    AsyncImage(
+                        model = profileImageUrl,
+                        contentDescription = "Foto de perfil del Operador",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            } else {
+                Image(
+                    painter = painterResource(id = R.drawable.profile),
+                    contentDescription = "perfil",
+                    modifier = Modifier
+                        .padding(top = 30.dp, bottom = 8.dp)
+                        .size(160.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
-            ) {
-                Text("4.9 ★ ", fontSize = 17.sp, textAlign = TextAlign.Center)
+            }
+            if (isOperator) {
+                Button(
+                    onClick = {},
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Gray,
+                        contentColor = colorResource(R.color.black)
+                    )
+                ) {
+                    Text("$formattedRating ★ ", fontSize = 17.sp, textAlign = TextAlign.Center)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = {},
@@ -298,7 +341,8 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             text = "Para soporte o ayuda, puedes comunicarte a:",
                             fontSize = 16.sp,
                             textAlign = TextAlign.Center,
-                            color = Color.DarkGray
+                            color = Color.DarkGray,
+
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -308,7 +352,16 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorResource(R.color.blue),
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .clickable {
+                                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                        data = Uri.parse("mailto:parkme.company@gmail.com")
+                                        putExtra(Intent.EXTRA_SUBJECT, "Soporte ParkMe - Necesito ayuda")
+                                    }
+                                    context.startActivity(intent)
+                                }
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
