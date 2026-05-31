@@ -513,12 +513,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                                 modifier = Modifier.padding(bottom = 8.dp)
                                             )
                                         }
-                                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = colorResource(R.color.blue))
                                         Spacer(modifier = Modifier.width(12.dp))
-                                        Column {
-                                            Text(reservation.parkingName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.Black)
-                                            Text(displayAddress, fontSize = 14.sp, color = Color.DarkGray)
-                                        }
                                     }
                                 }
                             }
