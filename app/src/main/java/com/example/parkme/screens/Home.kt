@@ -666,7 +666,7 @@ fun ParkingLotItem(
                             )
                         } else {
                             Image(
-                                painter = painterResource(R.drawable.parqueadero1),
+                                painter = painterResource(R.drawable.default1),
                                 contentDescription = "Sin foto",
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -691,7 +691,7 @@ fun ParkingLotItem(
                             .background(Color.LightGray, RoundedCornerShape(12.dp))
                     ) {
                         Image(
-                            painter = painterResource(R.drawable.parqueadero1),
+                            painter = painterResource(R.drawable.default1),
                             contentDescription = "Sin foto",
                             modifier = Modifier
                                 .fillMaxSize()

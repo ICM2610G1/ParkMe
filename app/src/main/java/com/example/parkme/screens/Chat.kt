@@ -138,7 +138,8 @@ fun ChatBottomBar(onSendMessage: (String) -> Unit, onSendImage: (Uri) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 8.dp)
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .imePadding(),
         verticalAlignment = Alignment.Bottom
     ) {
         Surface(

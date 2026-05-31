@@ -38,7 +38,9 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.foundation)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 
@@ -58,12 +60,15 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation("com.google.firebase:firebase-messaging:23.4.1")
+    implementation(libs.androidx.ui)
+    implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.googleid)
 
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage")
+    implementation("com.google.firebase:firebase-storage-ktx")
 
     implementation("com.google.maps.android:maps-compose:6.6.0")
     implementation("com.google.android.gms:play-services-maps:19.2.0")

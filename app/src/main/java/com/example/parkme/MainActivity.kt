@@ -35,18 +35,6 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val requestPermissionLauncher = registerForActivityResult(
-                ActivityResultContracts.RequestPermission()
-            ) { isGranted: Boolean ->
-                if (isGranted) {
-                    Log.d("FCM", "Permiso de notificaciones concedido por el usuario.")
-                } else {
-                    Log.w("FCM", "Permiso de notificaciones denegado.")
-                }
-            }
-            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
         geocoder = Geocoder(this)
 
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
