@@ -6,6 +6,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -87,6 +88,15 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
         )
     }
 
+    val pinBitmap = remember(isDarkMode) {
+        resizeMapIcon(
+            context,
+            resId = if (isDarkMode) R.drawable.pinmaplogoblanco else R.drawable.pinmaplogo,
+            widthDp = 45,
+            heightDp = 45
+        )
+    }
+
     val bogota = LatLng(4.60971, -74.08175)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(bogota, 13f)
@@ -111,11 +121,13 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                 }
             }
 
-            db.collection("parqueaderos").document(parkingId).get().addOnSuccessListener { parkDoc ->
-                val lat = parkDoc.getDouble("latitud")
-                val lng = parkDoc.getDouble("longitud")
+            db.collection("parking lots").document(parkingId).get().addOnSuccessListener { parkDoc ->
+                val lat = parkDoc.getDouble("latitude")
+                val lng = parkDoc.getDouble("longitude")
                 if (lat != null && lng != null) {
                     parkingLocation = LatLng(lat, lng)
+                } else {
+                    Log.e("MAPS_DEBUG", "No se pudieron leer las coordenadas del parqueadero de Firestore")
                 }
             }
         }
@@ -131,13 +143,23 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
         }
     }
 
-    LaunchedEffect(clientLocation, isMapLoaded) {
-        if (isMapLoaded && clientLocation != null) {
+    LaunchedEffect(clientLocation, routePoints, isMapLoaded) {
+        if (isMapLoaded) {
             try {
-                cameraPositionState.animate(
-                    update = CameraUpdateFactory.newLatLngZoom(clientLocation!!, 16f),
-                    durationMs = 800
-                )
+                if (!routePoints.isNullOrEmpty()) {
+                    val boundsBuilder = com.google.android.gms.maps.model.LatLngBounds.Builder()
+                    routePoints!!.forEach { boundsBuilder.include(it) }
+
+                    cameraPositionState.animate(
+                        update = CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 150), // 150 de margen en los bordes
+                        durationMs = 800
+                    )
+                } else if (clientLocation != null) {
+                    cameraPositionState.animate(
+                        update = CameraUpdateFactory.newLatLngZoom(clientLocation!!, 16f),
+                        durationMs = 800
+                    )
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -218,13 +240,15 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                         Marker(
                             state = MarkerState(position = it),
                             title = "Parqueadero",
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                            icon = BitmapDescriptorFactory.fromBitmap(pinBitmap)
                         )
                     }
 
                     if (!routePoints.isNullOrEmpty()) {
                         Polyline(
-                            points = routePoints!!, color = Color.Blue, width = 12f, geodesic = true
+                            points = routePoints!!,
+                            color = Color.Blue,
+                            width = 12f
                         )
                     }
                 }

@@ -781,9 +781,3 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
         }
     }
 }
-@Composable
-@Preview
-fun Activitypreview() {
-    val navController = rememberNavController()
-    MyActivity(navController = navController)
-}

@@ -125,7 +125,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     }
 
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-    var myLocation by remember { mutableStateOf(LatLng(4.626072, -74.071427)) }
+    var myLocation by remember { mutableStateOf(LatLng(4.60971, -74.08175)) }
 
     val targetLocation = SearchMapLocationHolder.searchedLocation ?: myLocation
     val defaultLocation = SearchMapLocationHolder.searchedLocation ?: myLocation
@@ -224,9 +224,19 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
 
     val preSelectedParkingId =
         navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
-    var selectedForDetails by remember(allParkingLots, preSelectedParkingId) {
+
+    val initialSearchedLocation = remember { SearchMapLocationHolder.searchedLocation }
+    var selectedForDetails by remember(allParkingLots, preSelectedParkingId, initialSearchedLocation) {
         mutableStateOf(
-            allParkingLots.find { it.id == preSelectedParkingId })
+            allParkingLots.find { it.id == preSelectedParkingId }
+                ?:
+                initialSearchedLocation?.let { loc ->
+                    allParkingLots.find {
+                        it.location.latitude == loc.latitude &&
+                                it.location.longitude == loc.longitude
+                    }
+                }
+        )
     }
     var confirmedParkingLot by remember { mutableStateOf<ParkingLot?>(null) }
     var isSearching by remember { mutableStateOf(false) }
@@ -274,7 +284,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         ), label = "BuscandoAlpha"
     )
 
-    LaunchedEffect(selectedForDetails) {
+    LaunchedEffect(selectedForDetails, myLocation) {
         if (selectedForDetails != null) {
             val applicationInfo = context.packageManager.getApplicationInfo(
                 context.packageName, PackageManager.GET_META_DATA
@@ -286,19 +296,28 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
 
-    LaunchedEffect(routePoints) {
-        if (routePoints != null && routePoints!!.isNotEmpty()) {
+
+    LaunchedEffect(routePoints, confirmedParkingLot, myLocation) {
+        if (confirmedParkingLot != null) {
+
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngZoom(myLocation, 17.5f),
+                durationMs = 1000
+            )
+        } else if (routePoints != null && routePoints!!.isNotEmpty()) {
+
             val boundsBuilder = LatLngBounds.Builder()
             routePoints!!.forEach { boundsBuilder.include(it) }
             val bounds = boundsBuilder.build()
             cameraPositionState.animate(
-                update = CameraUpdateFactory.newLatLngBounds(bounds, 150), durationMs = 1200
+                update = CameraUpdateFactory.newLatLngBounds(bounds, 150),
+                durationMs = 1200
             )
         } else if (selectedForDetails == null) {
+
             cameraPositionState.animate(
-                update = CameraUpdateFactory.newLatLngZoom(
-                    defaultLocation, 16f
-                ), durationMs = 1000
+                update = CameraUpdateFactory.newLatLngZoom(defaultLocation, 16f),
+                durationMs = 1000
             )
         }
     }
@@ -356,7 +375,9 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             }
             if (routePoints != null) {
                 Polyline(
-                    points = routePoints!!, color = Color(0xFF0056D2), width = 12f, geodesic = true
+                    points = routePoints!!,
+                    color = colorResource(R.color.azulruta),
+                    width = 12f
                 )
             }
         }
@@ -779,20 +800,34 @@ suspend fun fetchRouteFromGoogle(
 ): List<LatLng>? {
     return withContext(Dispatchers.IO) {
         try {
-            val url =
-                "https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&key=$apiKey"
+
+            val url = "https://maps.googleapis.com/maps/api/directions/json?origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}&mode=driving&key=$apiKey"
             val response = java.net.URL(url).readText()
             val jsonObject = JSONObject(response)
             val status = jsonObject.getString("status")
+
             if (status != "OK") {
                 Log.e("MAPS_DEBUG", "Error de API: ${jsonObject.optString("error_message")}")
                 return@withContext null
             }
+
             val routesArray = jsonObject.getJSONArray("routes")
             if (routesArray.length() > 0) {
                 val route = routesArray.getJSONObject(0)
-                val polylineEncoded = route.getJSONObject("overview_polyline").getString("points")
-                return@withContext PolyUtil.decode(polylineEncoded)
+                val legsArray = route.getJSONArray("legs")
+                val detailedPath = mutableListOf<LatLng>()
+
+                for (i in 0 until legsArray.length()) {
+                    val leg = legsArray.getJSONObject(i)
+                    val stepsArray = leg.getJSONArray("steps")
+
+                    for (j in 0 until stepsArray.length()) {
+                        val step = stepsArray.getJSONObject(j)
+                        val polylineEncoded = step.getJSONObject("polyline").getString("points")
+                        detailedPath.addAll(PolyUtil.decode(polylineEncoded))
+                    }
+                }
+                return@withContext detailedPath
             }
         } catch (e: Exception) {
             e.printStackTrace()
