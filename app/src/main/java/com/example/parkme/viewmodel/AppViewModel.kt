@@ -420,4 +420,39 @@ class AppViewModel : ViewModel() {
             }
         }
     }
+
+    fun updateProfileImage(imageUri: Uri) {
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            _authState.value = _authState.value.copy(errorMessage = "Usuario no autenticado")
+            return
+        }
+
+        viewModelScope.launch {
+            _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
+
+            try {
+                val storageRef = FirebaseStorage.getInstance().reference
+                val imageRef = storageRef.child("profile_images/${uid}.jpg")
+
+                imageRef.putFile(imageUri).await()
+
+                val downloadUrl = imageRef.downloadUrl.await().toString()
+
+                firestore.collection("users").document(uid).update("profileImage", downloadUrl).await()
+
+                _authState.value = _authState.value.copy(
+                    profileImageUrl = downloadUrl,
+                    isLoading = false
+                )
+
+            } catch (e: Exception) {
+                _authState.value = _authState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Error al actualizar la foto: ${e.message}"
+                )
+            }
+        }
+    }
+
 }
