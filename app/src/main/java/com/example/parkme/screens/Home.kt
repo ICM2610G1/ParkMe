@@ -418,7 +418,7 @@ fun HomeOperator(navController: NavController) {
         remember { mutableStateOf<List<Pair<String, Map<String, Any>>>>(emptyList()) }
 
     DisposableEffect(uid) {
-        val listener = db.collection("parking lots") // Corrección aquí: antes era "parqueaderos"
+        val listener = db.collection("parking lots")
             .whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener

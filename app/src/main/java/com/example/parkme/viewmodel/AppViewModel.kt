@@ -217,7 +217,6 @@ class AppViewModel : ViewModel() {
                         val name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre"
                         val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
 
-                        // Extracción ultra-segura (funciona si es String o si es Number en Firebase)
                         val lat = doc.get("latitude")?.toString()?.toDoubleOrNull() ?: doc.get("latitud")?.toString()?.toDoubleOrNull() ?: 0.0
                         val lng = doc.get("longitude")?.toString()?.toDoubleOrNull() ?: doc.get("longitud")?.toString()?.toDoubleOrNull() ?: 0.0
 
@@ -236,7 +235,6 @@ class AppViewModel : ViewModel() {
 
                         val slot = doc.get("slot")?.toString()?.toIntOrNull() ?: doc.get("cupos")?.toString()?.toIntOrNull() ?: 0
 
-                        // Manejo seguro del booleano (A veces llega como texto "true")
                         val electricCharges = doc.getBoolean("electricCharges") ?: (doc.getString("electricCharges") == "true")
 
                         val rate = doc.get("rate")?.toString()?.toFloatOrNull() ?: doc.get("calificacion")?.toString()?.toFloatOrNull() ?: 0f
@@ -371,19 +369,36 @@ class AppViewModel : ViewModel() {
     }
 
     private fun checkAndUpdateExpiredReservations(reservations: List<Reservation>) {
-        val dateFormatFull = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-        val currentTime = Date()
-        val hoy = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(currentTime)
+        val dateFormatFull = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+        val currentTime = java.util.Date()
+
+        val hoy = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(currentTime)
+
         reservations.forEach { reserva ->
             if (reserva.status == "Activa" || reserva.status == "Activo") {
                 try {
-                    val end = if (reserva.endTime.length > 5) dateFormatFull.parse(reserva.endTime) else dateFormatFull.parse("$hoy ${reserva.endTime}")
-                    if (end != null && currentTime.after(end)) {
-                        firestore.collection("reservas").document(reserva.id).update(mapOf("status" to "Finalizada", "sharingLocation" to false)).addOnSuccessListener {
-                            if (auth.currentUser?.uid == reserva.userId) stopTrackingUserLocation()
-                        }
+                    val end = if (reserva.endTime.length > 5) {
+                        dateFormatFull.parse(reserva.endTime)
+                    } else {
+                        dateFormatFull.parse("$hoy ${reserva.endTime}")
                     }
-                } catch (e: Exception) { Log.e("RESERVAS", "Error fecha ${reserva.id}: ${e.message}") }
+
+                    if (end != null && currentTime.after(end)) {
+                        firestore.collection("reservas").document(reserva.id)
+                            .update(
+                                mapOf(
+                                    "status" to "Finalizada",
+                                    "sharingLocation" to false
+                                )
+                            ).addOnSuccessListener {
+                                if (auth.currentUser?.uid == reserva.userId) {
+                                    stopTrackingUserLocation()
+                                }
+                            }
+                    }
+                } catch (e: Exception) {
+                    Log.e("RESERVAS", "Error parseando fecha ${reserva.id}: ${e.message}")
+                }
             }
         }
     }

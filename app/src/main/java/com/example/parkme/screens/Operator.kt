@@ -1163,27 +1163,32 @@ fun DayLetter(letter: String) {
 
 @Composable
 fun TimeEditDialog(
-    title: String, currentTime: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit
+    title: String,
+    currentTime: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    var time by remember { mutableStateOf(currentTime) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = time,
-                onValueChange = { time = it },
-                label = { Text("HH:MM") },
-                singleLine = true
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(time) }) { Text("Listo") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+    val context = LocalContext.current
+
+    val parts = currentTime.split(":")
+    val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+    val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+
+    LaunchedEffect(Unit) {
+        android.app.TimePickerDialog(
+            context,
+            { _, selectedHour, selectedMinute ->
+                val formattedTime = String.format(java.util.Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute)
+                onConfirm(formattedTime)
+            },
+            hour,
+            minute,
+            true
+        ).apply {
+            setOnCancelListener { onDismiss() }
+            show()
         }
-    )
+    }
 }
 
 fun saveParkingDetails(
