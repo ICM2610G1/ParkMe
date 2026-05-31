@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +41,8 @@ enum class AppScreens {
     MapPicker,
     ChatListCli,
     ChatListOp,
-    TrackUserMap
+    TrackUserMap,
+    ParkingGallery
 }
 
 @Composable
@@ -94,6 +96,23 @@ fun Navigation() {
                 reservationId = reservationId,
                 viewModel = viewModel
             )
+        }
+        composable(route = AppScreens.ParkingGallery.name) { backStackEntry ->
+
+            val parking = navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.get<ParkingLot>("parking_data")
+
+            if (parking != null) {
+                ParkingLotDetail(
+                    navController = navController,
+                    parking = parking
+                )
+            } else {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Error al cargar las fotos")
+                }
+            }
         }
         composable(AppScreens.MyActivity.name) { MyActivity(navController,viewModel) }
         composable(AppScreens.UserProfile.name) { ProfileScreen(navController, viewModel) }
