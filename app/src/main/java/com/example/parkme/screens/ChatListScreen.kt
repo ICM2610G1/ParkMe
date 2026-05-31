@@ -55,7 +55,7 @@ fun ChatListScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Mis Mensajes",
+                        text = "Mis Chats",
                         color = colorResource(id = R.color.white),
                         fontWeight = FontWeight.Bold
                     )
