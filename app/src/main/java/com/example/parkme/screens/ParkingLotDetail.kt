@@ -207,7 +207,8 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                                 isSubmitting = true
                                 mensajeReserva = ""
 
-                                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                                sdf.timeZone = java.util.TimeZone.getTimeZone("America/Bogota")
                                 val hoy = sdf.format(java.util.Date())
 
                                 val llegadaFull = "$hoy $horaLlegada"
@@ -274,8 +275,14 @@ fun ReservationBottomBox(
     onConfirm: (placa: String, horaLlegada: String, horaSalida: String) -> Unit
 ) {
     var placa by remember { mutableStateOf("") }
-    var horaLlegada by remember { mutableStateOf(parking.hourStart) }
-    var horaSalida by remember { mutableStateOf(parking.hourFinish) }
+    val ahora = remember {
+        val cal = java.util.Calendar.getInstance()
+        val h = cal.get(java.util.Calendar.HOUR_OF_DAY).toString().padStart(2, '0')
+        val m = cal.get(java.util.Calendar.MINUTE).toString().padStart(2, '0')
+        "$h:$m"
+    }
+    var horaLlegada by remember { mutableStateOf(ahora) }
+    var horaSalida  by remember { mutableStateOf(parking.hourFinish) }
 
     var mostrarDialogoLlegada by remember { mutableStateOf(false) }
     var mostrarDialogoSalida by remember { mutableStateOf(false) }

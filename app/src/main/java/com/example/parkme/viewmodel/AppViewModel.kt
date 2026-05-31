@@ -8,6 +8,7 @@ import com.example.parkme.models.Reservation
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +45,10 @@ class AppViewModel : ViewModel() {
 
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
+
+    private var reservasListener: ListenerRegistration? = null
+    private var operatorReservasListener: ListenerRegistration? = null
+    private var operatorLotsListener: ListenerRegistration? = null
 
     private val _authState = MutableStateFlow(AuthState())
     val authState: StateFlow<AuthState> = _authState
@@ -262,9 +267,14 @@ class AppViewModel : ViewModel() {
 
     fun fetchUserReservations() {
         val uid = auth.currentUser?.uid ?: return
-        firestore.collection("reservas").whereEqualTo("userId", uid)
+        reservasListener?.remove()
+        reservasListener = firestore.collection("reservas").whereEqualTo("userId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (snapshot != null) {
+                    snapshot.documentChanges.forEach { change ->
+                        val doc = change.document
+                        Log.d("FIRESTORE_CHANGE", "Tipo: ${change.type} | Doc: ${doc.id} | status: ${doc.getString("status")} | endTime: ${doc.getString("endTime")}")
+                    }
                     val reservas = snapshot.documents.mapNotNull { doc ->
                         try {
                             Reservation(
@@ -296,7 +306,8 @@ class AppViewModel : ViewModel() {
 
     fun fetchOperatorActivity() {
         val uid = auth.currentUser?.uid ?: return
-        firestore.collection("parking lots").whereEqualTo("operatorId", uid)
+        operatorLotsListener?.remove()
+        operatorLotsListener = firestore.collection("parking lots").whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (snapshot != null) {
                     _operatorParkingLots.value = snapshot.documents.mapNotNull { doc ->
@@ -306,7 +317,8 @@ class AppViewModel : ViewModel() {
                     }
                 }
             }
-        firestore.collection("reservas").whereEqualTo("operatorId", uid)
+        operatorReservasListener?.remove()
+        operatorReservasListener = firestore.collection("reservas").whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (snapshot != null) {
                     val res = snapshot.documents.mapNotNull { doc ->
@@ -327,7 +339,7 @@ class AppViewModel : ViewModel() {
                             )
                         } catch (e: Exception) { null }
                     }
-                    checkAndUpdateExpiredReservations(res)
+                    // NO llamar checkAndUpdateExpiredReservations aquí — solo desde fetchUserReservations
                     _operatorReservations.value = res.sortedByDescending { it.startTime }
                 }
             }
@@ -369,37 +381,41 @@ class AppViewModel : ViewModel() {
     }
 
     private fun checkAndUpdateExpiredReservations(reservations: List<Reservation>) {
-        val dateFormatFull = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
+        dateFormat.timeZone = java.util.TimeZone.getTimeZone("America/Bogota")
         val currentTime = java.util.Date()
-
-        val hoy = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(currentTime)
 
         reservations.forEach { reserva ->
             if (reserva.status == "Activa" || reserva.status == "Activo") {
                 try {
-                    val end = if (reserva.endTime.length > 5) {
-                        dateFormatFull.parse(reserva.endTime)
-                    } else {
-                        dateFormatFull.parse("$hoy ${reserva.endTime}")
-                    }
+                    // Si endTime no tiene fecha completa (solo HH:mm), no finalizar
+                    if (reserva.endTime.length <= 5) return@forEach
 
-                    if (end != null && currentTime.after(end)) {
+                    val end = dateFormat.parse(reserva.endTime) ?: return@forEach
+
+                    Log.d("CHECK_RESERVAS", "Revisando ${reserva.id}: end=$end, now=$currentTime, expired=${currentTime.after(end)}")
+
+                    if (currentTime.after(end)) {
+                        Log.d("CHECK_RESERVAS", ">>> FINALIZANDO ${reserva.id}")
                         firestore.collection("reservas").document(reserva.id)
-                            .update(
-                                mapOf(
-                                    "status" to "Finalizada",
-                                    "sharingLocation" to false
-                                )
-                            ).addOnSuccessListener {
+                            .update(mapOf("status" to "Finalizada", "sharingLocation" to false))
+                            .addOnSuccessListener {
                                 if (auth.currentUser?.uid == reserva.userId) {
                                     stopTrackingUserLocation()
                                 }
                             }
                     }
                 } catch (e: Exception) {
-                    Log.e("RESERVAS", "Error parseando fecha ${reserva.id}: ${e.message}")
+                    Log.e("CHECK_RESERVAS", "Error parseando fecha ${reserva.id}: ${e.message}")
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        reservasListener?.remove()
+        operatorReservasListener?.remove()
+        operatorLotsListener?.remove()
     }
 }
