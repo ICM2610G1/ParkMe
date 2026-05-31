@@ -73,7 +73,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         imageUri = uri
-        if (uri != null) localError = null // Limpiar error si selecciona la foto
+        if (uri != null) localError = null
     }
 
     val authState by viewModel.authState.collectAsState()

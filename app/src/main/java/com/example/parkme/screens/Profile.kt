@@ -174,14 +174,14 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                     modifier = Modifier
                         .padding(top = 30.dp, bottom = 8.dp)
                         .size(160.dp),
-                    shape = CircleShape, // Imagen redonda
+                    shape = CircleShape,
                     colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
                 ) {
                     AsyncImage(
                         model = profileImageUrl,
                         contentDescription = "Foto de perfil del Operador",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop // Recorta para llenar el círculo
+                        contentScale = ContentScale.Crop
                     )
                 }
             } else {
@@ -191,7 +191,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                     modifier = Modifier
                         .padding(top = 30.dp, bottom = 8.dp)
                         .size(160.dp)
-                        .clip(CircleShape), // Mantiene la consistencia redonda
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -356,7 +356,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             modifier = Modifier
                                 .padding(8.dp)
                                 .clickable {
-                                    // --- NUEVA LÓGICA: Enviar a Gmail ---
                                     val intent = Intent(Intent.ACTION_SENDTO).apply {
                                         data = Uri.parse("mailto:parkme.company@gmail.com")
                                         putExtra(Intent.EXTRA_SUBJECT, "Soporte ParkMe - Necesito ayuda")
