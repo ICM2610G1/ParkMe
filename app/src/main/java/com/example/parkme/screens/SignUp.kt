@@ -1,5 +1,8 @@
 package com.example.parkme.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
@@ -46,6 +50,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.viewmodel.AppViewModel
 
@@ -61,9 +66,21 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var selectedRole by remember { mutableStateOf("Usuario") }
 
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imageUri = uri
+        if (uri != null) localError = null // Limpiar error si selecciona la foto
+    }
+
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
     var isRegistering by remember { mutableStateOf(false) }
+
+
 
     LaunchedEffect(authState.isAuthenticated) {
         if (authState.isAuthenticated && isRegistering) {
@@ -92,9 +109,10 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     .width(400.dp),
                 contentScale = ContentScale.Fit
             )
-            if (authState.errorMessage != null) {
+            val errorMessage = localError ?: authState.errorMessage
+            if (errorMessage != null) {
                 Text(
-                    text = authState.errorMessage!!,
+                    text = errorMessage,
                     color = Color.Red,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -292,7 +310,10 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                 ) {
                     RadioButton(
                         selected = selectedRole == "Usuario",
-                        onClick = { selectedRole = "Usuario" },
+                        onClick = {
+                            selectedRole = "Usuario"
+                            localError = null
+                        },
                         colors = RadioButtonDefaults.colors(
                             selectedColor = colorResource(R.color.blue),
                             unselectedColor = Color.Gray
@@ -312,7 +333,46 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     )
                     Text("Operador")
                 }
+                if (selectedRole == "Operador") {
+                    Spacer(modifier = Modifier.height(16.dp))
 
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Button(
+                            onClick = { imagePickerLauncher.launch("image/*") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorResource(R.color.blue),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(if (imageUri == null) "Seleccionar Foto de Perfil *" else "Cambiar Foto")
+                        }
+
+                        if (imageUri != null) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            ElevatedCard(
+                                modifier = Modifier.size(250.dp),
+                                shape = RoundedCornerShape(125.dp)
+                            ) {
+                                AsyncImage(
+                                    model = imageUri,
+                                    contentDescription = "Foto de perfil del Operador",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "La foto de perfil es obligatoria.",
+                                color = Color.Gray,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
@@ -322,18 +382,28 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                     contentColor = colorResource(R.color.white)
                 ),
                 onClick = {
-                    isRegistering = true
-                    viewModel.register(
-                        email,
-                        password,
-                        confirmPassword,
-                        name,
-                        lastName,
-                        phone,
-                        selectedRole
-                    )
+                    if (selectedRole == "Operador" && imageUri == null) {
+                        localError = "Debes seleccionar una foto de perfil obligatoria para ser Operador."
+                    } else {
+                        localError = null
+                        isRegistering = true
+                        viewModel.register(
+                            email,
+                            password,
+                            confirmPassword,
+                            name,
+                            lastName,
+                            phone,
+                            selectedRole,
+                            imageUri
+                        )
+                    }
                 },
                 enabled = !authState.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(30.dp)
             ) {
                 if (authState.isLoading) {
                     CircularProgressIndicator(
@@ -341,7 +411,7 @@ fun SignUp(navController: NavController, viewModel: AppViewModel) {
                         modifier = Modifier.size(20.dp)
                     )
                 } else {
-                    Text("Continuar", modifier = Modifier.padding(vertical = 8.dp))
+                    Text(text = "Continuar", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))

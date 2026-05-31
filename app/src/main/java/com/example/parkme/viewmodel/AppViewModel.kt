@@ -8,7 +8,6 @@ import com.example.parkme.models.Reservation
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +23,8 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.firebase.messaging.FirebaseMessaging
+import android.net.Uri
+import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,7 +38,8 @@ data class AuthState(
     val isVerified: Boolean = false,
     val isCheckingSession: Boolean = true,
     val userEmail: String? = null,
-    val userName: String? = null
+    val userName: String? = null,
+    val profileImageUrl: String? = null
 )
 
 class AppViewModel : ViewModel() {
@@ -62,6 +64,7 @@ class AppViewModel : ViewModel() {
                     val isVerified = doc.getBoolean("isVerified") ?: false
                     val name = doc.getString("name") ?: ""
                     val lastName = doc.getString("lastName") ?: ""
+                    val profileImageUrl = doc.getString("profileImage")
                     saveDeviceToken(currentUser.uid)
                     _authState.value = AuthState(
                         isAuthenticated = true,
@@ -69,7 +72,8 @@ class AppViewModel : ViewModel() {
                         isVerified = isVerified,
                         isCheckingSession = false,
                         userEmail = currentUser.email,
-                        userName = "$name $lastName".trim()
+                        userName = "$name $lastName".trim(),
+                        profileImageUrl = profileImageUrl
                     )
                 } catch (e: Exception) {
                     _authState.value = AuthState(isCheckingSession = false)
@@ -126,7 +130,7 @@ class AppViewModel : ViewModel() {
         }
     }
 
-    fun register(email: String, password: String, confirmPassword: String, name: String, lastName: String, phone: String, role: String) {
+    fun register(email: String, password: String, confirmPassword: String, name: String, lastName: String, phone: String, role: String,imageUri: Uri? = null) {
         if (email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
             _authState.value = _authState.value.copy(errorMessage = "Completa todos los campos")
             return
@@ -135,12 +139,26 @@ class AppViewModel : ViewModel() {
             _authState.value = _authState.value.copy(errorMessage = "Las contraseñas no coinciden")
             return
         }
+        if (role == "Operador" && imageUri == null) {
+            _authState.value = _authState.value.copy(errorMessage = "La foto de perfil es obligatoria para el Operador")
+            return
+        }
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true, errorMessage = null)
             try {
                 val result = auth.createUserWithEmailAndPassword(email, password).await()
                 val user = result.user ?: throw Exception("Error creando usuario")
+                var profileImageUrl: String? = null
+                if (imageUri != null) {
+                    val storageRef = FirebaseStorage.getInstance().reference
+                    val imageRef = storageRef.child("profile_images/${user.uid}.jpg")
+                    imageRef.putFile(imageUri).await()
+                    profileImageUrl = imageRef.downloadUrl.await().toString()
+                }
                 val userMap = hashMapOf("name" to name, "lastName" to lastName, "phone" to phone, "email" to email, "role" to role, "isVerified" to false)
+                if (profileImageUrl != null) {
+                    userMap["profileImage"] = profileImageUrl
+                }
                 firestore.collection("users").document(user.uid).set(userMap).await()
                 saveDeviceToken(user.uid)
                 _authState.value = AuthState(isAuthenticated = true, userRole = role, isVerified = false, isCheckingSession = false, isLoading = false, userEmail = email, userName = "$name $lastName".trim())
@@ -301,7 +319,7 @@ class AppViewModel : ViewModel() {
                 if (snapshot != null) {
                     _operatorParkingLots.value = snapshot.documents.mapNotNull { doc ->
                         try {
-                            ParkingLot(id = doc.id, operatorId = doc.getString("operatorId") ?: "", name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre", slot = (doc.get("slot") as? Number)?.toInt() ?: 0)
+                            ParkingLot(id = doc.id, operatorId = doc.getString("operatorId") ?: "", name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre", slot = (doc.get("slot") as? Number)?.toInt() ?: 0,rate = doc.get("rate")?.toString()?.toFloatOrNull() ?: doc.get("calificacion")?.toString()?.toFloatOrNull() ?: 0f, ratingCount = doc.get("ratingCount")?.toString()?.toIntOrNull() ?: 0)
                         } catch (e: Exception) { null }
                     }
                 }
