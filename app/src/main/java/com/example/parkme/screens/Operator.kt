@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -261,19 +262,67 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             }
         )
 
-        LabelAndRight(
-            label = "Reglas del parqueadero",
-            right = {
-                Button(
-                    onClick = { showTermsDialog = true },
-                    shape = pillShape,
-                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.grisClaro)),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showTermsDialog = true },
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colorResource(R.color.azulruta).copy(alpha = 0.05f)
+            ),
+            border = BorderStroke(1.dp, colorResource(R.color.azulruta).copy(alpha = 0.2f))
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text("Ingresar", color = Color.Blue, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Reglas",
+                        tint = colorResource(R.color.azulruta),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Reglas del parqueadero",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Toca para ingresar o editar las normas",
+                            fontSize = 13.sp,
+                            color = Color.Gray,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Card(
+                    shape = RoundedCornerShape(50),
+                    colors = CardDefaults.cardColors(containerColor = colorResource(R.color.azulruta))
+                ) {
+                    Text(
+                        text = "Ingresar",
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
                 }
             }
-        )
+        }
 
         if (showTermsDialog) {
             AlertDialog(
