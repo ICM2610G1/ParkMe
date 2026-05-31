@@ -479,7 +479,6 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     "photos" to emptyList<String>(),
                     "latitude" to (location.value?.latitude ?: 0.0),
                     "longitude" to (location.value?.longitude ?: 0.0),
-                    "direccion" to address.value,
                     "address" to address.value
                 )
 

@@ -184,7 +184,7 @@ class AppViewModel : ViewModel() {
     fun rateParkingLot(parkingLotId: String, reservationId: String, newRating: Float) {
         viewModelScope.launch {
             try {
-                val docRef = firestore.collection("parqueaderos").document(parkingLotId)
+                val docRef = firestore.collection("parking lots").document(parkingLotId)
                 val reservationRef = firestore.collection("reservas").document(reservationId)
                 firestore.runTransaction { transaction ->
                     val snapshot = transaction.get(docRef)
@@ -205,34 +205,42 @@ class AppViewModel : ViewModel() {
     }
 
     fun fetchParkingLots() {
-        firestore.collection("parqueaderos").addSnapshotListener { snapshot, error ->
-            if (error != null) return@addSnapshotListener
+        firestore.collection("parking lots").addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("DEBUG_MAPA", "Error leyendo Firebase: ${error.message}")
+                return@addSnapshotListener
+            }
+
             if (snapshot != null) {
                 val lots = snapshot.documents.mapNotNull { doc ->
                     try {
                         val name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre"
                         val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
 
-                        // Lectura con fallback a español
-                        val lat = (doc.get("latitude") as? Number)?.toDouble() ?: (doc.get("latitud") as? Number)?.toDouble() ?: 0.0
-                        val lng = (doc.get("longitude") as? Number)?.toDouble() ?: (doc.get("longitud") as? Number)?.toDouble() ?: 0.0
+                        // Extracción ultra-segura (funciona si es String o si es Number en Firebase)
+                        val lat = doc.get("latitude")?.toString()?.toDoubleOrNull() ?: doc.get("latitud")?.toString()?.toDoubleOrNull() ?: 0.0
+                        val lng = doc.get("longitude")?.toString()?.toDoubleOrNull() ?: doc.get("longitud")?.toString()?.toDoubleOrNull() ?: 0.0
 
-                        var pricePerMin = doc.getString("pricePerMin") ?: doc.getString("precioMinuto") ?: "0"
-                        var pricePerHour = doc.getString("pricePerHour") ?: doc.getString("precioHora") ?: "0"
-                        var fixedPrice = doc.getString("fixedPrice") ?: doc.getString("tarifaFija") ?: "0"
+                        var pricePerMin = doc.get("pricePerMin")?.toString() ?: doc.get("precioMinuto")?.toString() ?: "0"
+                        var pricePerHour = doc.get("pricePerHour")?.toString() ?: doc.get("precioHora")?.toString() ?: "0"
+                        var fixedPrice = doc.get("fixedPrice")?.toString() ?: doc.get("tarifaFija")?.toString() ?: "0"
 
                         if (!pricePerMin.startsWith("$")) pricePerMin = "$$pricePerMin"
                         if (!pricePerHour.startsWith("$")) pricePerHour = "$$pricePerHour"
                         if (!fixedPrice.startsWith("$")) fixedPrice = "$$fixedPrice"
 
                         val terms = doc.getString("terms") ?: doc.getString("terminos") ?: "Sin términos"
-                        val hourStart = doc.getString("hourStart") ?: doc.getString("horaApertura") ?: ""
-                        val hourFinish = doc.getString("hourFinish") ?: doc.getString("horaCierre") ?: ""
+                        val hourStart = doc.get("hourStart")?.toString() ?: doc.get("horaApertura")?.toString() ?: ""
+                        val hourFinish = doc.get("hourFinish")?.toString() ?: doc.get("horaCierre")?.toString() ?: ""
                         val weekAvailability = doc.getString("weekAvailability") ?: doc.getString("disponibilidad") ?: ""
-                        val slot = (doc.get("slot") as? Number)?.toInt() ?: (doc.get("cupos") as? Number)?.toInt() ?: 0
-                        val electricCharges = doc.getBoolean("electricCharges") ?: false
-                        val rate = (doc.get("rate") as? Number)?.toFloat() ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
-                        val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
+
+                        val slot = doc.get("slot")?.toString()?.toIntOrNull() ?: doc.get("cupos")?.toString()?.toIntOrNull() ?: 0
+
+                        // Manejo seguro del booleano (A veces llega como texto "true")
+                        val electricCharges = doc.getBoolean("electricCharges") ?: (doc.getString("electricCharges") == "true")
+
+                        val rate = doc.get("rate")?.toString()?.toFloatOrNull() ?: doc.get("calificacion")?.toString()?.toFloatOrNull() ?: 0f
+                        val ratingCount = doc.get("ratingCount")?.toString()?.toIntOrNull() ?: 0
                         val address = doc.getString("address") ?: doc.getString("direccion") ?: ""
 
                         val rawPhotos = doc.get("photos") ?: doc.get("fotos") ?: doc.get("imageUrl")
@@ -243,8 +251,12 @@ class AppViewModel : ViewModel() {
                         }
 
                         ParkingLot(id = doc.id, operatorId = operatorId, name = name, location = LatLng(lat, lng), pricePerMin = pricePerMin, pricePerHour = pricePerHour, fixedPrice = fixedPrice, terms = terms, electricCharges = electricCharges, hourStart = hourStart, hourFinish = hourFinish, weekAvailability = weekAvailability, slot = slot, rate = rate, ratingCount = ratingCount, address = address, photos = photos)
-                    } catch (e: Exception) { null }
+                    } catch (e: Exception) {
+                        Log.e("DEBUG_MAPA", "El parqueadero ${doc.id} tiene un error en Firebase y no se mostrará: ${e.message}")
+                        null
+                    }
                 }
+                Log.d("DEBUG_MAPA", "Se descargaron ${lots.size} parqueaderos exitosamente de Firebase")
                 _parkingLots.value = lots
             }
         }
@@ -286,7 +298,7 @@ class AppViewModel : ViewModel() {
 
     fun fetchOperatorActivity() {
         val uid = auth.currentUser?.uid ?: return
-        firestore.collection("parqueaderos").whereEqualTo("operatorId", uid)
+        firestore.collection("parking lots").whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (snapshot != null) {
                     _operatorParkingLots.value = snapshot.documents.mapNotNull { doc ->
