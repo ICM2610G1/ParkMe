@@ -200,7 +200,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     if (parking.photos.isEmpty()) {
                         repeat(3) {
                             Image(
-                                painter = painterResource(id = R.drawable.parqueadero1),
+                                painter = painterResource(id = R.drawable.default2),
                                 contentDescription = "Sin foto",
                                 modifier = Modifier.size(100.dp).clip(RoundedCornerShape(16.dp)),
                                 contentScale = ContentScale.Crop

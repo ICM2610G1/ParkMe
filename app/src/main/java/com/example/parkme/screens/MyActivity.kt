@@ -211,7 +211,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                     )
                                 } else {
                                     Image(
-                                        painter = painterResource(id = R.drawable.parqueadero1),
+                                        painter = painterResource(id = R.drawable.default2),
                                         contentDescription = "Sin foto",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
