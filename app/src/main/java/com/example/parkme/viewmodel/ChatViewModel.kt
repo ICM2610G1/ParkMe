@@ -52,11 +52,11 @@ class ChatViewModel : ViewModel() {
         )
     }
 
-    fun loadChatPartnerName(chatId: String, esOperador: Boolean) {
+    fun loadChatPartnerName(chatId: String, isOperator: Boolean) {
         db.collection("chats").document(chatId).get().addOnSuccessListener { doc ->
             val room = doc.toObject(ChatRoom::class.java)
             if (room != null) {
-                if (esOperador) {
+                if (isOperator) {
                     db.collection("users").document(room.userId).get().addOnSuccessListener { userDoc ->
                         val name = userDoc.getString("name") ?: "Usuario"
                         val lastName = userDoc.getString("lastName") ?: ""
@@ -71,25 +71,25 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    fun iniciarChatRoom(reserva: Reservation) {
+    fun initChatRoom(reservation: Reservation) {
         val chatRoom = ChatRoom(
-            id = reserva.id,
-            parkingName = reserva.parkingName,
-            userId = reserva.userId,
-            operatorId = reserva.operatorId
+            id = reservation.id,
+            parkingName = reservation.parkingName,
+            userId = reservation.userId,
+            operatorId = reservation.operatorId
         )
 
-        db.collection("chats").document(reserva.id)
+        db.collection("chats").document(reservation.id)
             .set(chatRoom, SetOptions.merge())
             .addOnSuccessListener { Log.i("ChatViewModel", "Sala de chat asegurada") }
             .addOnFailureListener { e -> Log.e("ChatViewModel", "Error al crear sala", e) }
     }
 
-    fun fetchMyChats(userId: String, isOperador: Boolean) {
-        val campoBusqueda = if (isOperador) "operatorId" else "userId"
+    fun fetchMyChats(userId: String, isOperator: Boolean) {
+        val searchField = if (isOperator) "operatorId" else "userId"
 
         db.collection("chats")
-            .whereEqualTo(campoBusqueda, userId)
+            .whereEqualTo(searchField, userId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("ChatViewModel", "Error al escuchar chat rooms", error)

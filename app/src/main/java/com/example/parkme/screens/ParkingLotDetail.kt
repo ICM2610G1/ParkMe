@@ -36,9 +36,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
-    var mostrarFormulario by remember { mutableStateOf(false) }
+    var showForm by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
-    var mensajeReserva by remember { mutableStateOf("") }
+    var reservationMessage by remember { mutableStateOf("") }
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     Scaffold(
@@ -52,7 +52,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(16.dp)
-                    .padding(bottom = if (mostrarFormulario) 380.dp else 100.dp)
+                    .padding(bottom = if (showForm) 380.dp else 100.dp)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.Start
             ) {
@@ -71,7 +71,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        text = "Detalles del\nparqueadero",
+                        text = "Detalles del\nParqueadero",
                         color = colorResource(R.color.black),
                         fontSize = 25.sp,
                         fontWeight = FontWeight.Bold,
@@ -99,7 +99,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(text = "${parking.pricePerMin} / min", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = "Plena: ${parking.fixedPrice}", fontSize = 14.sp, color = Color.DarkGray)
+                        Text(text = "Tarifa fija: ${parking.fixedPrice}", fontSize = 14.sp, color = Color.DarkGray)
                     }
                 }
 
@@ -119,7 +119,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Text("Detalles del lugar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
+                Text("Detalles de la ubicación", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = colorResource(R.color.black))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 12.dp)) {
@@ -128,7 +128,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                         else Icon(Icons.Default.Cancel, null, Modifier.size(16.dp), tint = Color.Red)
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(if (parking.slot > 0) "Capacidad total: ${parking.slot} espacios" else "Sin servicio", fontSize = 16.sp, color = Color.DarkGray)
+                    Text(if (parking.slot > 0) "Capacidad total: ${parking.slot} espacios" else "Fuera de servicio", fontSize = 16.sp, color = Color.DarkGray)
                 }
 
                 if (parking.electricCharges) {
@@ -151,7 +151,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     Column {
                         Text("Reglas del parqueadero", fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = parking.terms.ifEmpty { "Sin reglas definidas" }, fontSize = 16.sp, color = Color.DarkGray)
+                        Text(text = parking.terms.ifEmpty { "No hay reglas definidas" }, fontSize = 16.sp, color = Color.DarkGray)
                     }
                 }
 
@@ -160,7 +160,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                     Text("Fotos", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = colorResource(R.color.black))
                     TextButton(onClick = {}, contentPadding = PaddingValues(0.dp)) {
-                        Text("Ver todo", color = colorResource(R.color.blue), fontSize = 14.sp)
+                        Text("Ver todas", color = colorResource(R.color.blue), fontSize = 14.sp)
                     }
                 }
                 Spacer(Modifier.height(12.dp))
@@ -178,7 +178,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                         parking.photos.take(3).forEach { url ->
                             AsyncImage(
                                 model = url,
-                                contentDescription = "Foto parqueadero",
+                                contentDescription = "Foto del parqueadero",
                                 modifier = Modifier.size(100.dp).clip(RoundedCornerShape(16.dp)),
                                 contentScale = ContentScale.Crop
                             )
@@ -188,7 +188,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
             }
 
             Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-                if (mostrarFormulario) {
+                if (showForm) {
                     if (isSubmitting) {
                         Box(
                             modifier = Modifier
@@ -202,41 +202,42 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     } else {
                         ReservationBottomBox(
                             parking = parking,
-                            onCancel = { mostrarFormulario = false },
-                            onConfirm = { placa, horaLlegada, horaSalida ->
+                            onCancel = { showForm = false },
+                            onConfirm = { licensePlate, arrivalTime, departureTime ->
                                 isSubmitting = true
-                                mensajeReserva = ""
+                                reservationMessage = ""
 
                                 val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                                val hoy = sdf.format(java.util.Date())
+                                val today = sdf.format(java.util.Date())
 
-                                val llegadaFull = "$hoy $horaLlegada"
-                                val salidaFull = "$hoy $horaSalida"
+                                val fullArrival = "$today $arrivalTime"
+                                val fullDeparture = "$today $departureTime"
 
-                                val nuevaReserva = Reservation(
+                                val newReservation = Reservation(
                                     parkingId = parking.id,
                                     parkingName = parking.name,
                                     userId = uid,
                                     operatorId = parking.operatorId,
-                                    placa = placa,
-                                    startTime = llegadaFull,
-                                    endTime = salidaFull,
+                                    licensePlate = licensePlate,
+                                    startTime = fullArrival,
+                                    endTime = fullDeparture,
                                     status = "Activa"
                                 )
 
-                                reserveSlot(      reserva = nuevaReserva,
+                                reserveSlot(
+                                    reservation = newReservation,
                                     maxSlots = parking.slot,
                                     onSuccess = {
                                         isSubmitting = false
-                                        mostrarFormulario = false
+                                        showForm = false
                                         navController.navigate(AppScreens.MyActivity.name)
                                     },
                                     onError = { e ->
                                         isSubmitting = false
-                                        mensajeReserva = "Error: ${e.message}"
-                                    } )
+                                        reservationMessage = "Error: ${e.message}"
+                                    }
+                                )
                             }
-
                         )
                     }
                 } else {
@@ -245,7 +246,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                         contentAlignment = Alignment.Center
                     ) {
                         Button(
-                            onClick = { mostrarFormulario = true },
+                            onClick = { showForm = true },
                             modifier = Modifier.fillMaxWidth(0.85f).height(56.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                             shape = RoundedCornerShape(16.dp)
@@ -256,9 +257,9 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                 }
             }
 
-            if (mensajeReserva.isNotEmpty() && !mostrarFormulario) {
+            if (reservationMessage.isNotEmpty() && !showForm) {
                 Box(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp)) {
-                    Text(text = mensajeReserva, color = Color.Red, fontWeight = FontWeight.Bold)
+                    Text(text = reservationMessage, color = Color.Red, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -269,78 +270,77 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
 fun ReservationBottomBox(
     parking: ParkingLot,
     onCancel: () -> Unit,
-    onConfirm: (placa: String, horaLlegada: String, horaSalida: String) -> Unit
+    onConfirm: (licensePlate: String, arrivalTime: String, departureTime: String) -> Unit
 ) {
-    var placa by remember { mutableStateOf("") }
-    var horaLlegada by remember { mutableStateOf(parking.hourStart) }
-    var horaSalida by remember { mutableStateOf(parking.hourFinish) }
+    var licensePlate by remember { mutableStateOf("") }
+    var arrivalTime by remember { mutableStateOf(parking.hourStart) }
+    var departureTime by remember { mutableStateOf(parking.hourFinish) }
 
-    var mostrarDialogoLlegada by remember { mutableStateOf(false) }
-    var mostrarDialogoSalida by remember { mutableStateOf(false) }
+    var showArrivalDialog by remember { mutableStateOf(false) }
+    var showDepartureDialog by remember { mutableStateOf(false) }
 
-    var cuposDisponibles by remember { mutableIntStateOf(parking.slot) }
-    var mensajeErrorHorario by remember { mutableStateOf("") }
-    var isCheckingDisponibilidad by remember { mutableStateOf(false) }
+    var availableSlots by remember { mutableIntStateOf(parking.slot) }
+    var scheduleErrorMessage by remember { mutableStateOf("") }
+    var isCheckingAvailability by remember { mutableStateOf(false) }
 
-    LaunchedEffect(horaLlegada, horaSalida) {
-        isCheckingDisponibilidad = true
-        mensajeErrorHorario = ""
+    LaunchedEffect(arrivalTime, departureTime) {
+        isCheckingAvailability = true
+        scheduleErrorMessage = ""
 
-        if (horaLlegada >= horaSalida) {
-            mensajeErrorHorario = "La hora de salida debe ser mayor a la de llegada"
-            cuposDisponibles = 0
-            isCheckingDisponibilidad = false
+        if (arrivalTime >= departureTime) {
+            scheduleErrorMessage = "La hora de salida debe ser posterior a la hora de llegada"
+            availableSlots = 0
+            isCheckingAvailability = false
             return@LaunchedEffect
         }
-        if (horaLlegada < parking.hourStart || horaSalida > parking.hourFinish) {
-            mensajeErrorHorario = "Fuera del horario de atención (${parking.hourStart} - ${parking.hourFinish})"
-            cuposDisponibles = 0
-            isCheckingDisponibilidad = false
+        if (arrivalTime < parking.hourStart || departureTime > parking.hourFinish) {
+            scheduleErrorMessage = "Fuera del horario de atención (${parking.hourStart} - ${parking.hourFinish})"
+            availableSlots = 0
+            isCheckingAvailability = false
             return@LaunchedEffect
         }
-
 
         val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-        val hoy = sdf.format(java.util.Date())
-        val llegadaFull = "$hoy $horaLlegada"
-        val salidaFull = "$hoy $horaSalida"
+        val today = sdf.format(java.util.Date())
+        val fullArrival = "$today $arrivalTime"
+        val fullDeparture = "$today $departureTime"
 
         FirebaseFirestore.getInstance().collection("reservas")
             .whereEqualTo("parkingId", parking.id)
             .whereEqualTo("status", "Activa")
             .get()
             .addOnSuccessListener { snapshot ->
-                var reservasSuperpuestas = 0
+                var overlappingReservations = 0
                 for (doc in snapshot.documents) {
                     var rStart = doc.getString("startTime") ?: ""
                     var rEnd = doc.getString("endTime") ?: ""
 
-                    if (rStart.length <= 5) rStart = "$hoy $rStart"
-                    if (rEnd.length <= 5) rEnd = "$hoy $rEnd"
+                    if (rStart.length <= 5) rStart = "$today $rStart"
+                    if (rEnd.length <= 5) rEnd = "$today $rEnd"
 
-                    if (llegadaFull < rEnd && salidaFull > rStart) {
-                        reservasSuperpuestas++
+                    if (fullArrival < rEnd && fullDeparture > rStart) {
+                        overlappingReservations++
                     }
                 }
 
-                cuposDisponibles = parking.slot - reservasSuperpuestas
+                availableSlots = parking.slot - overlappingReservations
 
-                if (cuposDisponibles <= 0) {
-                    mensajeErrorHorario = "Agotado en este horario, selecciona otro."
+                if (availableSlots <= 0) {
+                    scheduleErrorMessage = "Agotado en este horario, selecciona otro."
                 }
-                isCheckingDisponibilidad = false
+                isCheckingAvailability = false
             }
             .addOnFailureListener {
-                mensajeErrorHorario = "Error al conectar con la base de datos"
-                isCheckingDisponibilidad = false
+                scheduleErrorMessage = "Error al conectar con la base de datos"
+                isCheckingAvailability = false
             }
     }
 
-    if (mostrarDialogoLlegada) {
-        TimeEditDialog("Hora de llegada", horaLlegada, { horaLlegada = it; mostrarDialogoLlegada = false }, { mostrarDialogoLlegada = false })
+    if (showArrivalDialog) {
+        TimeEditDialog("Hora de llegada", arrivalTime, { arrivalTime = it; showArrivalDialog = false }, { showArrivalDialog = false })
     }
-    if (mostrarDialogoSalida) {
-        TimeEditDialog("Hora de salida", horaSalida, { horaSalida = it; mostrarDialogoSalida = false }, { mostrarDialogoSalida = false })
+    if (showDepartureDialog) {
+        TimeEditDialog("Hora de salida", departureTime, { departureTime = it; showDepartureDialog = false }, { showDepartureDialog = false })
     }
 
     Column(
@@ -352,28 +352,28 @@ fun ReservationBottomBox(
             .padding(24.dp)
             .fillMaxWidth()
     ) {
-        Text("Detalles de tu reserva", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+        Text("Detalles de la reserva", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         Text(parking.name, fontSize = 14.sp,  color = Color.DarkGray)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = placa,
+            value = licensePlate,
             onValueChange = { newValue ->
-                val textoBase = newValue.replace("-", "").uppercase()
+                val baseText = newValue.replace("-", "").uppercase()
 
-                var textoFiltrado = ""
-                for (i in textoBase.indices) {
-                    if (i < 3 && textoBase[i].isLetter()) {
-                        textoFiltrado += textoBase[i]
-                    } else if (i in 3..5 && textoBase[i].isDigit()) {
-                        textoFiltrado += textoBase[i]
+                var filteredText = ""
+                for (i in baseText.indices) {
+                    if (i < 3 && baseText[i].isLetter()) {
+                        filteredText += baseText[i]
+                    } else if (i in 3..5 && baseText[i].isDigit()) {
+                        filteredText += baseText[i]
                     }
                 }
 
-                placa = if (textoFiltrado.length > 3) {
-                    "${textoFiltrado.substring(0, 3)}-${textoFiltrado.substring(3)}"
+                licensePlate = if (filteredText.length > 3) {
+                    "${filteredText.substring(0, 3)}-${filteredText.substring(3)}"
                 } else {
-                    textoFiltrado
+                    filteredText
                 }
             },
             label = { Text("Placa (Ej: ABC-123)", fontSize = 14.sp) },
@@ -389,20 +389,20 @@ fun ReservationBottomBox(
         Spacer(modifier = Modifier.height(12.dp))
 
         LabelAndRight("Llegada", right = {
-            Box(modifier = Modifier.clickable { mostrarDialogoLlegada = true }) { TimePill(horaLlegada) }
+            Box(modifier = Modifier.clickable { showArrivalDialog = true }) { TimePill(arrivalTime) }
         })
         LabelAndRight("Salida", right = {
-            Box(modifier = Modifier.clickable { mostrarDialogoSalida = true }) { TimePill(horaSalida) }
+            Box(modifier = Modifier.clickable { showDepartureDialog = true }) { TimePill(departureTime) }
         })
 
         Spacer(modifier = Modifier.height(8.dp))
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            if (isCheckingDisponibilidad) {
+            if (isCheckingAvailability) {
                 Text("Calculando disponibilidad...", color = Color.Gray, fontSize = 13.sp)
-            } else if (mensajeErrorHorario.isNotEmpty()) {
-                Text(mensajeErrorHorario, color = Color.Red, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            } else if (scheduleErrorMessage.isNotEmpty()) {
+                Text(scheduleErrorMessage, color = Color.Red, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             } else {
-                Text("Hay $cuposDisponibles cupos en este horario", color = Color(0xFF008000), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text("Hay $availableSlots espacios en este horario", color = Color(0xFF008000), fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -417,8 +417,8 @@ fun ReservationBottomBox(
             ) { Text("Cancelar", color = Color.White, fontWeight = FontWeight.Bold) }
 
             Button(
-                enabled = placa.length == 7 && mensajeErrorHorario.isEmpty() && !isCheckingDisponibilidad,
-                onClick = { onConfirm(placa, horaLlegada, horaSalida) },
+                enabled = licensePlate.length == 7 && scheduleErrorMessage.isEmpty() && !isCheckingAvailability,
+                onClick = { onConfirm(licensePlate, arrivalTime, departureTime) },
                 colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(50)
@@ -428,7 +428,7 @@ fun ReservationBottomBox(
 }
 
 fun reserveSlot(
-    reserva: Reservation,
+    reservation: Reservation,
     maxSlots: Int,
     onSuccess: () -> Unit,
     onError: (Exception) -> Unit
@@ -436,35 +436,35 @@ fun reserveSlot(
     val db = FirebaseFirestore.getInstance()
 
     val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-    val hoy = sdf.format(java.util.Date())
+    val today = sdf.format(java.util.Date())
 
     db.collection("reservas")
-        .whereEqualTo("parkingId", reserva.parkingId)
+        .whereEqualTo("parkingId", reservation.parkingId)
         .whereEqualTo("status", "Activa")
         .get()
         .addOnSuccessListener { snapshot ->
-            var reservasSuperpuestas = 0
+            var overlappingReservations = 0
             for (doc in snapshot.documents) {
                 var rStart = doc.getString("startTime") ?: ""
                 var rEnd = doc.getString("endTime") ?: ""
 
-                if (rStart.length <= 5 && rStart.isNotEmpty()) rStart = "$hoy $rStart"
-                if (rEnd.length <= 5 && rEnd.isNotEmpty()) rEnd = "$hoy $rEnd"
+                if (rStart.length <= 5 && rStart.isNotEmpty()) rStart = "$today $rStart"
+                if (rEnd.length <= 5 && rEnd.isNotEmpty()) rEnd = "$today $rEnd"
 
-                if (reserva.startTime < rEnd && reserva.endTime > rStart) {
-                    reservasSuperpuestas++
+                if (reservation.startTime < rEnd && reservation.endTime > rStart) {
+                    overlappingReservations++
                 }
             }
 
-            if (reservasSuperpuestas < maxSlots) {
+            if (overlappingReservations < maxSlots) {
                 val reservationRef = db.collection("reservas").document()
-                val reservaFinal = reserva.copy(id = reservationRef.id)
+                val finalReservation = reservation.copy(id = reservationRef.id)
 
-                reservationRef.set(reservaFinal)
+                reservationRef.set(finalReservation)
                     .addOnSuccessListener { onSuccess() }
                     .addOnFailureListener { e -> onError(e) }
             } else {
-                onError(Exception("Lo sentimos, alguien acaba de tomar el último cupo en este horario."))
+                onError(Exception("Lo sentimos, alguien acaba de tomar el último espacio en este horario."))
             }
         }
         .addOnFailureListener { e -> onError(e) }

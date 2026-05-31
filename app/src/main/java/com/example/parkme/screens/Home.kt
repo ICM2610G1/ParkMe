@@ -52,31 +52,29 @@ import com.example.parkme.viewmodel.AppViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
-
 @Composable
 fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()) {
     val context = LocalContext.current
-    var suggestions by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
+    var addressSuggestions by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val geocoder = remember { Geocoder(context) }
-    var field by remember { mutableStateOf("") }
-    var itemSeleccionado by remember { mutableIntStateOf(0) }
-    val reservasUsuario by viewModel.userReservations.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedItem by remember { mutableIntStateOf(0) }
+    val userReservations by viewModel.userReservations.collectAsState()
     val allParkingLots by viewModel.parkingLots.collectAsState()
+
     LaunchedEffect(Unit) {
         viewModel.fetchUserReservations()
         viewModel.fetchParkingLots()
     }
 
-
-    LaunchedEffect(field) {
-        if (field.length > 3) {
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.length > 3) {
             delay(500)
             withContext(Dispatchers.IO) {
                 try {
-
                     val results = geocoder.getFromLocationName(
-                        field,
+                        searchQuery,
                         5,
                         -4.22,
                         -79.27,
@@ -84,14 +82,14 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                         -66.86
                     )
 
-                    suggestions = results ?: emptyList()
-                    isDropdownExpanded = suggestions.isNotEmpty()
+                    addressSuggestions = results ?: emptyList()
+                    isDropdownExpanded = addressSuggestions.isNotEmpty()
                 } catch (e: Exception) {
-                    suggestions = emptyList()
+                    addressSuggestions = emptyList()
                 }
             }
         } else {
-            suggestions = emptyList()
+            addressSuggestions = emptyList()
             isDropdownExpanded = false
         }
     }
@@ -110,8 +108,8 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
                         label = { Text("Inicio", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 0,
-                        onClick = { itemSeleccionado = 0 },
+                        selected = selectedItem == 0,
+                        onClick = { selectedItem = 0 },
                         colors = NavigationBarItemDefaults.colors(
                             indicatorColor = Color.Black,
                             selectedIconColor = Color.White,
@@ -126,9 +124,9 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                             )
                         },
                         label = { Text("Actividad", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 1,
+                        selected = selectedItem == 1,
                         onClick = {
-                            itemSeleccionado = 1
+                            selectedItem = 1
                             navController.navigate(AppScreens.MyActivity.name)
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -140,9 +138,9 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 2,
+                        selected = selectedItem == 2,
                         onClick = {
-                            itemSeleccionado = 2
+                            selectedItem = 2
                             navController.navigate(AppScreens.UserProfile.name)
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -200,8 +198,8 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
             Column(modifier = Modifier.fillMaxWidth()) {
 
                 TextField(
-                    value = field,
-                    onValueChange = { field = it },
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
@@ -230,7 +228,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                 )
 
 
-                AnimatedVisibility(visible = isDropdownExpanded && suggestions.isNotEmpty()) {
+                AnimatedVisibility(visible = isDropdownExpanded && addressSuggestions.isNotEmpty()) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -239,7 +237,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                         shadowElevation = 8.dp
                     ) {
                         Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                            suggestions.forEachIndexed { index, address ->
+                            addressSuggestions.forEachIndexed { index, address ->
                                 val placeName = address.featureName ?: "Dirección"
                                 val fullAddress = address.getAddressLine(0) ?: ""
 
@@ -247,7 +245,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            field = fullAddress
+                                            searchQuery = fullAddress
                                             isDropdownExpanded = false
                                             val location =
                                                 LatLng(address.latitude, address.longitude)
@@ -286,7 +284,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                     }
                                 }
 
-                                if (index < suggestions.lastIndex) {
+                                if (index < addressSuggestions.lastIndex) {
                                     HorizontalDivider(
                                         modifier = Modifier.padding(
                                             horizontal = 56.dp,
@@ -325,7 +323,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                     .background(Color.Transparent)
                     .padding(16.dp)
             ) {
-                if (reservasUsuario.isEmpty()) {
+                if (userReservations.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No tienes reservas recientes", color = Color.Gray)
                     }
@@ -334,13 +332,13 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(reservasUsuario) { reserva ->
-                            val parqueaderoDeEstaReserva =
-                                allParkingLots.find { it.id == reserva.parkingId }
-                            val direccionGuardada = parqueaderoDeEstaReserva?.direccion
-                            var direccionMostrar by remember(reserva.parkingId, direccionGuardada) {
+                        items(userReservations) { reservation ->
+                            val reservationParkingLot =
+                                allParkingLots.find { it.id == reservation.parkingId }
+                            val savedAddress = reservationParkingLot?.adress // Se mantiene 'adress' según el modelo
+                            var displayAddress by remember(reservation.parkingId, savedAddress) {
                                 mutableStateOf(
-                                    if (!direccionGuardada.isNullOrBlank()) direccionGuardada
+                                    if (!savedAddress.isNullOrBlank()) savedAddress
                                     else "Calculando dirección..."
                                 )
                             }
@@ -352,14 +350,14 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                                         shape = RoundedCornerShape(24.dp)
                                     )
                                     .clickable {
-                                        if (parqueaderoDeEstaReserva != null) {
+                                        if (reservationParkingLot != null) {
                                             navController.currentBackStackEntry?.savedStateHandle?.set(
                                                 "ubicacionBuscada",
-                                                parqueaderoDeEstaReserva.location
+                                                reservationParkingLot.location
                                             )
                                             navController.currentBackStackEntry?.savedStateHandle?.set(
                                                 "preSelectedParkingId",
-                                                parqueaderoDeEstaReserva.id
+                                                reservationParkingLot.id
                                             )
                                             navController.navigate(AppScreens.SearchMap.name)
                                         }
@@ -368,14 +366,14 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                             ) {
                                 Column {
                                     Text(
-                                        reserva.parkingName,
+                                        reservation.parkingName,
                                         color = Color.Black,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
                                         modifier = Modifier.padding(bottom = 4.dp)
                                     )
                                     Text(
-                                        text = direccionMostrar,
+                                        text = displayAddress,
                                         color = Color.DarkGray,
                                         fontSize = 14.sp,
                                         modifier = Modifier.padding(bottom = 8.dp)
@@ -413,26 +411,25 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
 
 @Composable
 fun HomeOperator(navController: NavController) {
-    var itemSeleccionado by remember { mutableIntStateOf(0) }
+    var selectedItem by remember { mutableIntStateOf(0) }
     val db = FirebaseFirestore.getInstance()
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-    val parqueaderos =
+    val parkingLots =
         remember { mutableStateOf<List<Pair<String, Map<String, Any>>>>(emptyList()) }
 
     DisposableEffect(uid) {
-        val listener = db.collection("parqueaderos")
+        val listener = db.collection("parking lots") // Corrección aquí: antes era "parqueaderos"
             .whereEqualTo("operatorId", uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) return@addSnapshotListener
 
                 if (snapshot != null) {
-                    parqueaderos.value = snapshot.documents.map { doc ->
+                    parkingLots.value = snapshot.documents.map { doc ->
                         doc.id to (doc.data ?: emptyMap())
                     }
                 }
             }
 
-        
         onDispose {
             listener.remove()
         }
@@ -452,8 +449,8 @@ fun HomeOperator(navController: NavController) {
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
                         label = { Text("Inicio", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 0,
-                        onClick = { itemSeleccionado = 0 },
+                        selected = selectedItem == 0,
+                        onClick = { selectedItem = 0 },
                         colors = NavigationBarItemDefaults.colors(
                             indicatorColor = Color.Black,
                             selectedIconColor = Color.White,
@@ -468,9 +465,9 @@ fun HomeOperator(navController: NavController) {
                             )
                         },
                         label = { Text("Actividad", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 1,
+                        selected = selectedItem == 1,
                         onClick = {
-                            itemSeleccionado = 1
+                            selectedItem = 1
                             navController.navigate(AppScreens.MyActivityOperator.name)
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -482,9 +479,9 @@ fun HomeOperator(navController: NavController) {
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 2,
+                        selected = selectedItem == 2,
                         onClick = {
-                            itemSeleccionado = 2
+                            selectedItem = 2
                             navController.navigate(AppScreens.OperatorProfile.name)
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -545,7 +542,7 @@ fun HomeOperator(navController: NavController) {
                     .border(2.dp, Color.Gray, RoundedCornerShape(24.dp))
                     .padding(16.dp)
             ) {
-                if (parqueaderos.value.isEmpty()) {
+                if (parkingLots.value.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("No tienes parqueaderos aún", color = Color.Gray)
                     }
@@ -554,25 +551,24 @@ fun HomeOperator(navController: NavController) {
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(24.dp)
                     ) {
-                        items(parqueaderos.value) { (id, data) ->
-                            val rawRate = data["rate"] ?: data["calificacion"]
-                            val rateFloat = (rawRate as? Number)?.toFloat() ?: 0f
-                            val rateString =
-                                if (rateFloat > 0f) String.format("%.1f", rateFloat) else "0.0"
+                        items(parkingLots.value) { (id, data) ->
+                            val rawRating = data["rate"] ?: data["calificacion"]
+                            val ratingFloat = (rawRating as? Number)?.toFloat() ?: 0f
+                            val ratingString =
+                                if (ratingFloat > 0f) String.format("%.1f", ratingFloat) else "0.0"
 
-                            val rawPhotos = data["photos"] ?: data["fotos"] ?: data["imageUrl"]
-                            ?: data["imageUrls"]
-                            val fotosList = when (rawPhotos) {
+                            val rawPhotos = data["photos"] ?: data["fotos"] ?: data["imageUrl"] ?: data["imageUrls"]
+                            val photoList = when (rawPhotos) {
                                 is List<*> -> rawPhotos.filterIsInstance<String>()
                                 is String -> if (rawPhotos.isNotBlank()) listOf(rawPhotos) else emptyList()
                                 else -> emptyList()
                             }
 
                             ParkingLotItem(
-                                nombre = data["name"] as? String ?: "Sin nombre",
-                                calificacion = rateString,
+                                name = data["name"] as? String ?: "Sin nombre",
+                                rating = ratingString,
                                 parkingId = id,
-                                fotos = fotosList,
+                                photos = photoList,
                                 navController = navController
                             )
                         }
@@ -605,10 +601,10 @@ fun HomeOperator(navController: NavController) {
 
 @Composable
 fun ParkingLotItem(
-    nombre: String,
-    calificacion: String,
+    name: String,
+    rating: String,
     parkingId: String,
-    fotos: List<String> = emptyList(),
+    photos: List<String> = emptyList(),
     navController: NavController
 ) {
     Column {
@@ -617,7 +613,7 @@ fun ParkingLotItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = nombre, fontSize = 20.sp, color = Color.Black)
+            Text(text = name, fontSize = 20.sp, color = Color.Black)
             TextButton(
                 onClick = { navController.navigate("${AppScreens.EditParking.name}/$parkingId") },
                 contentPadding = PaddingValues(0.dp)
@@ -635,7 +631,7 @@ fun ParkingLotItem(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                Text(text = "$calificacion", fontSize = 14.sp, color = Color.Black)
+                Text(text = "$rating", fontSize = 14.sp, color = Color.Black)
                 Spacer(modifier = Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.Default.Star,
@@ -646,15 +642,14 @@ fun ParkingLotItem(
             }
         }
 
-        if (fotos.isNotEmpty()) {
+        if (photos.isNotEmpty()) {
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(fotos) { url ->
+                items(photos) { url ->
                     Box(
                         modifier = Modifier
-
                             .width(160.dp)
                             .height(110.dp)
                             .border(2.dp, Color(0xFF1877F2), RoundedCornerShape(12.dp))
@@ -712,12 +707,12 @@ fun ParkingLotItem(
 
 @Composable
 @Preview
-fun HomeUserInpreview() {
+fun HomeUserPreview() {
     HomeUser(navController = rememberNavController())
 }
 
 @Composable
 @Preview
-fun HomeOperatorpreview() {
+fun HomeOperatorPreview() {
     HomeOperator(navController = rememberNavController())
 }

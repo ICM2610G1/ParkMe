@@ -37,7 +37,7 @@ import java.util.*
 @Composable
 fun ChatListScreen(
     navController: NavController,
-    esOperador: Boolean,
+    isOperator: Boolean,
     chatViewModel: ChatViewModel = viewModel()
 ) {
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -45,7 +45,7 @@ fun ChatListScreen(
 
     LaunchedEffect(currentUserId) {
         if (currentUserId.isNotEmpty()) {
-            chatViewModel.fetchMyChats(userId = currentUserId, isOperador = esOperador)
+            chatViewModel.fetchMyChats(userId = currentUserId, isOperator = isOperator)
         }
     }
 
@@ -110,8 +110,8 @@ fun ChatListScreen(
                         onClick = {
                             ReservationHolder.selectedReservationId = room.id
 
-                            val ruta = if (esOperador) AppScreens.ChatOp.name else AppScreens.ChatCli.name
-                            navController.navigate(ruta)
+                            val route = if (isOperator) AppScreens.ChatOp.name else AppScreens.ChatCli.name
+                            navController.navigate(route)
                         }
                     )
                     HorizontalDivider(
@@ -152,7 +152,6 @@ fun ChatRoomItem(chatRoom: ChatRoom, onClick: () -> Unit) {
 
         Spacer(modifier = Modifier.width(16.dp))
 
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -170,10 +169,10 @@ fun ChatRoomItem(chatRoom: ChatRoom, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             val date = Date(chatRoom.timestamp)
             Text(
-                text = sdf.format(date),
+                text = dateFormat.format(date),
                 fontSize = 12.sp,
                 color = colorResource(id = R.color.gris)
             )

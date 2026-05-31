@@ -51,11 +51,11 @@ import java.util.UUID
 
 @Composable
 fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modifier) {
-    val pill = RoundedCornerShape(50)
-    val card = RoundedCornerShape(24)
+    val pillShape = RoundedCornerShape(50)
+    val cardShape = RoundedCornerShape(24)
     val backStackEntry = navController.currentBackStackEntry
 
-    val scroll = rememberScrollState()
+    val scrollState = rememberScrollState()
     val db = FirebaseFirestore.getInstance()
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     val context = LocalContext.current
@@ -69,68 +69,68 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
     val hourStart = rememberSaveable { mutableStateOf("00:00") }
     val hourFinish = rememberSaveable { mutableStateOf("23:59") }
     val slot = rememberSaveable { mutableStateOf("0") }
-    val mensaje = rememberSaveable { mutableStateOf("") }
-    val subiendo = rememberSaveable { mutableStateOf(false) }
-    val ubicacion = remember { mutableStateOf<LatLng?>(null) }
-    val direccion = rememberSaveable { mutableStateOf("") }
+    val message = rememberSaveable { mutableStateOf("") }
+    val isUploading = rememberSaveable { mutableStateOf(false) }
+    val location = remember { mutableStateOf<LatLng?>(null) }
+    val address = rememberSaveable { mutableStateOf("") }
 
-    val fotosUris = remember {
+    val photoUris = remember {
         mutableStateOf<List<Uri>>(
-            backStackEntry?.savedStateHandle?.get<ArrayList<Uri>>("fotosUris") ?: emptyList()
+            backStackEntry?.savedStateHandle?.get<ArrayList<Uri>>("photoUris") ?: emptyList()
         )
     }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        val espaciosDisponibles = 15 - fotosUris.value.size
-        val urisPermitidas = uris.take(espaciosDisponibles)
+        val availableSpaces = 15 - photoUris.value.size
+        val allowedUris = uris.take(availableSpaces)
 
-        if (uris.size > espaciosDisponibles) {
+        if (uris.size > availableSpaces) {
             android.widget.Toast.makeText(
                 context,
-                "Solo se permitieron ${urisPermitidas.size} fotos para no exceder el límite de 15",
+                "Solo se permitieron ${allowedUris.size} fotos para no exceder el límite de 15",
                 android.widget.Toast.LENGTH_LONG
             ).show()
         }
 
-        val nuevaLista = fotosUris.value + urisPermitidas
-        fotosUris.value = nuevaLista
-        backStackEntry?.savedStateHandle?.set("fotosUris", ArrayList(nuevaLista))
+        val newList = photoUris.value + allowedUris
+        photoUris.value = newList
+        backStackEntry?.savedStateHandle?.set("photoUris", ArrayList(newList))
     }
 
-    var mostrarDialogoTerms by rememberSaveable { mutableStateOf(false) }
-    var mostrarDialogoApertura by rememberSaveable { mutableStateOf(false) }
-    var mostrarDialogoCierre by rememberSaveable { mutableStateOf(false) }
+    var showTermsDialog by rememberSaveable { mutableStateOf(false) }
+    var showOpeningDialog by rememberSaveable { mutableStateOf(false) }
+    var showClosingDialog by rememberSaveable { mutableStateOf(false) }
 
     val latLng by navController.currentBackStackEntry
         ?.savedStateHandle
         ?.getStateFlow<LatLng?>("latLng", null)
         ?.collectAsState() ?: remember { mutableStateOf(null) }
 
-    val diasSeleccionados = remember {
+    val selectedDays = remember {
         mutableStateOf<List<Boolean>>(
-            backStackEntry?.savedStateHandle?.get<ArrayList<Boolean>>("dias")
+            backStackEntry?.savedStateHandle?.get<ArrayList<Boolean>>("days")
                 ?: listOf(true, false, true, false, true, false, true)
         )
     }
-    LaunchedEffect(diasSeleccionados.value) {
-        backStackEntry?.savedStateHandle?.set("dias_seleccionados", diasSeleccionados.value)
+    LaunchedEffect(selectedDays.value) {
+        backStackEntry?.savedStateHandle?.set("selected_days", selectedDays.value)
     }
 
     LaunchedEffect(latLng) {
         if (latLng != null) {
-            ubicacion.value = latLng
+            location.value = latLng
             try {
                 val geocoder = android.location.Geocoder(context)
                 val addresses = geocoder.getFromLocation(latLng!!.latitude, latLng!!.longitude, 1)
                 if (!addresses.isNullOrEmpty()) {
-                    direccion.value = addresses[0].getAddressLine(0) ?: ""
+                    address.value = addresses[0].getAddressLine(0) ?: ""
                 } else {
-                    direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+                    address.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
                 }
             } catch (e: Exception) {
-                direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+                address.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
             }
         }
     }
@@ -139,7 +139,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
         modifier = Modifier
             .background(color = colorResource(R.color.back))
             .fillMaxSize()
-            .verticalScroll(scroll)
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.Start
     ) {
@@ -265,8 +265,8 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             label = "Reglas del parqueadero",
             right = {
                 Button(
-                    onClick = { mostrarDialogoTerms = true },
-                    shape = pill,
+                    onClick = { showTermsDialog = true },
+                    shape = pillShape,
                     colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.grisClaro)),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                 ) {
@@ -275,9 +275,9 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             }
         )
 
-        if (mostrarDialogoTerms) {
+        if (showTermsDialog) {
             AlertDialog(
-                onDismissRequest = { mostrarDialogoTerms = false },
+                onDismissRequest = { showTermsDialog = false },
                 title = { Text("Reglas del parqueadero") },
                 text = {
                     OutlinedTextField(
@@ -290,7 +290,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     )
                 },
                 confirmButton = {
-                    TextButton(onClick = { mostrarDialogoTerms = false }) { Text("Listo") }
+                    TextButton(onClick = { showTermsDialog = false }) { Text("Listo") }
                 }
             )
         }
@@ -301,7 +301,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .background(colorResource(R.color.grisClaro), card)
+                .background(colorResource(R.color.grisClaro), cardShape)
                 .padding(20.dp)
         ) {
             Column {
@@ -311,7 +311,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Fotos del parqueadero", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("${fotosUris.value.size}/15", color = Color.Gray)
+                    Text("${photoUris.value.size}/15", color = Color.Gray)
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -320,18 +320,18 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 4.dp, end = 4.dp)
                 ) {
-                    items(fotosUris.value) { uri ->
+                    items(photoUris.value) { uri ->
                         SelectedImage(
                             model = uri,
                             onDelete = {
-                                val nuevaLista = fotosUris.value.toMutableList()
-                                nuevaLista.remove(uri)
-                                fotosUris.value = nuevaLista
+                                val newList = photoUris.value.toMutableList()
+                                newList.remove(uri)
+                                photoUris.value = newList
                             }
                         )
                     }
 
-                    if (fotosUris.value.size < 15) {
+                    if (photoUris.value.size < 15) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -356,25 +356,25 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     launchSingleTop = true
                 }
             },
-            shape = pill,
+            shape = pillShape,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (ubicacion.value != null) colorResource(R.color.blue) else colorResource(R.color.grisClaro)
+                containerColor = if (location.value != null) colorResource(R.color.blue) else colorResource(R.color.grisClaro)
             ),
             modifier = Modifier
                 .fillMaxWidth(0.72f)
                 .align(Alignment.CenterHorizontally)
         ) {
             Text(
-                if (ubicacion.value != null) "Ubicación agregada" else "Agregar Ubicación",
-                color = if (ubicacion.value != null) Color.White else Color.DarkGray,
+                if (location.value != null) "Ubicación agregada" else "Agregar Ubicación",
+                color = if (location.value != null) Color.White else Color.DarkGray,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        if (ubicacion.value != null && direccion.value.isNotBlank()) {
+        if (location.value != null && address.value.isNotBlank()) {
             Spacer(Modifier.height(6.dp))
             Text(
-                text = direccion.value,
+                text = address.value,
                 fontSize = 14.sp,
                 color = Color.DarkGray,
                 textAlign = TextAlign.Center,
@@ -389,7 +389,7 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
         LabelAndRight(
             label = "Hora de apertura",
             right = {
-                Box(modifier = Modifier.clickable { mostrarDialogoApertura = true }) {
+                Box(modifier = Modifier.clickable { showOpeningDialog = true }) {
                     TimePill(hourStart.value)
                 }
             }
@@ -397,26 +397,26 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
         LabelAndRight(
             label = "Hora de cierre",
             right = {
-                Box(modifier = Modifier.clickable { mostrarDialogoCierre = true }) {
+                Box(modifier = Modifier.clickable { showClosingDialog = true }) {
                     TimePill(hourFinish.value)
                 }
             }
         )
 
-        if (mostrarDialogoApertura) {
+        if (showOpeningDialog) {
             TimeEditDialog(
-                titulo = "Hora de apertura",
-                horaActual = hourStart.value,
-                onConfirm = { hourStart.value = it; mostrarDialogoApertura = false },
-                onDismiss = { mostrarDialogoApertura = false }
+                title = "Hora de apertura",
+                currentTime = hourStart.value,
+                onConfirm = { hourStart.value = it; showOpeningDialog = false },
+                onDismiss = { showOpeningDialog = false }
             )
         }
-        if (mostrarDialogoCierre) {
+        if (showClosingDialog) {
             TimeEditDialog(
-                titulo = "Hora de cierre",
-                horaActual = hourFinish.value,
-                onConfirm = { hourFinish.value = it; mostrarDialogoCierre = false },
-                onDismiss = { mostrarDialogoCierre = false }
+                title = "Hora de cierre",
+                currentTime = hourFinish.value,
+                onConfirm = { hourFinish.value = it; showClosingDialog = false },
+                onDismiss = { showClosingDialog = false }
             )
         }
 
@@ -430,14 +430,14 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
         Spacer(Modifier.height(8.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            diasSeleccionados.value.forEachIndexed { index, seleccionado ->
+            selectedDays.value.forEachIndexed { index, seleccionado ->
                 CircleCheckClickable(
                     checked = seleccionado,
                     onClick = {
-                        val nuevaLista = diasSeleccionados.value.toMutableList()
-                        nuevaLista[index] = !seleccionado
-                        diasSeleccionados.value = nuevaLista
-                        backStackEntry?.savedStateHandle?.set("dias", ArrayList(nuevaLista))
+                        val newList = selectedDays.value.toMutableList()
+                        newList[index] = !seleccionado
+                        selectedDays.value = newList
+                        backStackEntry?.savedStateHandle?.set("days", ArrayList(newList))
                     }
                 )
             }
@@ -446,25 +446,25 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
         Spacer(Modifier.height(18.dp))
 
         Button(
-            enabled = !subiendo.value,
+            enabled = !isUploading.value,
             onClick = {
                 if (uid.isEmpty()) {
-                    mensaje.value = "Usuario no autenticado"
+                    message.value = "Usuario no autenticado"
                     return@Button
                 }
-                if (ubicacion.value == null) {
-                    mensaje.value = "Debes agregar una ubicación en el mapa"
+                if (location.value == null) {
+                    message.value = "Debes agregar una ubicación en el mapa"
                     return@Button
                 }
 
-                subiendo.value = true
+                isUploading.value = true
 
-                val diasString = diasSeleccionados.value
+                val daysString = selectedDays.value
                     .mapIndexed { i, b -> if (b) listOf("L", "M", "M", "J", "V", "S", "D")[i] else "" }
                     .filter { it.isNotEmpty() }
                     .joinToString(",")
 
-                val parqueaderoBase = hashMapOf(
+                val baseParkingLot = hashMapOf(
                     "operatorId" to uid,
                     "name" to name.value,
                     "pricePerHour" to pricePerHour.value,
@@ -474,21 +474,24 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                     "electricCharges" to electricCharges.value,
                     "hourStart" to hourStart.value,
                     "hourFinish" to hourFinish.value,
-                    "weekAvailability" to diasString,
+                    "weekAvailability" to daysString,
                     "slot" to (slot.value.toIntOrNull() ?: 0),
                     "fotos" to emptyList<String>(),
                     "photos" to emptyList<String>(),
-                    "latitud" to (ubicacion.value?.latitude ?: 0.0),
-                    "longitud" to (ubicacion.value?.longitude ?: 0.0),
-                    "direccion" to direccion.value
+                    "latitud" to (location.value?.latitude ?: 0.0),
+                    "latitude" to (location.value?.latitude ?: 0.0),
+                    "longitud" to (location.value?.longitude ?: 0.0),
+                    "longitude" to (location.value?.longitude ?: 0.0),
+                    "direccion" to address.value,
+                    "address" to address.value
                 )
 
-                db.collection("parqueaderos").add(parqueaderoBase)
+                db.collection("parking lots").add(baseParkingLot)
                     .addOnSuccessListener { docRef ->
-                        val totalFotos = fotosUris.value.size
-                        if (totalFotos == 0) {
-                            mensaje.value = " Parqueadero creado"
-                            subiendo.value = false
+                        val totalPhotos = photoUris.value.size
+                        if (totalPhotos == 0) {
+                            message.value = " Parqueadero creado"
+                            isUploading.value = false
                             navController.popBackStack()
                             return@addOnSuccessListener
                         }
@@ -497,61 +500,61 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
                         scope.launch {
                             try {
                                 val storageRef = FirebaseStorage.getInstance().reference
-                                val fotosSubidas = mutableListOf<String>()
+                                val uploadedPhotos = mutableListOf<String>()
 
-                                fotosUris.value.forEach { uri ->
+                                photoUris.value.forEach { uri ->
                                     val fileName = UUID.randomUUID().toString() + ".jpg"
-                                    val imageRef = storageRef.child("parqueaderos/$fileName")
+                                    val imageRef = storageRef.child("parking lots/$fileName")
                                     imageRef.putFile(uri).await()
                                     val downloadUrl = imageRef.downloadUrl.await()
-                                    fotosSubidas.add(downloadUrl.toString())
+                                    uploadedPhotos.add(downloadUrl.toString())
                                 }
 
                                 withContext(Dispatchers.Main) {
                                     docRef.update(mapOf(
-                                        "fotos" to fotosSubidas,
-                                        "photos" to fotosSubidas
+                                        "fotos" to uploadedPhotos,
+                                        "photos" to uploadedPhotos
                                     )).addOnSuccessListener {
-                                        mensaje.value = "Parqueadero creado con fotos"
-                                        subiendo.value = false
+                                        message.value = "Parqueadero creado con fotos"
+                                        isUploading.value = false
                                         navController.popBackStack()
                                     }
                                         .addOnFailureListener { e ->
-                                            mensaje.value = "Error guardando fotos: ${e.message}"
-                                            subiendo.value = false
+                                            message.value = "Error guardando fotos: ${e.message}"
+                                            isUploading.value = false
                                         }
                                 }
                             } catch (e: Exception) {
                                 withContext(Dispatchers.Main) {
-                                    mensaje.value = "Error subiendo fotos a Firebase: ${e.message}"
-                                    subiendo.value = false
+                                    message.value = "Error subiendo fotos a Firebase: ${e.message}"
+                                    isUploading.value = false
                                 }
                             }
                         }
                     }
                     .addOnFailureListener { e ->
-                        mensaje.value = "Error creando parqueadero: ${e.message}"
-                        subiendo.value = false
+                        message.value = "Error creando parqueadero: ${e.message}"
+                        isUploading.value = false
                     }
             },
-            shape = pill,
+            shape = pillShape,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .fillMaxWidth(0.6f)
                 .height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue))
         ) {
-            if (subiendo.value) {
+            if (isUploading.value) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
                 Text("Crear", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
         }
 
-        if (mensaje.value.isNotEmpty()) {
+        if (message.value.isNotEmpty()) {
             Text(
-                text = mensaje.value,
-                color = if (mensaje.value.startsWith("P")) Color.Green else Color.Red,
+                text = message.value,
+                color = if (message.value.startsWith("P")) Color.Green else Color.Red,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
@@ -564,9 +567,9 @@ fun CreateParkingVisual(navController: NavController, modifier: Modifier = Modif
 fun EditParkingVisual(
     parkingId: String = "", navController: NavController? = null, modifier: Modifier = Modifier
 ) {
-    val pill = RoundedCornerShape(50)
-    val card = RoundedCornerShape(24)
-    val scroll = rememberScrollState()
+    val pillShape = RoundedCornerShape(50)
+    val cardShape = RoundedCornerShape(24)
+    val scrollState = rememberScrollState()
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
 
@@ -579,33 +582,31 @@ fun EditParkingVisual(
     val hourStart = remember { mutableStateOf("00:00") }
     val hourFinish = remember { mutableStateOf("23:59") }
     val slot = remember { mutableStateOf("0") }
-    val diasSeleccionados = remember { mutableStateOf(listOf(true, false, true, false, true, false, true)) }
-    val mensaje = remember { mutableStateOf("") }
-    val cargando = remember { mutableStateOf(true) }
-    val subiendo = remember { mutableStateOf(false) }
-    val fotosUris = remember { mutableStateOf<List<Uri>>(emptyList()) }
-    val fotosUrls = remember { mutableStateOf<List<String>>(emptyList()) }
-    val ubicacion = remember { mutableStateOf<LatLng?>(null) }
-    val direccion = rememberSaveable { mutableStateOf("") }
+    val selectedDays = remember { mutableStateOf(listOf(true, false, true, false, true, false, true)) }
+    val message = remember { mutableStateOf("") }
+    val isLoading = remember { mutableStateOf(true) }
+    val isUploading = remember { mutableStateOf(false) }
+    val photoUris = remember { mutableStateOf<List<Uri>>(emptyList()) }
+    val photoUrls = remember { mutableStateOf<List<String>>(emptyList()) }
+    val location = remember { mutableStateOf<LatLng?>(null) }
+    val address = rememberSaveable { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        val totalActual = fotosUrls.value.size + fotosUris.value.size
+        val currentTotal = photoUrls.value.size + photoUris.value.size
+        val availableSpaces = 15 - currentTotal
+        val allowedUris = uris.take(availableSpaces)
 
-        val espaciosDisponibles = 15 - totalActual
-
-        val urisPermitidas = uris.take(espaciosDisponibles)
-
-        if (uris.size > espaciosDisponibles) {
+        if (uris.size > availableSpaces) {
             android.widget.Toast.makeText(
                 context,
-                "Solo se agregaron ${urisPermitidas.size} fotos para respetar el límite de 15",
+                "Solo se agregaron ${allowedUris.size} fotos para respetar el límite de 15",
                 android.widget.Toast.LENGTH_LONG
             ).show()
         }
 
-        fotosUris.value = fotosUris.value + urisPermitidas
+        photoUris.value = photoUris.value + allowedUris
     }
 
     val latLng by navController?.currentBackStackEntry
@@ -615,24 +616,24 @@ fun EditParkingVisual(
 
     LaunchedEffect(latLng) {
         if (latLng != null) {
-            ubicacion.value = latLng
+            location.value = latLng
             try {
                 val geocoder = android.location.Geocoder(context)
                 val addresses = geocoder.getFromLocation(latLng!!.latitude, latLng!!.longitude, 1)
                 if (!addresses.isNullOrEmpty()) {
-                    direccion.value = addresses[0].getAddressLine(0) ?: ""
+                    address.value = addresses[0].getAddressLine(0) ?: ""
                 } else {
-                    direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+                    address.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
                 }
             } catch (e: Exception) {
-                direccion.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
+                address.value = "Coordenadas: ${latLng!!.latitude}, ${latLng!!.longitude}"
             }
         }
     }
 
     LaunchedEffect(parkingId) {
         if (parkingId.isNotEmpty()) {
-            db.collection("parqueaderos").document(parkingId).get()
+            db.collection("parking lots").document(parkingId).get()
                 .addOnSuccessListener { doc ->
                     name.value = doc.getString("name") ?: ""
                     pricePerHour.value = doc.getString("pricePerHour") ?: ""
@@ -643,35 +644,35 @@ fun EditParkingVisual(
                     hourStart.value = doc.getString("hourStart") ?: "00:00"
                     hourFinish.value = doc.getString("hourFinish") ?: "23:59"
                     slot.value = doc.getLong("slot")?.toString() ?: "0"
-                    direccion.value = doc.getString("direccion") ?: ""
+                    address.value = doc.getString("address") ?: doc.getString("direccion") ?: ""
 
-                    val lat = doc.getDouble("latitud")
-                    val lng = doc.getDouble("longitud")
+                    val lat = doc.getDouble("latitude") ?: doc.getDouble("latitud")
+                    val lng = doc.getDouble("longitude") ?: doc.getDouble("longitud")
                     if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
-                        ubicacion.value = LatLng(lat, lng)
+                        location.value = LatLng(lat, lng)
                     }
 
                     val weekAvail = doc.getString("weekAvailability") ?: ""
-                    val dias = listOf("L", "M", "M", "J", "V", "S", "D")
-                    diasSeleccionados.value = dias.map { weekAvail.contains(it) }
+                    val days = listOf("L", "M", "M", "J", "V", "S", "D")
+                    selectedDays.value = days.map { weekAvail.contains(it) }
 
-                    val fotosFirestore = doc.get("photos") ?: doc.get("fotos")
-                    if (fotosFirestore is List<*>) {
-                        fotosUrls.value = fotosFirestore.filterIsInstance<String>()
+                    val firestorePhotos = doc.get("photos") ?: doc.get("fotos")
+                    if (firestorePhotos is List<*>) {
+                        photoUrls.value = firestorePhotos.filterIsInstance<String>()
                     }
 
-                    cargando.value = false
+                    isLoading.value = false
                 }
                 .addOnFailureListener {
-                    mensaje.value = "Error al cargar datos"
-                    cargando.value = false
+                    message.value = "Error al cargar datos"
+                    isLoading.value = false
                 }
         } else {
-            cargando.value = false
+            isLoading.value = false
         }
     }
 
-    if (cargando.value) {
+    if (isLoading.value) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -682,7 +683,7 @@ fun EditParkingVisual(
         modifier = Modifier
             .background(color = colorResource(R.color.back))
             .fillMaxSize()
-            .verticalScroll(scroll)
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.Start
     ) {
@@ -806,14 +807,14 @@ fun EditParkingVisual(
             }
         )
 
-        var mostrarDialogoTerms by remember { mutableStateOf(false) }
+        var showTermsDialog by remember { mutableStateOf(false) }
 
         LabelAndRight(
             label = "Reglas del parqueadero",
             right = {
                 Button(
-                    onClick = { mostrarDialogoTerms = true },
-                    shape = pill,
+                    onClick = { showTermsDialog = true },
+                    shape = pillShape,
                     colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.grisClaro)),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
                 ) {
@@ -821,9 +822,9 @@ fun EditParkingVisual(
                 }
             }
         )
-        if (mostrarDialogoTerms) {
+        if (showTermsDialog) {
             AlertDialog(
-                onDismissRequest = { mostrarDialogoTerms = false },
+                onDismissRequest = { showTermsDialog = false },
                 title = { Text("Reglas del parqueadero") },
                 text = {
                     OutlinedTextField(
@@ -836,7 +837,7 @@ fun EditParkingVisual(
                     )
                 },
                 confirmButton = {
-                    TextButton(onClick = { mostrarDialogoTerms = false }) { Text("Listo") }
+                    TextButton(onClick = { showTermsDialog = false }) { Text("Listo") }
                 }
             )
         }
@@ -847,18 +848,18 @@ fun EditParkingVisual(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .background(colorResource(R.color.grisClaro), card)
+                .background(colorResource(R.color.grisClaro), cardShape)
                 .padding(20.dp)
         ) {
             Column {
-                val totalFotos = fotosUrls.value.size + fotosUris.value.size
+                val totalPhotos = photoUrls.value.size + photoUris.value.size
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Fotos del parqueadero", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text("$totalFotos/15", color = Color.Gray)
+                    Text("$totalPhotos/15", color = Color.Gray)
                 }
 
                 Spacer(Modifier.height(16.dp))
@@ -867,20 +868,20 @@ fun EditParkingVisual(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 4.dp, end = 4.dp)
                 ) {
-                    items(fotosUrls.value) { url ->
+                    items(photoUrls.value) { url ->
                         SelectedImage(
                             model = url,
-                            onDelete = { fotosUrls.value = fotosUrls.value.filter { it != url } }
+                            onDelete = { photoUrls.value = photoUrls.value.filter { it != url } }
                         )
                     }
-                    items(fotosUris.value) { uri ->
+                    items(photoUris.value) { uri ->
                         SelectedImage(
                             model = uri,
-                            onDelete = { fotosUris.value = fotosUris.value.filter { it != uri } }
+                            onDelete = { photoUris.value = photoUris.value.filter { it != uri } }
                         )
                     }
 
-                    if (totalFotos < 15) {
+                    if (totalPhotos < 15) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -901,25 +902,25 @@ fun EditParkingVisual(
 
         Button(
             onClick = { navController?.navigate(AppScreens.MapPicker.name) },
-            shape = pill,
+            shape = pillShape,
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (ubicacion.value != null) colorResource(R.color.blue) else colorResource(R.color.grisClaro)
+                containerColor = if (location.value != null) colorResource(R.color.blue) else colorResource(R.color.grisClaro)
             ),
             modifier = Modifier
                 .fillMaxWidth(0.72f)
                 .align(Alignment.CenterHorizontally)
         ) {
             Text(
-                if (ubicacion.value != null) "Ubicación agregada" else "Agregar Ubicación",
-                color = if (ubicacion.value != null) Color.White else Color.DarkGray,
+                if (location.value != null) "Ubicación agregada" else "Agregar Ubicación",
+                color = if (location.value != null) Color.White else Color.DarkGray,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        if (ubicacion.value != null && direccion.value.isNotBlank()) {
+        if (location.value != null && address.value.isNotBlank()) {
             Spacer(Modifier.height(6.dp))
             Text(
-                text = direccion.value,
+                text = address.value,
                 fontSize = 14.sp,
                 color = Color.DarkGray,
                 textAlign = TextAlign.Center,
@@ -931,13 +932,13 @@ fun EditParkingVisual(
 
         Spacer(Modifier.height(16.dp))
 
-        var mostrarDialogoApertura by remember { mutableStateOf(false) }
-        var mostrarDialogoCierre by remember { mutableStateOf(false) }
+        var showOpeningDialog by remember { mutableStateOf(false) }
+        var showClosingDialog by remember { mutableStateOf(false) }
 
         LabelAndRight(
             label = "Hora de apertura",
             right = {
-                Box(modifier = Modifier.clickable { mostrarDialogoApertura = true }) {
+                Box(modifier = Modifier.clickable { showOpeningDialog = true }) {
                     TimePill(hourStart.value)
                 }
             }
@@ -945,26 +946,26 @@ fun EditParkingVisual(
         LabelAndRight(
             label = "Hora de cierre",
             right = {
-                Box(modifier = Modifier.clickable { mostrarDialogoCierre = true }) {
+                Box(modifier = Modifier.clickable { showClosingDialog = true }) {
                     TimePill(hourFinish.value)
                 }
             }
         )
 
-        if (mostrarDialogoApertura) {
+        if (showOpeningDialog) {
             TimeEditDialog(
-                titulo = "Hora de apertura",
-                horaActual = hourStart.value,
-                onConfirm = { hourStart.value = it; mostrarDialogoApertura = false },
-                onDismiss = { mostrarDialogoApertura = false }
+                title = "Hora de apertura",
+                currentTime = hourStart.value,
+                onConfirm = { hourStart.value = it; showOpeningDialog = false },
+                onDismiss = { showOpeningDialog = false }
             )
         }
-        if (mostrarDialogoCierre) {
+        if (showClosingDialog) {
             TimeEditDialog(
-                titulo = "Hora de cierre",
-                horaActual = hourFinish.value,
-                onConfirm = { hourFinish.value = it; mostrarDialogoCierre = false },
-                onDismiss = { mostrarDialogoCierre = false }
+                title = "Hora de cierre",
+                currentTime = hourFinish.value,
+                onConfirm = { hourFinish.value = it; showClosingDialog = false },
+                onDismiss = { showClosingDialog = false }
             )
         }
 
@@ -978,13 +979,13 @@ fun EditParkingVisual(
         Spacer(Modifier.height(8.dp))
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            diasSeleccionados.value.forEachIndexed { index, seleccionado ->
+            selectedDays.value.forEachIndexed { index, seleccionado ->
                 CircleCheckClickable(
                     checked = seleccionado,
                     onClick = {
-                        val nuevaLista = diasSeleccionados.value.toMutableList()
-                        nuevaLista[index] = !seleccionado
-                        diasSeleccionados.value = nuevaLista
+                        val newList = selectedDays.value.toMutableList()
+                        newList[index] = !seleccionado
+                        selectedDays.value = newList
                     }
                 )
             }
@@ -993,72 +994,72 @@ fun EditParkingVisual(
         Spacer(Modifier.height(18.dp))
 
         Button(
-            enabled = !subiendo.value,
+            enabled = !isUploading.value,
             onClick = {
                 if (parkingId.isEmpty()) {
-                    mensaje.value = "ID de parqueadero inválido"
+                    message.value = "ID de parqueadero inválido"
                     return@Button
                 }
-                subiendo.value = true
+                isUploading.value = true
 
-                val diasString = diasSeleccionados.value
+                val daysString = selectedDays.value
                     .mapIndexed { i, b -> if (b) listOf("L", "M", "M", "J", "V", "S", "D")[i] else "" }
                     .filter { it.isNotEmpty() }
                     .joinToString(",")
 
-                val totalFotos = fotosUris.value.size
-                if (totalFotos == 0) {
+                val totalPhotos = photoUris.value.size
+                if (totalPhotos == 0) {
                     saveParkingDetails(
                         db, parkingId, name.value, pricePerHour.value, pricePerMin.value,
                         fixedPrice.value, terms.value, electricCharges.value,
-                        hourStart.value, hourFinish.value, diasString,
+                        hourStart.value, hourFinish.value, daysString,
                         slot.value.toIntOrNull() ?: 0,
-                        fotosUrls.value, ubicacion.value, direccion,
-                        mensaje, subiendo, navController
+                        photoUrls.value, location.value, address,
+                        message, isUploading, navController
                     )
                 } else {
                     val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.IO)
                     scope.launch {
                         try {
                             val storageRef = FirebaseStorage.getInstance().reference
-                            val fotosSubidas = mutableListOf<String>()
+                            val uploadedPhotos = mutableListOf<String>()
 
-                            fotosUris.value.forEach { uri ->
+                            photoUris.value.forEach { uri ->
                                 val fileName = UUID.randomUUID().toString() + ".jpg"
-                                val imageRef = storageRef.child("parqueaderos/$fileName")
+                                val imageRef = storageRef.child("parking lots/$fileName")
                                 imageRef.putFile(uri).await()
                                 val downloadUrl = imageRef.downloadUrl.await()
-                                fotosSubidas.add(downloadUrl.toString())
+                                uploadedPhotos.add(downloadUrl.toString())
                             }
-                            val todasLasFotos = fotosUrls.value + fotosSubidas
+                            val allPhotos = photoUrls.value + uploadedPhotos
 
                             withContext(Dispatchers.Main) {
                                 saveParkingDetails(
                                     db, parkingId, name.value , pricePerHour.value, pricePerMin.value,
                                     fixedPrice.value, terms.value, electricCharges.value,
-                                    hourStart.value, hourFinish.value, diasString,
+                                    hourStart.value, hourFinish.value, daysString,
                                     slot.value.toIntOrNull() ?: 0,
-                                    todasLasFotos, ubicacion.value, direccion,
-                                    mensaje, subiendo, navController
+                                    allPhotos, location.value, address,
+                                    message, isUploading, navController
                                 )
                             }
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
-                                mensaje.value = "Error subiendo fotos a Firebase: ${e.message}"
-                                subiendo.value = false
+                                message.value = "Error subiendo fotos a Firebase: ${e.message}"
+                                isUploading.value = false
                             }
                         }
                     }
                 }
             },
-            shape = pill,
+            shape = pillShape,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .fillMaxWidth(0.6f)
                 .height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue))
         ) {
-            if (subiendo.value) {
+            if (isUploading.value) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
                 Text("Guardar", fontWeight = FontWeight.Bold, fontSize = 18.sp)
@@ -1067,18 +1068,18 @@ fun EditParkingVisual(
         Spacer(Modifier.height(16.dp))
 
         Button(
-            enabled = !subiendo.value,
+            enabled = !isUploading.value,
             onClick = {
-                deleteParking(db, parkingId, mensaje, subiendo, navController)
+                deleteParking(db, parkingId, message, isUploading, navController)
             },
-            shape = pill,
+            shape = pillShape,
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .fillMaxWidth(0.6f)
                 .height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
         ) {
-            if (subiendo.value) {
+            if (isUploading.value) {
                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
                 Text("Eliminar", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
@@ -1087,10 +1088,10 @@ fun EditParkingVisual(
 
         Spacer(Modifier.height(24.dp))
 
-        if (mensaje.value.isNotEmpty()) {
+        if (message.value.isNotEmpty()) {
             Text(
-                text = mensaje.value,
-                color = if (mensaje.value.startsWith("P") || mensaje.value.startsWith("C")) Color.Green else Color.Red,
+                text = message.value,
+                color = if (message.value.startsWith("P") || message.value.startsWith("C")) Color.Green else Color.Red,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         }
@@ -1166,22 +1167,22 @@ fun DayLetter(letter: String) {
 
 @Composable
 fun TimeEditDialog(
-    titulo: String, horaActual: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit
+    title: String, currentTime: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit
 ) {
-    var hora by remember { mutableStateOf(horaActual) }
+    var time by remember { mutableStateOf(currentTime) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(titulo) },
+        title = { Text(title) },
         text = {
             OutlinedTextField(
-                value = hora,
-                onValueChange = { hora = it },
+                value = time,
+                onValueChange = { time = it },
                 label = { Text("HH:MM") },
                 singleLine = true
             )
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(hora) }) { Text("Listo") }
+            TextButton(onClick = { onConfirm(time) }) { Text("Listo") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancelar") }
@@ -1202,14 +1203,14 @@ fun saveParkingDetails(
     hourFinish: String,
     weekAvailability: String,
     slot: Int,
-    fotos: List<String>,
-    ubicacion: LatLng?,
-    direccion: MutableState<String>,
-    mensaje: MutableState<String>,
-    subiendo: MutableState<Boolean>,
+    photos: List<String>,
+    location: LatLng?,
+    address: MutableState<String>,
+    message: MutableState<String>,
+    isUploading: MutableState<Boolean>,
     navController: NavController?
 ) {
-    val datos = hashMapOf(
+    val data = hashMapOf(
         "name" to name,
         "pricePerHour" to pricePerHour,
         "pricePerMin" to pricePerMin,
@@ -1220,45 +1221,48 @@ fun saveParkingDetails(
         "hourFinish" to hourFinish,
         "weekAvailability" to weekAvailability,
         "slot" to slot,
-        "fotos" to fotos,
-        "photos" to fotos,
-        "latitud" to (ubicacion?.latitude ?: 0.0),
-        "longitud" to (ubicacion?.longitude ?: 0.0),
-        "direccion" to direccion.value
+        "fotos" to photos,
+        "photos" to photos,
+        "latitud" to (location?.latitude ?: 0.0),
+        "latitude" to (location?.latitude ?: 0.0),
+        "longitud" to (location?.longitude ?: 0.0),
+        "longitude" to (location?.longitude ?: 0.0),
+        "direccion" to address.value,
+        "address" to address.value
     )
-    db.collection("parqueaderos").document(parkingId).set(datos, SetOptions.merge())
+    db.collection("parking lots").document(parkingId).set(data, SetOptions.merge())
         .addOnSuccessListener {
-            mensaje.value = "Cambios guardados"
-            subiendo.value = false
+            message.value = "Cambios guardados"
+            isUploading.value = false
             navController?.popBackStack()
         }.addOnFailureListener { e ->
-            mensaje.value = "Error: ${e.message}"
-            subiendo.value = false
+            message.value = "Error: ${e.message}"
+            isUploading.value = false
         }
 }
 
 fun deleteParking(
     db: FirebaseFirestore,
     parkingId: String,
-    mensaje: MutableState<String>,
-    subiendo: MutableState<Boolean>,
+    message: MutableState<String>,
+    isUploading: MutableState<Boolean>,
     navController: NavController?
 ) {
     if (parkingId.isEmpty()) {
-        mensaje.value = "ID de parqueadero inválido"
+        message.value = "ID de parqueadero inválido"
         return
     }
 
-    subiendo.value = true
+    isUploading.value = true
 
-    db.collection("parqueaderos").document(parkingId).delete()
+    db.collection("parking lots").document(parkingId).delete()
         .addOnSuccessListener {
-            mensaje.value = "Parqueadero eliminado"
-            subiendo.value = false
+            message.value = "Parqueadero eliminado"
+            isUploading.value = false
             navController?.popBackStack()
         }.addOnFailureListener { e ->
-            mensaje.value = "Error al eliminar: ${e.message}"
-            subiendo.value = false
+            message.value = "Error al eliminar: ${e.message}"
+            isUploading.value = false
         }
 }
 

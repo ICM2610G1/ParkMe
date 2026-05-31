@@ -10,7 +10,7 @@ data class ChatMessage(
     val imageUrl: String? = null,
     val timestamp: Timestamp = Timestamp.now()
 ) {
-    fun isEnviadoPorMi(miUserId: String): Boolean {
+    fun isSentByMe(miUserId: String): Boolean {
         return senderId == miUserId
     }
 

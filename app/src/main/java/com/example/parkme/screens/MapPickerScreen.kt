@@ -140,7 +140,6 @@ fun MapPickerScreen(navController: NavController, onLocationPicked: (LatLng) -> 
             }
         }
 
-
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -285,9 +284,3 @@ fun findLocation(address: String): LatLng? {
     return null
 }
 
-@Preview(showBackground = true)
-@Composable
-fun PreviewPiccker() {
-    val navControllerv = rememberNavController()
-    MapPickerScreen(navControllerv) { }
-}

@@ -332,7 +332,7 @@ class AppViewModel : ViewModel() {
                         val rate = (doc.get("rate") as? Number)?.toFloat()
                             ?: (doc.get("calificacion") as? Number)?.toFloat() ?: 0f
                         val ratingCount = (doc.get("ratingCount") as? Number)?.toInt() ?: 0
-                        val direccion = doc.getString("direccion") ?: ""
+                        val adress = doc.getString("direccion") ?: ""
                         val rawPhotos =
                             doc.get("photos") ?: doc.get("fotos") ?: doc.get("imageUrl") ?: doc.get(
                                 "imageUrls"
@@ -359,7 +359,7 @@ class AppViewModel : ViewModel() {
                             slot = slot,
                             rate = rate,
                             ratingCount = ratingCount,
-                            direccion = direccion,
+                            adress = adress,
                             photos = photos
                         )
                     } catch (e: Exception) {
@@ -395,7 +395,7 @@ class AppViewModel : ViewModel() {
                             val parkingId = doc.getString("parkingId") ?: doc.getString("idParqueadero") ?: ""
                             val parkingName = doc.getString("parkingName") ?: doc.getString("nombreParqueadero") ?: "Parqueadero"
                             val userId = doc.getString("userId") ?: ""
-                            val placa = doc.getString("placa") ?: ""
+                            val licensePlate = doc.getString("licensePlate") ?: ""
                             val operatorId = doc.getString("operatorId") ?: doc.getString("idOperador") ?: ""
                             val startTime = doc.getString("startTime") ?: doc.getString("horaInicio") ?: ""
                             val endTime = doc.getString("endTime") ?: doc.getString("horaFin") ?: ""
@@ -412,7 +412,7 @@ class AppViewModel : ViewModel() {
                                 operatorId = operatorId,
                                 parkingName = parkingName,
                                 userId = userId,
-                                placa = placa,
+                                licensePlate = licensePlate,
                                 startTime = startTime,
                                 endTime = endTime,
                                 status = status,
@@ -476,7 +476,7 @@ class AppViewModel : ViewModel() {
                                 operatorId = doc.getString("operatorId") ?: "",
                                 parkingName = doc.getString("parkingName") ?: "",
                                 userId = doc.getString("userId") ?: "",
-                                placa = doc.getString("placa") ?: "",
+                                licensePlate = doc.getString("licensePlate") ?: "",
                                 startTime = doc.getString("startTime") ?: "",
                                 endTime = doc.getString("endTime") ?: "",
                                 status = doc.getString("status") ?: "Activa",

@@ -7,7 +7,7 @@ data class Reservation(
     val parkingName: String = "",
     val userId: String = "",
     val operatorId: String = "",
-    val placa: String = "",
+    val licensePlate: String = "",
     val startTime: String = "",
     val endTime: String = "",
     val status: String = "Activa",

@@ -108,14 +108,14 @@ fun Navigation() {
         composable(AppScreens.EditParking.name) { EditParkingVisual() }
 
         composable(AppScreens.ChatCli.name) {
-            val reservaId = ReservationHolder.selectedReservationId
+            val reservationId = ReservationHolder.selectedReservationId
             val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: "usuario_desconocido"
 
-            if (reservaId.isNotEmpty()) {
+            if (reservationId.isNotEmpty()) {
                 ChatScreen(
-                    chatId = reservaId,
-                    miUserId = currentUserUid,
-                    esOperador = false,
+                    chatId = reservationId,
+                    myUserId = currentUserUid,
+                    isOperator = false,
                     navController = navController,
                     appViewModel = viewModel
                 )
@@ -123,14 +123,14 @@ fun Navigation() {
         }
 
         composable(AppScreens.ChatOp.name) {
-            val reservaId = ReservationHolder.selectedReservationId
-            val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: "operador_desconocido"
+            val reservationId = ReservationHolder.selectedReservationId
+            val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: "unknown_operator"
 
-            if (reservaId.isNotEmpty()) {
+            if (reservationId.isNotEmpty()) {
                 ChatScreen(
-                    chatId = reservaId,
-                    miUserId = currentUserUid,
-                    esOperador = true,
+                    chatId = reservationId,
+                    myUserId = currentUserUid,
+                    isOperator = true,
                     navController = navController,
                     appViewModel = viewModel
                 )
@@ -138,11 +138,11 @@ fun Navigation() {
         }
 
         composable(AppScreens.ChatListCli.name) {
-            ChatListScreen(navController = navController, esOperador = false)
+            ChatListScreen(navController = navController, isOperator = false)
         }
 
         composable(AppScreens.ChatListOp.name) {
-            ChatListScreen(navController = navController, esOperador = true)
+            ChatListScreen(navController = navController, isOperator = true)
         }
 
         composable("${AppScreens.EditParking.name}/{parkingId}") { backStackEntry ->

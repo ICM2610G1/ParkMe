@@ -316,7 +316,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Button(
                                                 onClick = {
-                                                    chatViewModel.iniciarChatRoom(reservaReciente)
+                                                    chatViewModel.initChatRoom(reservaReciente)
                                                     navController.navigate(AppScreens.ChatListCli.name)
                                                 },
                                                 colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
@@ -713,7 +713,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                         ) {
                                             Column {
                                                 Text(
-                                                    text = "Vehículo Placa: ${reserva.placa.ifEmpty { "N/A" }}",
+                                                    text = "Vehículo Placa: ${reserva.licensePlate.ifEmpty { "N/A" }}",
                                                     color = Color.Black,
                                                     fontSize = 14.sp,
                                                     fontWeight = FontWeight.Bold

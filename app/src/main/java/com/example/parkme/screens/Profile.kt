@@ -58,9 +58,9 @@ import com.example.parkme.viewmodel.AppViewModel
 
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
-    var itemSeleccionado by remember { mutableIntStateOf(2) }
+    var selectedItem by remember { mutableIntStateOf(2) }
 
-    var mostrarSoporte by remember { mutableStateOf(false) }
+    var showSupportDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -90,9 +90,9 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
                         label = { Text("Inicio") },
-                        selected = itemSeleccionado == 0,
+                        selected = selectedItem == 0,
                         onClick = {
-                            itemSeleccionado = 0
+                            selectedItem = 0
                             navController.navigate(homeRoute)
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -110,9 +110,9 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             )
                         },
                         label = { Text("Actividad") },
-                        selected = itemSeleccionado == 1,
+                        selected = selectedItem == 1,
                         onClick = {
-                            itemSeleccionado = 1
+                            selectedItem = 1
                             navController.navigate(activityRoute)
                         },
                         colors = NavigationBarItemDefaults.colors(
@@ -125,8 +125,8 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
                         label = { Text("Perfil") },
-                        selected = itemSeleccionado == 2,
-                        onClick = { itemSeleccionado = 2 },
+                        selected = selectedItem == 2,
+                        onClick = { selectedItem = 2 },
                         colors = NavigationBarItemDefaults.colors(
                             indicatorColor = Color.Black,
                             selectedIconColor = Color.White,
@@ -217,7 +217,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(32.dp)
-                                    .clickable { mostrarSoporte = true }
+                                    .clickable { showSupportDialog = true }
                             )
                             Text("Soporte", fontSize = 10.sp, textAlign = TextAlign.Center)
                         }
@@ -257,8 +257,8 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
             }
         }
 
-        if (mostrarSoporte) {
-            Dialog(onDismissRequest = { mostrarSoporte = false }) {
+        if (showSupportDialog) {
+            Dialog(onDismissRequest = { showSupportDialog = false }) {
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White,
@@ -274,7 +274,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             horizontalArrangement = Arrangement.End
                         ) {
                             IconButton(
-                                onClick = { mostrarSoporte = false },
+                                onClick = { showSupportDialog = false },
                                 modifier = Modifier.size(24.dp)
                             ) {
                                 Icon(

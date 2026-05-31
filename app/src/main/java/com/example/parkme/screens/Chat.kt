@@ -36,8 +36,8 @@ import com.example.parkme.viewmodel.ChatViewModel
 @Composable
 fun ChatScreen(
     chatId: String,
-    miUserId: String,
-    esOperador: Boolean,
+    myUserId: String,
+    isOperator: Boolean,
     navController: NavController,
     appViewModel: AppViewModel,
     chatViewModel: ChatViewModel = viewModel()
@@ -47,21 +47,21 @@ fun ChatScreen(
 
     LaunchedEffect(chatId) {
         chatViewModel.listenForMessages(chatId)
-        chatViewModel.loadChatPartnerName(chatId, esOperador)
+        chatViewModel.loadChatPartnerName(chatId, isOperator)
     }
 
     Scaffold(
         containerColor = colorResource(R.color.back),
         topBar = {
-            ChatTopBar(nombreDestinatario = partnerName)
+            ChatTopBar(recipientName = partnerName)
         },
         bottomBar = {
             ChatBottomBar(
-                onSendMessage = { textoDelMensaje ->
-                    chatViewModel.sendMessage(chatId, textoDelMensaje, miUserId)
+                onSendMessage = { messageText ->
+                    chatViewModel.sendMessage(chatId, messageText, myUserId)
                 },
-                onSendImage = { uriImagen ->
-                    chatViewModel.sendImageMessage(chatId, uriImagen, miUserId)
+                onSendImage = { imageUri ->
+                    chatViewModel.sendImageMessage(chatId, imageUri, myUserId)
                 }
             )
         }
@@ -74,7 +74,7 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages) { message ->
-                MessageContent(message = message, miUserId = miUserId)
+                MessageContent(message = message, myUserId = myUserId)
             }
         }
     }
@@ -82,7 +82,7 @@ fun ChatScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatTopBar(nombreDestinatario: String) {
+fun ChatTopBar(recipientName: String) {
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -102,7 +102,7 @@ fun ChatTopBar(nombreDestinatario: String) {
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = nombreDestinatario,
+                        text = recipientName,
                         color = colorResource(R.color.white),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -203,22 +203,22 @@ fun ChatBottomBar(onSendMessage: (String) -> Unit, onSendImage: (Uri) -> Unit) {
 }
 
 @Composable
-fun MessageContent(message: ChatMessage, miUserId: String) {
-    val enviadoPorMi = message.isEnviadoPorMi(miUserId)
+fun MessageContent(message: ChatMessage, myUserId: String) {
+    val isSentByMe = message.isSentByMe(myUserId)
 
-    val bubbleShape = if (enviadoPorMi) {
+    val bubbleShape = if (isSentByMe) {
         RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 0.dp)
     } else {
         RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 16.dp)
     }
 
-    val bubbleColor = if (enviadoPorMi) colorResource(R.color.mensajerecibido) else colorResource(R.color.white)
-    val textColor = if (enviadoPorMi) colorResource(R.color.white) else colorResource(R.color.black)
-    val timeColor = if (enviadoPorMi) colorResource(R.color.white).copy(alpha = 0.8f) else colorResource(R.color.gris)
+    val bubbleColor = if (isSentByMe) colorResource(R.color.mensajerecibido) else colorResource(R.color.white)
+    val textColor = if (isSentByMe) colorResource(R.color.white) else colorResource(R.color.black)
+    val timeColor = if (isSentByMe) colorResource(R.color.white).copy(alpha = 0.8f) else colorResource(R.color.gris)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (enviadoPorMi) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isSentByMe) Arrangement.End else Arrangement.Start
     ) {
         Surface(
             shape = bubbleShape,

@@ -29,7 +29,6 @@ import com.example.parkme.navigation.AppScreens
 import com.example.parkme.viewmodel.AppViewModel
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogIn(navController: NavController, viewModel: AppViewModel) {
@@ -49,7 +48,7 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
     val activity = context as? MainActivity
 
     var linkedEmail by remember { mutableStateOf(viewModel.getSavedBiometricEmail(context)) }
-    var linkedPass by remember { mutableStateOf(viewModel.getSavedBiometricPass(context)) }
+    var linkedPassword by remember { mutableStateOf(viewModel.getSavedBiometricPass(context)) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -158,7 +157,7 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
                 Button(
                     onClick = {
                         activity?.authenticate(
-                            onSuccess = { viewModel.login(linkedEmail, linkedPass) },
+                            onSuccess = { viewModel.login(linkedEmail, linkedPassword) },
                             onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                         )
                     },
@@ -198,8 +197,8 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
             onClick = { showSheet = true },
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
         ) {
-            val textoBoton = if (linkedEmail.isNotEmpty()) "Cambiar cuenta principal" else "Configurar Biometría"
-            Text(textoBoton, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+            val buttonText = if (linkedEmail.isNotEmpty()) "Cambiar cuenta principal" else "Configurar Biometría"
+            Text(buttonText, color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
         }
 
         if (showSheet) {
@@ -289,7 +288,7 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
                         onClick = {
                             viewModel.verifyAndSaveBiometric(context, sheetEmail, sheetPassword) {
                                 linkedEmail = sheetEmail
-                                linkedPass = sheetPassword
+                                linkedPassword = sheetPassword
                                 showSheet = false
                                 sheetEmail = ""
                                 sheetPassword = ""

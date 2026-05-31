@@ -34,15 +34,13 @@ import com.google.maps.android.compose.*
 fun TrackUserMapScreen(navController: NavController, chatId: String) {
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
-
     var clientLocation by remember { mutableStateOf<LatLng?>(null) }
     var parkingLocation by remember { mutableStateOf<LatLng?>(null) }
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
-
     var lastRouteFetchedLocation by remember { mutableStateOf<LatLng?>(null) }
     var isMapLoaded by remember { mutableStateOf(false) }
-
     var isDarkMode by remember { mutableStateOf(false) }
+
     val sensorListener = remember {
         object : SensorEventListener {
             override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}

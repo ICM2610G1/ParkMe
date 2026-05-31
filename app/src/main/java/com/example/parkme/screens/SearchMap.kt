@@ -89,8 +89,8 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     var isDarkMode by remember { mutableStateOf(false) }
     val lightMapStyle = remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.lightmap) }
     val darkMapStyle = remember { MapStyleOptions.loadRawResourceStyle(context, R.raw.darkmap) }
-
     val currentMapStyle = if (isDarkMode) darkMapStyle else lightMapStyle
+
     if (!view.isInEditMode) {
         SideEffect {
             val window = context.findActivity()?.window

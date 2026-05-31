@@ -19,5 +19,5 @@ data class ParkingLot(
     val photos: List<String> = emptyList(),
     val rate: Float = 0f,
     val ratingCount: Int = 0,
-    val direccion: String = ""
+    val adress: String = ""
 )
