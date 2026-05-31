@@ -42,12 +42,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,7 +59,6 @@ import androidx.navigation.NavController
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
-import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
 import com.example.parkme.viewmodel.AppViewModel
@@ -169,31 +170,32 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (isOperator && !profileImageUrl.isNullOrEmpty()) {
-                ElevatedCard(
-                    modifier = Modifier
-                        .padding(top = 30.dp, bottom = 8.dp)
-                        .size(160.dp),
-                    shape = CircleShape,
-                    colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
-                ) {
+            Spacer(modifier = Modifier.height(40.dp))
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .background(Color.LightGray.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!profileImageUrl.isNullOrEmpty()) {
                     AsyncImage(
-                        model = profileImageUrl,
-                        contentDescription = "Foto de perfil del Operador",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(profileImageUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Foto de perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Icono por defecto",
+                        modifier = Modifier.size(80.dp),
+                        tint = Color.DarkGray
                     )
                 }
-            } else {
-                Image(
-                    painter = painterResource(id = R.drawable.profile),
-                    contentDescription = "perfil",
-                    modifier = Modifier
-                        .padding(top = 30.dp, bottom = 8.dp)
-                        .size(160.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
             }
             if (isOperator) {
                 Button(
