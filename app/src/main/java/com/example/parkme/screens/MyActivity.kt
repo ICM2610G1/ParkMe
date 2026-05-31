@@ -42,11 +42,11 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.parkme.R
 import com.example.parkme.models.Reservation
+import com.example.parkme.models.ReservationHolder
 import com.example.parkme.navigation.AppScreens
 import com.example.parkme.viewmodel.AppViewModel
 import com.example.parkme.viewmodel.ChatViewModel
 import com.google.firebase.firestore.FirebaseFirestore
-
 @Composable
 fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel()) {
 
@@ -145,11 +145,16 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
                     contentDescription = "Logo de la app",
-                    modifier = Modifier.width(130.dp).height(80.dp),
+                    modifier = Modifier
+                        .width(130.dp)
+                        .height(80.dp),
                     contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
+                Box(modifier = Modifier
+                    .height(60.dp)
+                    .width(2.dp)
+                    .background(Color.Black))
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Mi\nActividad",
@@ -196,14 +201,18 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                         model = primeraFoto,
                                         contentDescription = "Foto del parqueo",
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxWidth().height(160.dp)
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(160.dp)
                                     )
                                 } else {
                                     Image(
                                         painter = painterResource(id = R.drawable.default1),
                                         contentDescription = "Sin foto",
                                         contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxWidth().height(160.dp)
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(160.dp)
                                     )
                                 }
 
@@ -294,7 +303,8 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                             OutlinedButton(
                                                 onClick = {
                                                     chatViewModel.initChatRoom(reservaReciente)
-                                                    navController.navigate(AppScreens.ChatListCli.name)
+                                                    ReservationHolder.selectedReservationId = reservaReciente.id
+                                                    navController.navigate(AppScreens.ChatCli.name)
                                                 },
                                                 shape = RoundedCornerShape(50),
                                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = colorResource(R.color.blue)),
@@ -364,53 +374,117 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = reserva.parkingName, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
-                                    Text(text = "${reserva.startTime} - ${reserva.status}", fontSize = 14.sp, color = Color.DarkGray)
+                            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = reserva.parkingName, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                                        Text(text = "${reserva.startTime} - ${reserva.status}", fontSize = 14.sp, color = Color.DarkGray)
 
-                                    if (!reserva.isRated) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(top = 8.dp).clickable {
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("rateReservationId", reserva.id)
-                                                navController.navigate(AppScreens.RateParkingLot.name)
+                                        if (!reserva.isRated) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier
+                                                    .padding(top = 8.dp)
+                                                    .clickable {
+                                                        navController.currentBackStackEntry?.savedStateHandle?.set("rateParkingId", reserva.parkingId)
+                                                        navController.currentBackStackEntry?.savedStateHandle?.set("rateReservationId", reserva.id)
+                                                        navController.navigate(AppScreens.RateParkingLot.name)
+                                                    }
+                                            ) {
+                                                Icon(Icons.Outlined.Star, contentDescription = "Calificar", tint = colorResource(R.color.blue), modifier = Modifier.size(18.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Calificar", color = colorResource(R.color.blue), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                                             }
-                                        ) {
-                                            Icon(Icons.Outlined.Star, contentDescription = "Calificar", tint = colorResource(R.color.blue), modifier = Modifier.size(18.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Calificar", color = colorResource(R.color.blue), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(top = 8.dp)
+                                            ) {
+                                                Icon(Icons.Filled.Star, contentDescription = "Calificado", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("Calificado", color = Color.Gray, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            }
                                         }
-                                    } else {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(top = 8.dp)
-                                        ) {
-                                            Icon(Icons.Filled.Star, contentDescription = "Calificado", tint = Color.Gray, modifier = Modifier.size(16.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Calificado", color = Color.Gray, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                        }
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            if (parqueoData != null) {
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueoData.location)
+                                                navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueoData.id)
+                                                navController.navigate(AppScreens.SearchMap.name)
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.1f)),
+                                        shape = RoundedCornerShape(50),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Text("Volver", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
                                     }
                                 }
 
-                                Button(
-                                    onClick = {
-                                        if (parqueoData != null) {
-                                            navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueoData.location)
-                                            navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueoData.id)
-                                            navController.navigate(AppScreens.SearchMap.name)
+                                if (reserva.status == "Activa" || reserva.status == "Activo") {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    HorizontalDivider(color = Color(0xFFEEEEEE))
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                chatViewModel.initChatRoom(reserva)
+                                                ReservationHolder.selectedReservationId = reserva.id
+                                                navController.navigate(AppScreens.ChatCli.name)
+                                            },
+                                            shape = RoundedCornerShape(50),
+                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = colorResource(R.color.blue)),
+                                            border = BorderStroke(1.dp, colorResource(R.color.blue))
+                                        ) {
+                                            Text("Abrir Chat", fontWeight = FontWeight.Bold)
                                         }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.1f)),
-                                    shape = RoundedCornerShape(50),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                ) {
-                                    Text("Volver", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+
+                                        var localSharingState by remember(reserva.sharingLocation) {
+                                            mutableStateOf(reserva.sharingLocation)
+                                        }
+
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(50))
+                                                .background(if (localSharingState) Color(0xFFE8F5E9) else Color(0xFFF5F5F5))
+                                                .padding(horizontal = 12.dp, vertical = 4.dp)
+                                        ) {
+                                            Text(
+                                                text = if (localSharingState) "Compartiendo" else "Ubicación",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (localSharingState) Color(0xFF2E7D32) else Color.DarkGray
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Switch(
+                                                checked = localSharingState,
+                                                onCheckedChange = { isSharing ->
+                                                    if (isSharing && !hasLocationPermission) {
+                                                        permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                                    } else {
+                                                        localSharingState = isSharing
+                                                        db.collection("reservas").document(reserva.id).update("sharingLocation", isSharing)
+                                                        if (isSharing) viewModel.startTrackingUserLocation(context, reserva.userId)
+                                                        else viewModel.stopTrackingUserLocation()
+                                                    }
+                                                },
+                                                colors = SwitchDefaults.colors(checkedTrackColor = Color(0xFF4CAF50), uncheckedTrackColor = Color.Gray),
+                                                modifier = Modifier.scale(0.8f)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -514,16 +588,23 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 24.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 24.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logoparkme),
                     contentDescription = "Logo de la app",
-                    modifier = Modifier.width(130.dp).height(80.dp),
+                    modifier = Modifier
+                        .width(130.dp)
+                        .height(80.dp),
                     contentScale = ContentScale.Fit
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Box(modifier = Modifier.height(60.dp).width(2.dp).background(Color.Black))
+                Box(modifier = Modifier
+                    .height(60.dp)
+                    .width(2.dp)
+                    .background(Color.Black))
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
                     text = "Panel de\nActividad",
@@ -582,7 +663,10 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                 val prog = if (lot.slot > 0) ocupados.toFloat() / lot.slot.toFloat() else 0f
                                 LinearProgressIndicator(
                                     progress = { prog },
-                                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(50)),
                                     color = colorResource(R.color.blue),
                                     trackColor = Color(0xFFEEEEEE)
                                 )
@@ -615,7 +699,9 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                     val recentServices = activeReservations.sortedByDescending { it.startTime }
                                     recentServices.forEach { reserva ->
                                         Card(
-                                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 12.dp),
                                             shape = RoundedCornerShape(16.dp),
                                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
                                             border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
@@ -648,10 +734,13 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                                     Button(
                                                         onClick = {
                                                             chatViewModel.initChatRoom(reserva)
-                                                            navController.navigate(AppScreens.ChatListOp.name)
+                                                            ReservationHolder.selectedReservationId = reserva.id
+                                                            navController.navigate(AppScreens.ChatOp.name)
                                                         },
                                                         colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                                                        modifier = Modifier.weight(1f).height(42.dp),
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .height(42.dp),
                                                         contentPadding = PaddingValues(0.dp),
                                                         shape = RoundedCornerShape(12.dp)
                                                     ) {
@@ -669,7 +758,9 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
                                                             containerColor = Color(0xFF4CAF50),
                                                             disabledContainerColor = Color(0xFFE0E0E0)
                                                         ),
-                                                        modifier = Modifier.weight(1f).height(42.dp),
+                                                        modifier = Modifier
+                                                            .weight(1f)
+                                                            .height(42.dp),
                                                         contentPadding = PaddingValues(0.dp),
                                                         shape = RoundedCornerShape(12.dp)
                                                     ) {

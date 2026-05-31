@@ -28,7 +28,6 @@ import com.example.parkme.models.ParkingLot
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
-    // Esta pantalla ahora funciona EXCLUSIVAMENTE como la galería de fotos ("Ver todo")
 
     Scaffold(
         topBar = {
@@ -67,7 +66,6 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
             Spacer(modifier = Modifier.height(8.dp))
 
             if (parking.photos.isEmpty()) {
-                // Pantalla que se muestra si el parqueadero no tiene fotos guardadas
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -80,7 +78,6 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                     )
                 }
             } else {
-                // Cuadrícula de 2 columnas para mostrar todas las fotos
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),
@@ -94,7 +91,7 @@ fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
                             contentDescription = "Foto de ${parking.name}",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .aspectRatio(1f) // Mantiene las fotos cuadradas
+                                .aspectRatio(1f)
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(Color.LightGray.copy(alpha = 0.3f)),
                             contentScale = ContentScale.Crop
