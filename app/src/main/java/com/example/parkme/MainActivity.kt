@@ -3,6 +3,7 @@ package com.example.parkme
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.location.Geocoder
@@ -17,10 +18,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.FragmentActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import androidx.core.content.ContextCompat
 import com.example.parkme.navigation.Navigation
 import com.example.parkme.utils.ShakeDetector
-
 lateinit var sensorManager: SensorManager
 var lightSensor: Sensor? = null
 lateinit var geocoder: Geocoder
@@ -34,6 +37,8 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pedirPermisoNotificaciones()
+        actualizarFCMToken()
 
         geocoder = Geocoder(this)
 
@@ -47,6 +52,28 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             Navigation()
+        }
+    }
+
+    private fun pedirPermisoNotificaciones() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+            }
+        }
+    }
+
+    private fun actualizarFCMToken() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result
+                    FirebaseFirestore.getInstance().collection("users")
+                        .document(user.uid)
+                        .update("fcmToken", token)
+                }
+            }
         }
     }
 

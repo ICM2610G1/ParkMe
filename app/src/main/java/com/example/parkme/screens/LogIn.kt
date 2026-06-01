@@ -41,18 +41,15 @@ fun LogIn(navController: NavController, viewModel: AppViewModel) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-
     var sheetEmail by remember { mutableStateOf("") }
     var sheetPassword by remember { mutableStateOf("") }
     var showSheet by remember { mutableStateOf(false) }
     var sheetPasswordVisible by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scrollState = rememberScrollState()
-
     val authState by viewModel.authState.collectAsState()
     val context = LocalContext.current
     val activity = context as? MainActivity
-
     var linkedEmail by remember { mutableStateOf(viewModel.getSavedBiometricEmail(context)) }
     var linkedPassword by remember { mutableStateOf(viewModel.getSavedBiometricPass(context)) }
 

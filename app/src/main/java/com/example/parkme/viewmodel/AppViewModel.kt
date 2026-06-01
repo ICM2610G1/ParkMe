@@ -554,6 +554,7 @@ class AppViewModel : ViewModel() {
                     "operatorId" to parking.operatorId,
                     "parkingName" to parking.name,
                     "userId" to userId,
+                    "userName" to (_authState.value.userName ?: "Usuario"),
                     "licensePlate" to licensePlate.uppercase(),
                     "startTime" to startTime,
                     "endTime" to endTime,
