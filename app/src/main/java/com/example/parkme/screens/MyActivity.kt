@@ -47,6 +47,7 @@ import com.example.parkme.R
 import com.example.parkme.models.Reservation
 import com.example.parkme.models.ReservationHolder
 import com.example.parkme.navigation.AppScreens
+import com.example.parkme.utils.MyBottomNavBar
 import com.example.parkme.viewmodel.AppViewModel
 import com.example.parkme.viewmodel.ChatViewModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -79,57 +80,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 35.dp, topEnd = 35.dp),
-                color = colorResource(R.color.gris),
-                contentColor = colorResource(R.color.black),
-                shadowElevation = 8.dp
-            ) {
-                NavigationBar(containerColor = Color.Transparent) {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                        label = { Text("Inicio", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 0,
-                        onClick = {
-                            itemSeleccionado = 0
-                            navController.navigate(AppScreens.HomeUser.name)
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
-                    )
-
-                    NavigationBarItem(
-                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Actividad") },
-                        label = { Text("Actividad", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 1,
-                        onClick = { itemSeleccionado = 1 },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
-                    )
-
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                        label = { Text("Perfil", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 2,
-                        onClick = {
-                            itemSeleccionado = 2
-                            navController.navigate(AppScreens.UserProfile.name)
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
-                    )
-                }
-            }
+            MyBottomNavBar(navController = navController, initialIndex = 0)
         }) { paddingValues ->
         Column(
             modifier = Modifier
@@ -555,105 +506,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                color = Color(0xFFF8F9FA),
-                contentColor = Color.Black,
-                shadowElevation = 8.dp
-            ) {
-                NavigationBar(
-                    modifier = Modifier.height(76.dp),
-                    containerColor = Color.Transparent,
-                    tonalElevation = 0.dp
-                ) {
-                    val navigationColors = NavigationBarItemDefaults.colors(
-                        indicatorColor = Color.Transparent,
-                        selectedIconColor = colorResource(R.color.azulruta),
-                        selectedTextColor = colorResource(R.color.azulruta),
-                        unselectedIconColor = colorResource(R.color.grisicon),
-                        unselectedTextColor = colorResource(R.color.grisicon)
-                    )
-
-                    NavigationBarItem(
-                        selected = selectedItem == 0,
-                        onClick = { selectedItem = 0 },
-                        colors = navigationColors,
-                        label = null,
-                        icon = {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Home,
-                                    contentDescription = "Inicio",
-                                    modifier = Modifier.size(28.dp)
-                                )
-                                Text(
-                                    text = "Inicio",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    )
-
-                    NavigationBarItem(
-                        selected = selectedItem == 1,
-                        onClick = {
-                            selectedItem = 1
-                            navController.navigate(AppScreens.MyActivityOperator.name)
-                        },
-                        colors = navigationColors,
-                        label = null,
-                        icon = {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Timeline,
-                                    contentDescription = "Parqueaderos",
-                                    modifier = Modifier.size(28.dp)
-                                )
-                                Text(
-                                    text = "Actividad",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    )
-
-                    NavigationBarItem(
-                        selected = selectedItem == 2,
-                        onClick = {
-                            selectedItem = 2
-                            navController.navigate(AppScreens.OperatorProfile.name)
-                        },
-                        colors = navigationColors,
-                        label = null,
-                        icon = {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.AccountCircle,
-                                    contentDescription = "Perfil",
-                                    modifier = Modifier.size(28.dp)
-                                )
-                                Text(
-                                    text = "Perfil",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-                    )
-                }
-            }
+            MyBottomNavBar(navController = navController, initialIndex = 1)
         }) { paddingValues ->
         Column(
             modifier = Modifier

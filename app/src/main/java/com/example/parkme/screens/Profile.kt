@@ -63,6 +63,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
+import com.example.parkme.utils.MyBottomNavBar
 import com.example.parkme.viewmodel.AppViewModel
 import java.util.Locale
 
@@ -114,64 +115,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 35.dp, topEnd = 35.dp),
-                color = colorResource(R.color.gris),
-                contentColor = colorResource(R.color.black),
-                shadowElevation = 8.dp
-            ) {
-                NavigationBar(
-                    containerColor = Color.Transparent
-                ) {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                        label = { Text("Inicio") },
-                        selected = selectedItem == 0,
-                        onClick = {
-                            selectedItem = 0
-                            navController.navigate(homeRoute)
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
-                    )
-
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                Icons.AutoMirrored.Filled.List,
-                                contentDescription = "Actividad"
-                            )
-                        },
-                        label = { Text("Actividad") },
-                        selected = selectedItem == 1,
-                        onClick = {
-                            selectedItem = 1
-                            navController.navigate(activityRoute)
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
-                    )
-
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                        label = { Text("Perfil") },
-                        selected = selectedItem == 2,
-                        onClick = { selectedItem = 2 },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
-                    )
-                }
-            }
+            MyBottomNavBar(navController = navController, initialIndex = 2)
         }
     ) { paddingValues ->
         Column(
