@@ -69,7 +69,6 @@ import java.util.Locale
 
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
-    var selectedItem by remember { mutableIntStateOf(2) }
     var showSupportDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -123,151 +122,175 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                 .fillMaxSize()
                 .background(colorResource(R.color.back))
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
 
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(Color.LightGray.copy(alpha = 0.5f))
-                    .clickable(enabled = !isUploadingImage) { imagePickerLauncher.launch("image/*") },
-                contentAlignment = Alignment.Center
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (!profileImageUrl.isNullOrEmpty()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(profileImageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Foto de perfil",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Icono por defecto",
-                        modifier = Modifier.size(80.dp),
-                        tint = Color.DarkGray
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .size(180.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray.copy(alpha = 0.5f))
+                        .clickable(enabled = !isUploadingImage) { imagePickerLauncher.launch("image/*") },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!profileImageUrl.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(profileImageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Foto de perfil",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Icono por defecto",
+                            modifier = Modifier.size(120.dp),
+                            tint = Color.DarkGray
+                        )
+                    }
 
-                if (isUploadingImage) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = Color.White)
+                    if (isUploadingImage) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
                     }
                 }
-            }
 
-            if (isOperator) {
+                Spacer(modifier = Modifier.height(48.dp))
+
+                if (isOperator) {
+                    Button(
+                        onClick = {},
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Gray,
+                            contentColor = colorResource(R.color.black)
+                        )
+                    ) {
+                        Text("$formattedRating ★ ", fontSize = 17.sp, textAlign = TextAlign.Center)
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Button(
                     onClick = {},
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.Gray,
-                        contentColor = colorResource(R.color.black)
+                        contentColor = colorResource(R.color.white)
                     )
                 ) {
-                    Text("$formattedRating ★ ", fontSize = 17.sp, textAlign = TextAlign.Center)
+                    Text(
+                        authState.userName ?: "Cargando...",
+                        fontSize = 17.sp,
+                        textAlign = TextAlign.Center
+                    )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
 
-            Button(
-                onClick = {},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Gray,
-                    contentColor = colorResource(R.color.white)
-                )
-            ) {
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Text(
-                    authState.userName ?: "Cargando...",
-                    fontSize = 17.sp,
-                    textAlign = TextAlign.Center
+                    text = roleText,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.DarkGray
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = authState.userEmail ?: "Cargando...",
+                    fontSize = 16.sp,
+                    color = Color.Gray
                 )
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(roleText)
-
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(authState.userEmail ?: "Cargando...")
-
-            Spacer(modifier = Modifier.height(24.dp))
-
+            Spacer(modifier = Modifier.weight(1f))
             ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.elevatedCardColors(containerColor = Color.White)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = "Mis Servicios",
-                        modifier = Modifier.padding(bottom = 16.dp)
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 20.dp)
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.Top
                     ) {
-
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { showSupportDialog = true }
+                                .padding(8.dp)
                         ) {
                             Icon(
                                 Icons.Default.SupportAgent,
                                 contentDescription = null,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable { showSupportDialog = true }
+                                modifier = Modifier.size(42.dp)
                             )
-                            Text("Soporte", fontSize = 10.sp, textAlign = TextAlign.Center)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Soporte", fontSize = 14.sp, textAlign = TextAlign.Center)
                         }
+
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { navController.navigate(chatRoute) }
+                                .padding(8.dp)
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.Message,
                                 contentDescription = null,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable {
-                                        navController.navigate(chatRoute)
-                                    }
+                                modifier = Modifier.size(42.dp)
                             )
-                            Text("Mensajes", fontSize = 10.sp, textAlign = TextAlign.Center)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Mensajes", fontSize = 14.sp, textAlign = TextAlign.Center)
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.weight(0.3f))
+            Spacer(modifier = Modifier.weight(1f))
 
             Button(
                 onClick = {
                     viewModel.logout()
-                    navController.navigate(AppScreens.LogIn.name)
+                    navController.navigate(AppScreens.LogIn.name) {
+                        popUpTo(0)
+                    }
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorResource(R.color.blue),
                     contentColor = colorResource(R.color.white)
                 ),
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(bottom = 8.dp)
             ) {
-                Text("Cerrar Sesión", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Cerrar Sesión", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -313,8 +336,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                             fontSize = 16.sp,
                             textAlign = TextAlign.Center,
                             color = Color.DarkGray,
-
-                            )
+                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
 
