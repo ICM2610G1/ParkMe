@@ -76,7 +76,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     val authState by viewModel.authState.collectAsState()
     val profileImageUrl = authState.profileImageUrl
 
-    // Agregamos el estado de carga
     val isUploadingImage = authState.isLoading
 
     val isOperator = authState.userRole == "Operador"
@@ -86,7 +85,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     val chatRoute = if (isOperator) AppScreens.ChatListOp.name else AppScreens.ChatListCli.name
     val roleText = if (isOperator) "Operador" else "Usuario"
 
-    // Lanzador para abrir la galería
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -186,7 +184,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Box modificado para incluir clickable y el overlay de carga
             Box(
                 modifier = Modifier
                     .size(120.dp)
@@ -214,7 +211,6 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
                     )
                 }
 
-                // Muestra un loader oscuro encima si se está subiendo una nueva foto
                 if (isUploadingImage) {
                     Box(
                         modifier = Modifier

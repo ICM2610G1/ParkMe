@@ -111,7 +111,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
             override fun onSensorChanged(event: SensorEvent?) {
                 if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
                     val lux = event.values[0]
-                    isDarkMode = lux < 2000 // Cambia a modo oscuro si hay poca luz
+                    isDarkMode = lux < 2000
                 }
             }
         }
@@ -127,7 +127,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
     )
 
     val fusedLocationClient = remember { com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(context) }
-    var myLocation by remember { mutableStateOf(LatLng(4.60971, -74.08175)) } // Default Bogotá
+    var myLocation by remember { mutableStateOf(LatLng(4.60971, -74.08175)) }
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(myLocation, 15f)
     }

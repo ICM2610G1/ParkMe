@@ -257,6 +257,14 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     var isSearching by remember { mutableStateOf(false) }
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
 
+    var licensePlate by remember { mutableStateOf("") }
+    var entryTime by remember { mutableStateOf("") }
+    var exitTime by remember { mutableStateOf("") }
+
+    val calendar = remember { java.util.Calendar.getInstance() }
+    val currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
+    val currentMinute = calendar.get(java.util.Calendar.MINUTE)
+
     DisposableEffect(Unit) {
         onDispose {
             navController.previousBackStackEntry?.savedStateHandle?.remove<String>("preSelectedParkingId")
@@ -529,16 +537,104 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
+                        OutlinedTextField(
+                            value = licensePlate,
+                            onValueChange = { licensePlate = it },
+                            label = { Text("License Plate") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                OutlinedTextField(
+                                    value = entryTime,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Entry Time") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                Box(modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable {
+                                        android.app.TimePickerDialog(
+                                            context,
+                                            { _, hourOfDay, minuteOfHour ->
+                                                entryTime = String.format(java.util.Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour)
+                                            },
+                                            currentHour,
+                                            currentMinute,
+                                            false
+                                        ).show()
+                                    }
+                                )
+                            }
+
+                            Box(modifier = Modifier.weight(1f)) {
+                                OutlinedTextField(
+                                    value = exitTime,
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Exit Time") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                Box(modifier = Modifier
+                                    .matchParentSize()
+                                    .clickable {
+                                        android.app.TimePickerDialog(
+                                            context,
+                                            { _, hourOfDay, minuteOfHour ->
+                                                exitTime = String.format(java.util.Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour)
+                                            },
+                                            currentHour,
+                                            currentMinute,
+                                            false
+                                        ).show()
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
                         Button(
                             onClick = {
-                                ParkingLotHolder.selected = confirmedParkingLot
-                                navController.navigate(AppScreens.ParkingLotDetail.name)
+                                viewModel.createReservation(
+                                    parking = confirmedParkingLot!!,
+                                    licensePlate = licensePlate,
+                                    startTime = entryTime,
+                                    endTime = exitTime,
+                                    onSuccess = {
+                                        android.widget.Toast.makeText(context, "¡Reserva confirmada exitosamente!", android.widget.Toast.LENGTH_LONG).show()
+
+                                        confirmedParkingLot = null
+                                        selectedForDetails = null
+                                        licensePlate = ""
+                                        entryTime = ""
+                                        exitTime = ""
+                                        isSearching = false
+
+                                        navController.navigate(AppScreens.HomeUser.name)
+                                    },
+                                    onFailure = { error ->
+                                        android.widget.Toast.makeText(context, "Error al reservar: ${error.message}", android.widget.Toast.LENGTH_LONG).show()
+                                    }
+                                )
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
                             modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(50)
+                            shape = RoundedCornerShape(50),
+                            enabled = licensePlate.isNotBlank() && entryTime.isNotBlank() && exitTime.isNotBlank()
                         ) {
-                            Text("Ver Fotos del Parqueadero", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("Confirm Reservation", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -549,6 +645,9 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         selectedForDetails = null
                         isSearching = false
                         routePoints = null
+                        licensePlate = ""
+                        entryTime = ""
+                        exitTime = ""
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                     modifier = Modifier

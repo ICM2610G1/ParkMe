@@ -151,7 +151,7 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                     routePoints!!.forEach { boundsBuilder.include(it) }
 
                     cameraPositionState.animate(
-                        update = CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 150), // 150 de margen en los bordes
+                        update = CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 150),
                         durationMs = 800
                     )
                 } else if (clientLocation != null) {

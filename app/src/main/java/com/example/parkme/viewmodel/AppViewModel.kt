@@ -454,5 +454,57 @@ class AppViewModel : ViewModel() {
             }
         }
     }
+    fun createReservation(
+        parking: ParkingLot,
+        licensePlate: String,
+        startTime: String,
+        endTime: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            onFailure(Exception("Usuario no autenticado"))
+            return
+        }
+
+        var totalHours = 1.0
+        try {
+            val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            val start = sdf.parse(startTime)
+            val end = sdf.parse(endTime)
+            if (start != null && end != null) {
+                val diffMs = end.time - start.time
+                if (diffMs > 0) {
+                    totalHours = diffMs.toDouble() / (1000 * 60 * 60)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        val priceStr = parking.pricePerHour.replace(Regex("[^\\d]"), "")
+        val pricePerHour = priceStr.toDoubleOrNull() ?: 0.0
+        val totalPrice = totalHours * pricePerHour
+
+        val reservationMap = hashMapOf(
+            "parkingId" to parking.id,
+            "operatorId" to parking.operatorId,
+            "parkingName" to parking.name,
+            "userId" to userId,
+            "licensePlate" to licensePlate.uppercase(),
+            "startTime" to startTime,
+            "endTime" to endTime,
+            "status" to "Activa",
+            "totalPrice" to totalPrice,
+            "isRated" to false,
+            "sharingLocation" to false
+        )
+
+        firestore.collection("reservas")
+            .add(reservationMap)
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { onFailure(it) }
+    }
 
 }
