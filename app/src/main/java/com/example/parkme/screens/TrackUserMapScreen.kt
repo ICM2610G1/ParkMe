@@ -45,7 +45,6 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.maps.android.SphericalUtil
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.delay
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackUserMapScreen(navController: NavController, chatId: String) {
@@ -177,6 +176,7 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
 
     DisposableEffect(isCurrentUserTheDriver) {
         var locationCallback: LocationCallback? = null
+        var lastEtaUpdateTime = 0L
 
         if (isCurrentUserTheDriver) {
             locationCallback = object : LocationCallback() {
@@ -193,6 +193,16 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                                 results
                             )
                             val distanceInMeters = results[0]
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime - lastEtaUpdateTime > 20000) {
+                                val speed = if (location.speed > 2f) location.speed else 7f
+                                val etaSeconds = (distanceInMeters / speed).toInt()
+
+                                db.collection("reservas").document(chatId)
+                                    .update("etaSeconds", etaSeconds)
+
+                                lastEtaUpdateTime = currentTime
+                            }
 
                             if (distanceInMeters <= distanceThreshold && !hasArrivalAlertShown) {
                                 hasArrivalAlertShown = true

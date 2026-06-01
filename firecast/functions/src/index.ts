@@ -1,5 +1,5 @@
 import { setGlobalOptions } from "firebase-functions/v2";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 
@@ -79,22 +79,35 @@ export const sendChatNotification = onDocumentCreated("chats/{chatId}/messages/{
     }
 });
 
-export const sendReservationNotification = onDocumentCreated("reservas/{resId}", async (event) => {
-    const reservationData = event.data?.data();
-    if (!reservationData) return;
+export const sendReservationNotification = onDocumentWritten("reservas/{resId}", async (event) => {
 
-    const operatorId = reservationData.operatorId;
+    const afterData = event.data?.after?.data() as any;
+    const beforeData = event.data?.before?.data() as any;
+
+    if (!afterData) return;
+
+    const isNew = !beforeData;
+    const afterEta = afterData.etaSeconds || 900;
+    const beforeEta = beforeData?.etaSeconds || -1;
+
+    if (!isNew && Math.abs(afterEta - beforeEta) < 15) {
+        return;
+    }
+
+    const operatorId = afterData.operatorId;
+
+    if (!operatorId) return;
 
     try {
         const receiverDoc = await admin.firestore().collection("users").doc(operatorId).get();
         const fcmToken = receiverDoc.data()?.fcmToken;
 
         if (!fcmToken) {
-            logger.info(`Operator ${operatorId} does not have an FCM token saved. Cannot send reservation update.`);
+            logger.info(`Operator ${operatorId} does not have an FCM token saved.`);
             return;
         }
-        const initialEtaSeconds = reservationData.etaSeconds || 900;
-        const driverName = reservationData.userName || "Un conductor";
+
+        const driverName = afterData.userName || "Un conductor";
 
         const payload = {
             token: fcmToken,
@@ -102,13 +115,13 @@ export const sendReservationNotification = onDocumentCreated("reservas/{resId}",
                 type: "RESERVATION_UPDATE",
                 reservationId: event.params.resId,
                 userName: driverName,
-                eta: initialEtaSeconds.toString(),
+                eta: afterEta.toString(),
                 status: "en_camino"
             }
         };
 
         await admin.messaging().send(payload);
-        logger.info(`Uber-style reservation notification sent successfully to operator ${operatorId}`);
+        logger.info(`Uber-style notification sent to operator ${operatorId}. ETA: ${afterEta}s`);
 
     } catch (error) {
         logger.error("Error processing reservation notification:", error);
