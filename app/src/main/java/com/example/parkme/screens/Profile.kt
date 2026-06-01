@@ -63,6 +63,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
+import com.example.parkme.utils.OperatorBottomNavBar
 import com.example.parkme.utils.UserBottomNavBar
 import com.example.parkme.viewmodel.AppViewModel
 import java.util.Locale
@@ -70,16 +71,11 @@ import java.util.Locale
 @Composable
 fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     var showSupportDialog by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
-
     val authState by viewModel.authState.collectAsState()
     val profileImageUrl = authState.profileImageUrl
-
     val isUploadingImage = authState.isLoading
-
-    val isOperator = authState.userRole == "Operador"
-
+    val isOperator = authState.userRole?.equals("Operador", ignoreCase = true) == true
     val homeRoute = if (isOperator) AppScreens.HomeOperator.name else AppScreens.HomeUser.name
     val activityRoute = if (isOperator) AppScreens.MyActivityOperator.name else AppScreens.MyActivity.name
     val chatRoute = if (isOperator) AppScreens.ChatListOp.name else AppScreens.ChatListCli.name
@@ -114,7 +110,11 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-            UserBottomNavBar(navController = navController, initialIndex = 2)
+            if (isOperator) {
+                OperatorBottomNavBar(navController = navController, initialIndex = 2)
+            } else {
+                UserBottomNavBar(navController = navController, initialIndex = 2)
+            }
         }
     ) { paddingValues ->
         Column(
