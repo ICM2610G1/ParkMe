@@ -126,7 +126,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         )
     }
 
-
     val sensorListener = remember {
         object : SensorEventListener {
             override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
@@ -237,43 +236,36 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }.sortedBy { it.second }.map { it.first }
     }
 
-    val preSelectedParkingId =
-        navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
-
-    val initialSearchedLocation = remember { SearchMapLocationHolder.searchedLocation }
-    var selectedForDetails by remember(allParkingLots, preSelectedParkingId, initialSearchedLocation) {
-        mutableStateOf(
-            allParkingLots.find { it.id == preSelectedParkingId }
-                ?: initialSearchedLocation?.let { loc ->
-                    allParkingLots.find {
-                        it.location.latitude == loc.latitude &&
-                                it.location.longitude == loc.longitude
-                    }
-                }
-        )
-    }
+    var selectedForDetails by remember { mutableStateOf<ParkingLot?>(null) }
     var confirmedParkingLot by remember { mutableStateOf<ParkingLot?>(null) }
     var isSearching by remember { mutableStateOf(false) }
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
 
     LaunchedEffect(allParkingLots) {
-        if (selectedForDetails == null) {
-            val preSelectedId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
-            val loc = SearchMapLocationHolder.searchedLocation
+        val preSelectedId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
+        val loc = SearchMapLocationHolder.searchedLocation
 
-            if (preSelectedId != null) {
-                val found = allParkingLots.find { it.id == preSelectedId }
-                if (found != null) {
-                    selectedForDetails = found
-                    navController.previousBackStackEntry?.savedStateHandle?.remove<String>("preSelectedParkingId")
-                }
-            } else if (loc != null) {
-                val foundLoc = allParkingLots.find {
-                    it.location.latitude == loc.latitude && it.location.longitude == loc.longitude
-                }
-                if (foundLoc != null) {
-                    selectedForDetails = foundLoc
-                }
+        if (preSelectedId != null && allParkingLots.isNotEmpty()) {
+            val found = allParkingLots.find { it.id == preSelectedId }
+            if (found != null && selectedForDetails == null) {
+                selectedForDetails = found
+
+                filtersActive = true
+                appliedMaxDistance = 50000f
+                tempMaxDistance = 5000f
+                appliedMaxPrice = 100000f
+                tempMaxPrice = 20000f
+                appliedNeedElectric = false
+                tempNeedElectric = false
+
+                navController.previousBackStackEntry?.savedStateHandle?.remove<String>("preSelectedParkingId")
+            }
+        } else if (loc != null && allParkingLots.isNotEmpty()) {
+            val foundLoc = allParkingLots.find {
+                it.location.latitude == loc.latitude && it.location.longitude == loc.longitude
+            }
+            if (foundLoc != null && selectedForDetails == null) {
+                selectedForDetails = foundLoc
             }
         }
     }
@@ -627,10 +619,8 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                     .matchParentSize()
                                     .clickable {
                                         val rightNow = java.util.Calendar.getInstance()
-                                        val realCurrentHour =
-                                            rightNow.get(java.util.Calendar.HOUR_OF_DAY)
-                                        val realCurrentMinute =
-                                            rightNow.get(java.util.Calendar.MINUTE)
+                                        val realCurrentHour = rightNow.get(java.util.Calendar.HOUR_OF_DAY)
+                                        val realCurrentMinute = rightNow.get(java.util.Calendar.MINUTE)
 
                                         android.app.TimePickerDialog(
                                             context,
@@ -649,6 +639,22 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                                         hourOfDay,
                                                         minuteOfHour
                                                     )
+
+                                                    if (exitTime.isNotBlank()) {
+                                                        val eParts = entryTime.split(":")
+                                                        val exParts = exitTime.split(":")
+                                                        val eMins = eParts[0].toInt() * 60 + eParts[1].toInt()
+                                                        val exMins = exParts[0].toInt() * 60 + exParts[1].toInt()
+
+                                                        if (exMins <= eMins) {
+                                                            exitTime = ""
+                                                            android.widget.Toast.makeText(
+                                                                context,
+                                                                "Hora de salida reiniciada por ser menor a la entrada",
+                                                                android.widget.Toast.LENGTH_LONG
+                                                            ).show()
+                                                        }
+                                                    }
                                                 }
                                             },
                                             realCurrentHour,
@@ -677,18 +683,42 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                 Box(modifier = Modifier
                                     .matchParentSize()
                                     .clickable {
+                                        if (entryTime.isBlank()) {
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                "Por favor selecciona primero la hora de entrada",
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                            return@clickable
+                                        }
+
+                                        val eParts = entryTime.split(":")
+                                        val defaultHour = eParts[0].toInt()
+                                        val defaultMinute = eParts[1].toInt()
+
                                         android.app.TimePickerDialog(
                                             context,
                                             { _, hourOfDay, minuteOfHour ->
-                                                exitTime = String.format(
-                                                    java.util.Locale.getDefault(),
-                                                    "%02d:%02d",
-                                                    hourOfDay,
-                                                    minuteOfHour
-                                                )
+                                                val selectedMins = hourOfDay * 60 + minuteOfHour
+                                                val eMins = defaultHour * 60 + defaultMinute
+
+                                                if (selectedMins <= eMins) {
+                                                    android.widget.Toast.makeText(
+                                                        context,
+                                                        "La hora de salida debe ser mayor a la hora de entrada",
+                                                        android.widget.Toast.LENGTH_SHORT
+                                                    ).show()
+                                                } else {
+                                                    exitTime = String.format(
+                                                        java.util.Locale.getDefault(),
+                                                        "%02d:%02d",
+                                                        hourOfDay,
+                                                        minuteOfHour
+                                                    )
+                                                }
                                             },
-                                            currentHour,
-                                            currentMinute,
+                                            defaultHour,
+                                            defaultMinute,
                                             false
                                         ).show()
                                     }
@@ -849,7 +879,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                     .background(Color(0xFFE0E0E0))
                             )
                             Spacer(modifier = Modifier.width(12.dp))
-
 
                             Column(
                                 modifier = Modifier.weight(1f),
