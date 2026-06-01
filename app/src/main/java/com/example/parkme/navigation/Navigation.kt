@@ -62,11 +62,8 @@ fun Navigation() {
     }
 
     val startRoute = when {
-        authState.isAuthenticated && authState.isVerified -> {
+        authState.isAuthenticated -> {
             if (authState.userRole == "Operador") AppScreens.HomeOperator.name else AppScreens.HomeUser.name
-        }
-        authState.isAuthenticated && !authState.isVerified -> {
-            AppScreens.IdentityVerification.name
         }
         else -> AppScreens.LogIn.name
     }
@@ -183,13 +180,10 @@ fun Navigation() {
         val currentRoute = navController.currentBackStackEntry?.destination?.route
 
         when {
-            authState.isAuthenticated && !authState.isVerified -> {
-                if (currentRoute != AppScreens.IdentityVerification.name) {
-                    navController.navigate(AppScreens.IdentityVerification.name) { popUpTo(0) }
-                }
+            authState.isAuthenticated && !authState.isVerified && currentRoute == AppScreens.SignUp.name -> {
+                navController.navigate(AppScreens.IdentityVerification.name) { popUpTo(0) }
             }
-
-            authState.isAuthenticated && authState.isVerified -> {
+            authState.isAuthenticated -> {
                 val isOperator = authState.userRole?.equals("Operador", ignoreCase = true) == true
                 val destination = if (isOperator) {
                     AppScreens.HomeOperator.name

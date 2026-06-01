@@ -101,13 +101,16 @@ class AppViewModel : ViewModel() {
                 val isVerified = doc.getBoolean("isVerified") ?: false
                 val name = doc.getString("name") ?: ""
                 val lastName = doc.getString("lastName") ?: ""
+                val profileImageUrl = doc.getString("profileImage")
+
                 _authState.value = AuthState(
                     isAuthenticated = true,
                     userRole = role,
                     isVerified = isVerified,
                     isCheckingSession = false,
                     userEmail = user.email,
-                    userName = "$name $lastName".trim()
+                    userName = "$name $lastName".trim(),
+                    profileImageUrl = profileImageUrl
                 )
             } catch (e: Exception) {
                 _authState.value = AuthState(errorMessage = mapFirebaseError(e.message), isCheckingSession = false)

@@ -81,7 +81,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-           UserBottomNavBar(navController = navController, initialIndex = 0)
+           UserBottomNavBar(navController = navController, initialIndex = 1)
         }) { paddingValues ->
         Column(
             modifier = Modifier
@@ -273,7 +273,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                                     ReservationHolder.selectedReservationId = reservaReciente.id
                                                     navController.navigate(AppScreens.ChatCli.name)
                                                 },
-                                                shape = RoundedCornerShape(50),
+                                                shape = RoundedCornerShape(70),
                                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = colorResource(R.color.blue)),
                                                 border = BorderStroke(1.dp, colorResource(R.color.blue))
                                             ) {
@@ -423,7 +423,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                                 ReservationHolder.selectedReservationId = reserva.id
                                                 navController.navigate(AppScreens.ChatCli.name)
                                             },
-                                            shape = RoundedCornerShape(50),
+                                            shape = RoundedCornerShape(70),
                                             colors = ButtonDefaults.outlinedButtonColors(contentColor = colorResource(R.color.blue)),
                                             border = BorderStroke(1.dp, colorResource(R.color.blue))
                                         ) {
