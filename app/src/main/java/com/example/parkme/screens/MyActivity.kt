@@ -275,18 +275,30 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                             }
                                         }
 
-                                        Button(
-                                            onClick = {
-                                                if (parqueaderoReciente != null) {
-                                                    navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoReciente.location)
-                                                    navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoReciente.id)
-                                                    navController.navigate(AppScreens.SearchMap.name)
-                                                }
-                                            },
-                                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                                            shape = RoundedCornerShape(50)
-                                        ) {
-                                            Text("Reservar de nuevo", fontWeight = FontWeight.Bold)
+                                        if (reservaReciente.status == "Activa" || reservaReciente.status == "Activo") {
+                                            Button(
+                                                onClick = {
+                                                    navController.navigate("${AppScreens.TrackUserMap.name}/${reservaReciente.id}")
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                                shape = RoundedCornerShape(50)
+                                            ) {
+                                                Text("Ver Ruta", fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+                                        } else {
+                                            Button(
+                                                onClick = {
+                                                    if (parqueaderoReciente != null) {
+                                                        navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueaderoReciente.location)
+                                                        navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueaderoReciente.id)
+                                                        navController.navigate(AppScreens.SearchMap.name)
+                                                    }
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
+                                                shape = RoundedCornerShape(50)
+                                            ) {
+                                                Text("Reservar de nuevo", fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
                                         }
                                     }
 
@@ -411,19 +423,32 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
                                         }
                                     }
 
-                                    Button(
-                                        onClick = {
-                                            if (parqueoData != null) {
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueoData.location)
-                                                navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueoData.id)
-                                                navController.navigate(AppScreens.SearchMap.name)
-                                            }
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.1f)),
-                                        shape = RoundedCornerShape(50),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                    ) {
-                                        Text("Volver", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+                                    if (reserva.status == "Activa" || reserva.status == "Activo") {
+                                        Button(
+                                            onClick = {
+                                                navController.navigate("${AppScreens.TrackUserMap.name}/${reserva.id}")
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.1f)),
+                                            shape = RoundedCornerShape(50),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            Text("Ver Ruta", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+                                        }
+                                    } else {
+                                        Button(
+                                            onClick = {
+                                                if (parqueoData != null) {
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("ubicacionBuscada", parqueoData.location)
+                                                    navController.currentBackStackEntry?.savedStateHandle?.set("preSelectedParkingId", parqueoData.id)
+                                                    navController.navigate(AppScreens.SearchMap.name)
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue).copy(alpha = 0.1f)),
+                                            shape = RoundedCornerShape(50),
+                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                        ) {
+                                            Text("Volver", color = colorResource(R.color.blue), fontWeight = FontWeight.Bold)
+                                        }
                                     }
                                 }
 

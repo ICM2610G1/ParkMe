@@ -539,8 +539,21 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
 
                         OutlinedTextField(
                             value = licensePlate,
-                            onValueChange = { licensePlate = it },
-                            label = { Text("License Plate") },
+                            onValueChange = { newValue ->
+                                var text = newValue.uppercase().replace(Regex("[^A-Z0-9]"), "")
+                                var formatted = ""
+
+                                for (i in text.indices) {
+                                    if (i < 3) {
+                                        if (text[i].isLetter()) formatted += text[i]
+                                    } else if (i < 6) {
+                                        if (i == 3) formatted += "-"
+                                        if (text[i].isDigit()) formatted += text[i]
+                                    }
+                                }
+                                licensePlate = formatted
+                            },
+                            label = { Text("Placa (ej. ABC-123)") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
@@ -564,13 +577,26 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                 Box(modifier = Modifier
                                     .matchParentSize()
                                     .clickable {
+                                        val rightNow = java.util.Calendar.getInstance()
+                                        val realCurrentHour = rightNow.get(java.util.Calendar.HOUR_OF_DAY)
+                                        val realCurrentMinute = rightNow.get(java.util.Calendar.MINUTE)
+
                                         android.app.TimePickerDialog(
                                             context,
                                             { _, hourOfDay, minuteOfHour ->
-                                                entryTime = String.format(java.util.Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour)
+
+                                                if (hourOfDay < realCurrentHour || (hourOfDay == realCurrentHour && minuteOfHour < realCurrentMinute)) {
+                                                    android.widget.Toast.makeText(
+                                                        context,
+                                                        "La hora de entrada no puede ser en el pasado",
+                                                        android.widget.Toast.LENGTH_SHORT
+                                                    ).show()
+                                                } else {
+                                                    entryTime = String.format(java.util.Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour)
+                                                }
                                             },
-                                            currentHour,
-                                            currentMinute,
+                                            realCurrentHour,
+                                            realCurrentMinute,
                                             false
                                         ).show()
                                     }
