@@ -153,280 +153,377 @@ class _CreateParkingScreenState extends State<CreateParkingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Crear parqueadero",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.red),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildCard("Información General", Icons.home, [
-              _buildInput("Nombre del parqueadero", _nameCtrl),
-              const SizedBox(height: 12),
-              _buildInput("Cupos disponibles", _slotCtrl, TextInputType.number),
-              SwitchListTile(
-                title: const Text(
-                  "Estación de carga EV",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                activeColor: const Color(0xFF1E88E5),
-                contentPadding: EdgeInsets.zero,
-                value: _electricCharges,
-                onChanged: (val) => setState(() => _electricCharges = val),
-              ),
-            ]),
-
-            _buildCard("Tarifas (Obligatorio)", Icons.star, [
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: _buildInput(
-                      "\$ Precio por hora",
-                      _priceHourCtrl,
-                      TextInputType.number,
-                    ),
+                  Image.asset(
+                    'assets/logoparkme.png',
+                    width: 110,
+                    height: 65,
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildInput(
-                      "\$ Precio por min",
-                      _priceMinCtrl,
-                      TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildInput(
-                "\$ Tarifa plena (Día completo)",
-                _fixedPriceCtrl,
-                TextInputType.number,
-              ),
-            ]),
-
-            _buildCard("Horarios de Atención", Icons.date_range, [
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onPressed: () => _selectTime(context, true),
-                      child: Text(
-                        "Apertura:\n$_hourStart",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
+                  Container(height: 45, width: 2, color: Colors.black),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      onPressed: () => _selectTime(context, false),
-                      child: Text(
-                        "Cierre:\n$_hourFinish",
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.black),
-                      ),
+                  const Text(
+                    "Crear\nparqueadero",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      height: 1.1,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                "Días de servicio",
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(7, (index) {
-                  const days = ["L", "M", "M", "J", "V", "S", "D"];
-                  return GestureDetector(
-                    onTap: () => setState(
-                      () => _selectedDays[index] = !_selectedDays[index],
-                    ),
-                    child: CircleAvatar(
-                      radius: 19,
-                      backgroundColor: _selectedDays[index]
-                          ? const Color(0xFF1E88E5)
-                          : const Color(0xFFF0F0F0),
-                      child: Text(
-                        days[index],
-                        style: TextStyle(
-                          color: _selectedDays[index]
-                              ? Colors.white
-                              : Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ]),
-
-            _buildCard("Fotos del Parqueadero", Icons.camera_alt, [
-              ElevatedButton.icon(
-                onPressed: _pickParkingImages,
-                icon: const Icon(Icons.add_photo_alternate),
-                label: const Text("Añadir fotos"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.black,
-                  elevation: 0,
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (_parkingImages.isNotEmpty)
-                SizedBox(
-                  height: 80,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _parkingImages.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            _parkingImages[index],
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.red),
+                    onPressed: () async {
+                      await FirebaseAuth.instance.signOut();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
                       );
                     },
                   ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              _buildFormSection("Información General", Icons.home, [
+                _buildModernTextField("Nombre del parqueadero", _nameCtrl),
+                const SizedBox(height: 12),
+                _buildModernTextField(
+                  "Cupos disponibles",
+                  _slotCtrl,
+                  TextInputType.number,
                 ),
-            ]),
-
-            _buildCard("Detalles y Multimedia", Icons.list, [
-              _buildInput("Reglas del parqueadero", _termsCtrl),
-              const SizedBox(height: 16),
-
-              InkWell(
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MapPickerScreen()),
-                  );
-                  if (result != null) {
-                    setState(() {
-                      _selectedLocation = result['latLng'];
-                      _address = result['address'];
-                    });
-                  }
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: _selectedLocation != null
-                        ? const Color(0xFFE8F5E9)
-                        : const Color(0xFFF5F7FA),
-                    border: Border.all(
-                      color: _selectedLocation != null
-                          ? const Color(0xFFA5D6A7)
-                          : const Color(0xFFE0E0E0),
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.location_on,
-                        color: _selectedLocation != null
-                            ? const Color(0xFF2E7D32)
-                            : Colors.grey,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Estación de carga EV",
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _selectedLocation != null
-                                  ? "Ubicación fijada"
-                                  : "Ubicación en el mapa",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Text(
-                              _selectedLocation != null
-                                  ? _address
-                                  : "Toca para abrir el mapa",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                    ),
+                    Switch(
+                      value: _electricCharges,
+                      onChanged: (val) =>
+                          setState(() => _electricCharges = val),
+                      activeColor: Colors.white,
+                      activeTrackColor: const Color(0xFF1E88E5),
+                    ),
+                  ],
+                ),
+              ]),
+
+              _buildFormSection("Tarifas (Obligatorio)", Icons.star, [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildModernTextField(
+                        "\$ Precio por hora",
+                        _priceHourCtrl,
+                        TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildModernTextField(
+                        "\$ Precio por min",
+                        _priceMinCtrl,
+                        TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildModernTextField(
+                  "\$ Tarifa plena (Día completo)",
+                  _fixedPriceCtrl,
+                  TextInputType.number,
+                ),
+              ]),
+
+              _buildFormSection("Horarios de Atención", Icons.date_range, [
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          foregroundColor: Colors.black,
+                          side: const BorderSide(color: Colors.grey),
+                        ),
+                        onPressed: () => _selectTime(context, true),
+                        child: Text(
+                          "Apertura:\n$_hourStart",
+                          textAlign: TextAlign.center,
                         ),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          foregroundColor: Colors.black,
+                          side: const BorderSide(color: Colors.grey),
+                        ),
+                        onPressed: () => _selectTime(context, false),
+                        child: Text(
+                          "Cierre:\n$_hourFinish",
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  "Días de servicio",
+                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(7, (index) {
+                    const days = ["L", "M", "M", "J", "V", "S", "D"];
+                    return GestureDetector(
+                      onTap: () => setState(
+                        () => _selectedDays[index] = !_selectedDays[index],
+                      ),
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _selectedDays[index]
+                              ? const Color(0xFF1E88E5)
+                              : const Color(0xFFF0F0F0),
+                        ),
+                        child: Text(
+                          days[index],
+                          style: TextStyle(
+                            color: _selectedDays[index]
+                                ? Colors.white
+                                : Colors.grey,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ]),
+
+              _buildFormSection("Detalles y Multimedia", Icons.list, [
+                _buildModernTextField("Reglas del parqueadero", _termsCtrl),
+                const SizedBox(height: 12),
+
+                InkWell(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MapPickerScreen(),
+                      ),
+                    );
+                    if (result != null) {
+                      setState(() {
+                        _selectedLocation = result['latLng'];
+                        _address = result['address'];
+                      });
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _selectedLocation != null
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFF5F7FA),
+                      border: Border.all(
+                        color: _selectedLocation != null
+                            ? const Color(0xFFA5D6A7)
+                            : const Color(0xFFE0E0E0),
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: _selectedLocation != null
+                              ? const Color(0xFF2E7D32)
+                              : Colors.grey,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedLocation != null
+                                    ? "Ubicación fijada"
+                                    : "Ubicación en el mapa",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                _selectedLocation != null
+                                    ? _address
+                                    : "Toca para abrir el mapa",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Fotos",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    Text(
+                      "${_parkingImages.length}/15",
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      ..._parkingImages.map(
+                        (file) => Padding(
+                          padding: const EdgeInsets.only(right: 12.0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              file,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_parkingImages.length < 15)
+                        GestureDetector(
+                          onTap: _pickParkingImages,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E88E5).withOpacity(0.05),
+                              border: Border.all(
+                                color: const Color(0xFF1E88E5),
+                                width: 1.5,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add, color: Color(0xFF1E88E5)),
+                                Text(
+                                  "Añadir",
+                                  style: TextStyle(
+                                    color: Color(0xFF1E88E5),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              ),
-            ]),
+              ]),
 
-            const SizedBox(height: 10),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _createParking,
-                    child: const Text(
-                      "Crear Parqueadero",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
+              const SizedBox(height: 24),
+
+              Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _createParking,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E88E5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
                       ),
+                      elevation: 0,
                     ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "Crear Parqueadero",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
-            const SizedBox(height: 40),
-          ],
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildCard(String title, IconData icon, List<Widget> children) {
+  Widget _buildFormSection(String title, IconData icon, List<Widget> children) {
     return Card(
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -445,7 +542,7 @@ class _CreateParkingScreenState extends State<CreateParkingScreen> {
                   title,
                   style: const TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: Colors.black,
                   ),
                 ),
@@ -459,7 +556,7 @@ class _CreateParkingScreenState extends State<CreateParkingScreen> {
     );
   }
 
-  Widget _buildInput(
+  Widget _buildModernTextField(
     String hint,
     TextEditingController ctrl, [
     TextInputType type = TextInputType.text,
@@ -467,11 +564,16 @@ class _CreateParkingScreenState extends State<CreateParkingScreen> {
     return TextField(
       controller: ctrl,
       keyboardType: type,
+      style: const TextStyle(fontSize: 15),
       decoration: InputDecoration(
         labelText: hint,
         labelStyle: const TextStyle(color: Colors.grey, fontSize: 13),
         filled: true,
         fillColor: const Color(0xFFF9F9F9),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
