@@ -14,6 +14,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -255,6 +256,44 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
     var isSearching by remember { mutableStateOf(false) }
     var routePoints by remember { mutableStateOf<List<LatLng>?>(null) }
 
+    LaunchedEffect(allParkingLots) {
+        if (selectedForDetails == null) {
+            val preSelectedId = navController.previousBackStackEntry?.savedStateHandle?.get<String>("preSelectedParkingId")
+            val loc = SearchMapLocationHolder.searchedLocation
+
+            if (preSelectedId != null) {
+                val found = allParkingLots.find { it.id == preSelectedId }
+                if (found != null) {
+                    selectedForDetails = found
+                    navController.previousBackStackEntry?.savedStateHandle?.remove<String>("preSelectedParkingId")
+                }
+            } else if (loc != null) {
+                val foundLoc = allParkingLots.find {
+                    it.location.latitude == loc.latitude && it.location.longitude == loc.longitude
+                }
+                if (foundLoc != null) {
+                    selectedForDetails = foundLoc
+                }
+            }
+        }
+    }
+
+    BackHandler(enabled = showFilters || confirmedParkingLot != null || selectedForDetails != null) {
+        when {
+            showFilters -> {
+                showFilters = false
+            }
+            confirmedParkingLot != null -> {
+                confirmedParkingLot = null
+                isSearching = false
+            }
+            selectedForDetails != null -> {
+                selectedForDetails = null
+                routePoints = null
+                SearchMapLocationHolder.searchedLocation = null // Limpiamos la búsqueda también
+            }
+        }
+    }
     var licensePlate by remember { mutableStateOf("") }
     var entryTime by remember { mutableStateOf("") }
     var exitTime by remember { mutableStateOf("") }
@@ -573,8 +612,10 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                     .matchParentSize()
                                     .clickable {
                                         val rightNow = java.util.Calendar.getInstance()
-                                        val realCurrentHour = rightNow.get(java.util.Calendar.HOUR_OF_DAY)
-                                        val realCurrentMinute = rightNow.get(java.util.Calendar.MINUTE)
+                                        val realCurrentHour =
+                                            rightNow.get(java.util.Calendar.HOUR_OF_DAY)
+                                        val realCurrentMinute =
+                                            rightNow.get(java.util.Calendar.MINUTE)
 
                                         android.app.TimePickerDialog(
                                             context,
@@ -587,7 +628,12 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                                         android.widget.Toast.LENGTH_SHORT
                                                     ).show()
                                                 } else {
-                                                    entryTime = String.format(java.util.Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour)
+                                                    entryTime = String.format(
+                                                        java.util.Locale.getDefault(),
+                                                        "%02d:%02d",
+                                                        hourOfDay,
+                                                        minuteOfHour
+                                                    )
                                                 }
                                             },
                                             realCurrentHour,
@@ -613,7 +659,12 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                         android.app.TimePickerDialog(
                                             context,
                                             { _, hourOfDay, minuteOfHour ->
-                                                exitTime = String.format(java.util.Locale.getDefault(), "%02d:%02d", hourOfDay, minuteOfHour)
+                                                exitTime = String.format(
+                                                    java.util.Locale.getDefault(),
+                                                    "%02d:%02d",
+                                                    hourOfDay,
+                                                    minuteOfHour
+                                                )
                                             },
                                             currentHour,
                                             currentMinute,
@@ -651,7 +702,9 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                 )
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
                             shape = RoundedCornerShape(50),
                             enabled = licensePlate.isNotBlank() && entryTime.isNotBlank() && exitTime.isNotBlank()
                         ) {
@@ -849,7 +902,9 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                         imageVector = Icons.Default.Menu,
                                         contentDescription = null,
                                         tint = colorResource(R.color.blue),
-                                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .padding(top = 2.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
@@ -917,7 +972,9 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
 
                             if (previewPhotos.size < 3) {
                                 repeat(3 - previewPhotos.size) {
-                                    Spacer(modifier = Modifier.weight(1f).aspectRatio(1f))
+                                    Spacer(modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f))
                                 }
                             }
                         }
@@ -932,14 +989,18 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                         Button(
                             onClick = { selectedForDetails = null },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                            modifier = Modifier.weight(1f).height(50.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(50.dp),
                             shape = RoundedCornerShape(50)
                         ) { Text("Volver", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold) }
 
                         Button(
                             onClick = { confirmedParkingLot = p; isSearching = true },
                             colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.blue)),
-                            modifier = Modifier.weight(1.5f).height(50.dp),
+                            modifier = Modifier
+                                .weight(1.5f)
+                                .height(50.dp),
                             shape = RoundedCornerShape(50)
                         ) { Text("Aceptar y Conectar", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold) }
                     }
@@ -1013,7 +1074,8 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     }
                 }
                 Button(
-                    onClick = { navController.navigate(AppScreens.HomeUser.name) },
+                    onClick = { SearchMapLocationHolder.searchedLocation = null
+                        navController.popBackStack() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1219,7 +1281,9 @@ fun PriceCard(title: String, price: String, modifier: Modifier = Modifier) {
         border = BorderStroke(1.dp, Color(0xFFE0E0E0))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = title, fontSize = 14.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
@@ -1233,7 +1297,9 @@ fun PriceCard(title: String, price: String, modifier: Modifier = Modifier) {
 fun RowInfo(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, detail: String, iconColor: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            modifier = Modifier.size(40.dp).background(iconColor.copy(alpha = 0.1f), CircleShape),
+            modifier = Modifier
+                .size(40.dp)
+                .background(iconColor.copy(alpha = 0.1f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(24.dp))

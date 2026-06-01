@@ -1,5 +1,6 @@
 package com.example.parkme.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -28,7 +29,9 @@ import com.example.parkme.models.ParkingLot
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParkingLotDetail(navController: NavController, parking: ParkingLot) {
-
+    BackHandler {
+        navController.popBackStack()
+    }
     Scaffold(
         topBar = {
             TopAppBar(

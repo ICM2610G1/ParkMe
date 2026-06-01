@@ -494,7 +494,10 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
                     Spacer(modifier = Modifier.height(20.dp))
                     if (!isKeyboardOpen) {
                         Button(
-                            onClick = { navController.navigate(AppScreens.SearchMap.name) },
+                            onClick = { navController.currentBackStackEntry?.savedStateHandle?.remove<String>("preSelectedParkingId")
+                                navController.currentBackStackEntry?.savedStateHandle?.remove<Any>("ubicacionBuscada")
+                                SearchMapLocationHolder.searchedLocation = null
+                                navController.navigate(AppScreens.SearchMap.name) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
