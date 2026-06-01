@@ -290,7 +290,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
             selectedForDetails != null -> {
                 selectedForDetails = null
                 routePoints = null
-                SearchMapLocationHolder.searchedLocation = null // Limpiamos la búsqueda también
+                SearchMapLocationHolder.searchedLocation = null
             }
         }
     }
@@ -490,6 +490,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     color = colorResource(R.color.grisClaro),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                 )
+                .imePadding()
                 .padding(24.dp)
                 .fillMaxWidth()
                 .heightIn(max = 450.dp)
@@ -528,7 +529,9 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                     }
                 } else {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
@@ -590,7 +593,13 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                             label = { Text("Placa (ej. ABC-123)") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(50),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = colorResource(R.color.blue),
+                                unfocusedBorderColor = Color(0xFFE0E0E0),
+                                focusedContainerColor = Color(0xFFF9F9F9),
+                                unfocusedContainerColor = Color(0xFFF9F9F9)
+                            )
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
@@ -606,7 +615,13 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                     readOnly = true,
                                     label = { Text("Entry Time") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(50),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = colorResource(R.color.blue),
+                                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                                        focusedContainerColor = Color(0xFFF9F9F9),
+                                        unfocusedContainerColor = Color(0xFFF9F9F9)
+                                    )
                                 )
                                 Box(modifier = Modifier
                                     .matchParentSize()
@@ -651,7 +666,13 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                                     readOnly = true,
                                     label = { Text("Exit Time") },
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp)
+                                    shape = RoundedCornerShape(50),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = colorResource(R.color.blue),
+                                        unfocusedBorderColor = Color(0xFFE0E0E0),
+                                        focusedContainerColor = Color(0xFFF9F9F9),
+                                        unfocusedContainerColor = Color(0xFFF9F9F9)
+                                    )
                                 )
                                 Box(modifier = Modifier
                                     .matchParentSize()
