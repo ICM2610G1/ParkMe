@@ -31,46 +31,56 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        // Standard notification handling (e.g., Chats)
         remoteMessage.notification?.let {
             showNotification(
                 title = it.title,
                 body = it.body,
                 notifId = System.currentTimeMillis().toInt(),
-                maxProgress = 0,
-                currentProgress = 0,
                 channelId = "chat_notifications",
-                channelName = "Mensajes de Chat" // User-facing, keep in Spanish
+                channelName = "Mensajes de Chat"
             )
         }
 
-        // Data Payload handling (Uber-style reservations)
-        if (remoteMessage.data.isNotEmpty() && remoteMessage.data["type"] == "RESERVATION_UPDATE") {
-            val userName = remoteMessage.data["userName"] ?: "Usuario"
-            val etaSeconds = remoteMessage.data["eta"]?.toIntOrNull() ?: 0
+        if (remoteMessage.data.isNotEmpty() && remoteMessage.data["type"] == "NEW_RESERVATION") {
+            val licensePlate = remoteMessage.data["licensePlate"] ?: "Desconocida"
+            val sharingLocation = remoteMessage.data["sharingLocation"].toBoolean()
+            val reservationId = remoteMessage.data["reservationId"] ?: ""
 
-            // Safe hashcode to prevent app crash if reservationId is missing
-            val reservationId = remoteMessage.data["reservationId"]?.hashCode() ?: System.currentTimeMillis().toInt()
+            val title = "Nueva Reserva"
+            val body = "Reserva en camino: $licensePlate"
 
-            val remainingMinutes = etaSeconds / 60
+            val intent = Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                putExtra("action", "open_map")
+                putExtra("reservationId", reservationId)
+                putExtra("sharingLocation", sharingLocation)
+            }
 
-            // User-facing text remains in Spanish
-            val title = "Reserva en camino: $userName"
-            val body = "Llega en aprox $remainingMinutes minutos"
-
-            // Assuming a max estimated trip (e.g., 30 min = 1800 seconds) for the progress bar max value
-            val maxProgress = 1800
-            val currentProgress = maxProgress - etaSeconds // The lower the ETA, the fuller the bar
-
-            showNotification(
-                title = title,
-                body = body,
-                notifId = reservationId,
-                maxProgress = maxProgress,
-                currentProgress = currentProgress,
-                channelId = "reservation_notifications",
-                channelName = "Estado de Reservas" // User-facing, keep in Spanish
+            val pendingIntent = PendingIntent.getActivity(
+                this, reservationId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+
+            val builder = NotificationCompat.Builder(this, "reservation_notifications")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    "reservation_notifications",
+                    "Estado de Reservas",
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+                manager.createNotificationChannel(channel)
+            }
+
+            manager.notify(reservationId.hashCode(), builder.build())
         }
     }
 
@@ -78,16 +88,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         title: String?,
         body: String?,
         notifId: Int,
-        maxProgress: Int,
-        currentProgress: Int,
         channelId: String,
         channelName: String
     ) {
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
+
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            this, notifId, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val builder = NotificationCompat.Builder(this, channelId)
@@ -95,20 +104,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-
-        // If maxProgress is greater than 0, display the progress bar
-        if (maxProgress > 0) {
-            builder.setProgress(maxProgress, currentProgress, false)
-            // Prevents the notification from making a sound every single time it updates
-            builder.setOnlyAlertOnce(true)
-        } else {
-            builder.setAutoCancel(true)
-        }
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Channel creation logic is CRITICAL for Android 8.0+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,

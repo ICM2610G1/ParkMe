@@ -46,7 +46,7 @@ enum class AppScreens {
 }
 
 @Composable
-fun Navigation() {
+fun Navigation(targetRoute: String? = null, onNavigated: () -> Unit = {}) {
     val navController = rememberNavController()
     val viewModel: AppViewModel = viewModel()
     val authState by viewModel.authState.collectAsState()
@@ -206,6 +206,12 @@ fun Navigation() {
                     navController.navigate(AppScreens.LogIn.name) { popUpTo(0) }
                 }
             }
+        }
+    }
+    LaunchedEffect(targetRoute) {
+        if (targetRoute != null) {
+            navController.navigate(targetRoute)
+            onNavigated()
         }
     }
 }

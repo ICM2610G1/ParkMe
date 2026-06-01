@@ -1,5 +1,5 @@
 import { setGlobalOptions } from "firebase-functions/v2";
-import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 
@@ -79,51 +79,34 @@ export const sendChatNotification = onDocumentCreated("chats/{chatId}/messages/{
     }
 });
 
-export const sendReservationNotification = onDocumentWritten("reservas/{resId}", async (event) => {
+export const sendReservationNotification = onDocumentCreated("reservas/{resId}", async (event) => {
+    const reservationData = event.data?.data();
+    if (!reservationData) return;
 
-    const afterData = event.data?.after?.data() as any;
-    const beforeData = event.data?.before?.data() as any;
-
-    if (!afterData) return;
-
-    const isNew = !beforeData;
-    const afterEta = afterData.etaSeconds || 900;
-    const beforeEta = beforeData?.etaSeconds || -1;
-
-    if (!isNew && Math.abs(afterEta - beforeEta) < 15) {
-        return;
-    }
-
-    const operatorId = afterData.operatorId;
-
-    if (!operatorId) return;
+    const operatorId = reservationData.operatorId;
+    const licensePlate = reservationData.licensePlate || "Desconocida";
+    const sharingLocation = reservationData.sharingLocation ? "true" : "false";
 
     try {
         const receiverDoc = await admin.firestore().collection("users").doc(operatorId).get();
         const fcmToken = receiverDoc.data()?.fcmToken;
 
-        if (!fcmToken) {
-            logger.info(`Operator ${operatorId} does not have an FCM token saved.`);
-            return;
-        }
-
-        const driverName = afterData.userName || "Un conductor";
+        if (!fcmToken) return;
 
         const payload = {
             token: fcmToken,
             data: {
-                type: "RESERVATION_UPDATE",
+                type: "NEW_RESERVATION",
                 reservationId: event.params.resId,
-                userName: driverName,
-                eta: afterEta.toString(),
-                status: "en_camino"
+                licensePlate: licensePlate,
+                sharingLocation: sharingLocation
             }
         };
 
         await admin.messaging().send(payload);
-        logger.info(`Uber-style notification sent to operator ${operatorId}. ETA: ${afterEta}s`);
+        logger.info(`Notificación simple enviada. Placa: ${licensePlate}`);
 
     } catch (error) {
-        logger.error("Error processing reservation notification:", error);
+        logger.error("Error", error);
     }
 });

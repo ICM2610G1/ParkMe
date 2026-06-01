@@ -194,8 +194,8 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                             )
                             val distanceInMeters = results[0]
                             val currentTime = System.currentTimeMillis()
-                            if (currentTime - lastEtaUpdateTime > 20000) {
-                                val speed = if (location.speed > 2f) location.speed else 7f
+                            if (currentTime - lastEtaUpdateTime > 10000) {
+                                val speed = if (location.speed > 1f) location.speed else 5f
                                 val etaSeconds = (distanceInMeters / speed).toInt()
 
                                 db.collection("reservas").document(chatId)
@@ -215,13 +215,8 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
                         }
 
                         db.collection("users").document(currentUid).update(
-                            mapOf(
-                                "latitude" to location.latitude,
-                                "longitude" to location.longitude
-                            )
-                        ).addOnFailureListener {
-                            Log.e("MAPS_DEBUG", "Error actualizando ubicación en Firebase")
-                        }
+                            mapOf("latitude" to location.latitude, "longitude" to location.longitude)
+                        )
                     }
                 }
             }
@@ -232,23 +227,14 @@ fun TrackUserMapScreen(navController: NavController, chatId: String) {
 
             if (hasLocationPermission) {
                 val locationRequest = com.google.android.gms.location.LocationRequest.Builder(
-                    com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY,
-                    3000
+                    com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY, 3000
                 ).setMinUpdateDistanceMeters(2f).build()
 
-                fusedLocationClient.requestLocationUpdates(
-                    locationRequest,
-                    locationCallback,
-                    android.os.Looper.getMainLooper()
-                )
+                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper())
             }
         }
-
-        onDispose {
-            locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
-        }
+        onDispose { locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) } }
     }
-
     LaunchedEffect(clientLocation) {
         clientLocation?.let {
             clientMarkerState.position = it

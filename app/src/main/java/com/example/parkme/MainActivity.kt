@@ -12,6 +12,9 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,8 +25,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import androidx.core.content.ContextCompat
+import com.example.parkme.navigation.AppScreens
 import com.example.parkme.navigation.Navigation
 import com.example.parkme.utils.ShakeDetector
+
 lateinit var sensorManager: SensorManager
 var lightSensor: Sensor? = null
 lateinit var geocoder: Geocoder
@@ -34,6 +39,7 @@ class MainActivity : FragmentActivity() {
 
     private var canAuthenticate = false
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
+    private var targetRoute by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,8 +56,13 @@ class MainActivity : FragmentActivity() {
 
         setupAuth()
 
+        manejarClickNotificacion(intent)
+
         setContent {
-            Navigation()
+            Navigation(
+                targetRoute = targetRoute,
+                onNavigated = { targetRoute = null }
+            )
         }
     }
 
@@ -59,6 +70,24 @@ class MainActivity : FragmentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        manejarClickNotificacion(intent)
+    }
+
+    private fun manejarClickNotificacion(intent: Intent?) {
+        if (intent?.getStringExtra("action") == "open_map") {
+            val sharingLocation = intent.getBooleanExtra("sharingLocation", false)
+            val reservationId = intent.getStringExtra("reservationId") ?: ""
+
+            if (!sharingLocation) {
+                Toast.makeText(this, "Actualmente el usuario no está compartiendo ubicación", Toast.LENGTH_LONG).show()
+            } else {
+                targetRoute = "${AppScreens.TrackUserMap.name}/$reservationId"
             }
         }
     }
