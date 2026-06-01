@@ -63,7 +63,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
-import com.example.parkme.utils.MyBottomNavBar
+import com.example.parkme.utils.UserBottomNavBar
 import com.example.parkme.viewmodel.AppViewModel
 import java.util.Locale
 
@@ -114,7 +114,7 @@ fun ProfileScreen(navController: NavController, viewModel: AppViewModel) {
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-            MyBottomNavBar(navController = navController, initialIndex = 2)
+            UserBottomNavBar(navController = navController, initialIndex = 2)
         }
     ) { paddingValues ->
         Column(

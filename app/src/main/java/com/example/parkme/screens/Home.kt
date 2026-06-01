@@ -66,7 +66,8 @@ import com.example.parkme.lightSensor
 import com.example.parkme.navigation.AppScreens
 import com.example.parkme.models.SearchMapLocationHolder
 import com.example.parkme.sensorManager
-import com.example.parkme.utils.MyBottomNavBar
+import com.example.parkme.utils.OperatorBottomNavBar
+import com.example.parkme.utils.UserBottomNavBar
 import com.example.parkme.viewmodel.AppViewModel
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.Priority
@@ -240,7 +241,7 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
         containerColor = Color.Transparent,
         bottomBar = {
             if (!isKeyboardOpen) {
-                MyBottomNavBar(navController = navController, initialIndex = 0)
+                UserBottomNavBar(navController = navController, initialIndex = 0)
             }
         }
     ) { paddingValues ->
@@ -578,7 +579,7 @@ fun HomeOperator(navController: NavController) {
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-           MyBottomNavBar(navController = navController, initialIndex = 0)
+           OperatorBottomNavBar(navController = navController, initialIndex = 0)
         }
     ) { paddingValues ->
         Column(

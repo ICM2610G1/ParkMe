@@ -47,7 +47,8 @@ import com.example.parkme.R
 import com.example.parkme.models.Reservation
 import com.example.parkme.models.ReservationHolder
 import com.example.parkme.navigation.AppScreens
-import com.example.parkme.utils.MyBottomNavBar
+import com.example.parkme.utils.OperatorBottomNavBar
+import com.example.parkme.utils.UserBottomNavBar
 import com.example.parkme.viewmodel.AppViewModel
 import com.example.parkme.viewmodel.ChatViewModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -80,7 +81,7 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-            MyBottomNavBar(navController = navController, initialIndex = 0)
+           UserBottomNavBar(navController = navController, initialIndex = 0)
         }) { paddingValues ->
         Column(
             modifier = Modifier
@@ -506,7 +507,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
     Scaffold(
         modifier = Modifier.background(color = colorResource(R.color.back)),
         bottomBar = {
-            MyBottomNavBar(navController = navController, initialIndex = 1)
+            OperatorBottomNavBar(navController = navController, initialIndex = 1)
         }) { paddingValues ->
         Column(
             modifier = Modifier

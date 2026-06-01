@@ -20,7 +20,7 @@ import com.example.parkme.R
 import com.example.parkme.navigation.AppScreens
 
 @Composable
-fun MyBottomNavBar(navController: NavController, initialIndex: Int) {
+fun OperatorBottomNavBar(navController: NavController, initialIndex: Int) {
     var selectedItem by remember { mutableIntStateOf(initialIndex) }
 
     Surface(
@@ -102,6 +102,115 @@ fun MyBottomNavBar(navController: NavController, initialIndex: Int) {
                 onClick = {
                     selectedItem = 2
                     navController.navigate(AppScreens.OperatorProfile.name)
+                },
+                colors = navigationColors,
+                label = null,
+                icon = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AccountCircle,
+                            contentDescription = "Perfil",
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Text(
+                            text = "Perfil",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            )
+        }
+    }
+}
+
+
+@Composable
+fun UserBottomNavBar(navController: NavController, initialIndex: Int) {
+    var selectedItem by remember { mutableIntStateOf(initialIndex) }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        color = Color(0xFFF8F9FA),
+        contentColor = Color.Black,
+        shadowElevation = 8.dp
+    ) {
+        NavigationBar(
+            modifier = Modifier.height(76.dp),
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp
+        ) {
+            val navigationColors = NavigationBarItemDefaults.colors(
+                indicatorColor = Color.Transparent,
+                selectedIconColor = colorResource(R.color.azulruta),
+                selectedTextColor = colorResource(R.color.azulruta),
+                unselectedIconColor = colorResource(R.color.grisicon),
+                unselectedTextColor = colorResource(R.color.grisicon)
+            )
+
+            NavigationBarItem(
+                selected = selectedItem == 0,
+                onClick = {
+                    selectedItem = 0
+                    navController.navigate(AppScreens.HomeUser.name)
+                },
+                colors = navigationColors,
+                label = null,
+                icon = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Home,
+                            contentDescription = "Inicio",
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Text(
+                            text = "Inicio",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            )
+
+            NavigationBarItem(
+                selected = selectedItem == 1,
+                onClick = {
+                    selectedItem = 1
+                    navController.navigate(AppScreens.MyActivity.name)
+                },
+                colors = navigationColors,
+                label = null,
+                icon = {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Timeline,
+                            contentDescription = "Parqueaderos",
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Text(
+                            text = "Actividad",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            )
+
+            NavigationBarItem(
+                selected = selectedItem == 2,
+                onClick = {
+                    selectedItem = 2
+                    navController.navigate(AppScreens.UserProfile.name)
                 },
                 colors = navigationColors,
                 label = null,
