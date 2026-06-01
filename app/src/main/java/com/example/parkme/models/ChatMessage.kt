@@ -19,4 +19,4 @@ data class ChatMessage(
         val format = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
         return format.format(date)
     }
-}
+}   
