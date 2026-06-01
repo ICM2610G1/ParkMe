@@ -71,7 +71,10 @@ fun MyActivity(navController: NavController, viewModel: AppViewModel = viewModel
     val reservasRaw by viewModel.userReservations.collectAsState()
     val allParkingLots by viewModel.parkingLots.collectAsState()
 
-    val reservasUsuario = reservasRaw.sortedByDescending { it.startTime }
+    val reservasUsuario = reservasRaw.sortedWith(
+        compareByDescending<Reservation> { it.status == "Activa"}
+            .thenByDescending { it.startTime }
+    )
 
     LaunchedEffect(Unit) {
         viewModel.fetchUserReservations()
