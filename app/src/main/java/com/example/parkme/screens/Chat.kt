@@ -17,10 +17,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -42,6 +46,8 @@ fun ChatScreen(
     appViewModel: AppViewModel,
     chatViewModel: ChatViewModel = viewModel()
 ) {
+
+    val partnerImage by chatViewModel.chatPartnerImage.collectAsState()
     val messages by chatViewModel.messages.collectAsState()
     val partnerName by chatViewModel.chatPartnerName.collectAsState()
 
@@ -53,8 +59,8 @@ fun ChatScreen(
     Scaffold(
         containerColor = colorResource(R.color.back),
         topBar = {
-            ChatTopBar(recipientName = partnerName)
-        },
+            ChatTopBar(recipientName = partnerName, recipientImage = partnerImage)
+                 },
         bottomBar = {
             ChatBottomBar(
                 onSendMessage = { messageText ->
@@ -82,7 +88,7 @@ fun ChatScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatTopBar(recipientName: String) {
+fun ChatTopBar(recipientName: String, recipientImage: String?) {
     TopAppBar(
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -93,11 +99,22 @@ fun ChatTopBar(recipientName: String) {
                         .background(colorResource(R.color.white)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = "Perfil",
-                        tint = colorResource(R.color.blue)
-                    )
+                    if (recipientImage.isNullOrEmpty()) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = "Perfil",
+                            tint = colorResource(R.color.blue)
+                        )
+                    } else {
+                        AsyncImage(
+                            model = recipientImage,
+                            contentDescription = "Foto de perfil",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {

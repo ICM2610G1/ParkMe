@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import com.google.firebase.firestore.FirebaseFirestore
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChatBubbleOutline
@@ -144,13 +147,28 @@ fun ChatListScreen(
     }
 }
 
+
 @Composable
-fun ChatRoomItem(chatRoom: ChatRoom,isOperator: Boolean, onClick: () -> Unit) {
+fun ChatRoomItem(chatRoom: ChatRoom, isOperator: Boolean, onClick: () -> Unit) {
     val displayName = if (isOperator) {
         if (chatRoom.userName.isNotBlank()) chatRoom.userName else "Usuario"
     } else {
         chatRoom.parkingName
     }
+
+    var partnerImageUrl by remember { mutableStateOf<String?>(null) }
+
+    val partnerId = if (isOperator) chatRoom.userId else chatRoom.operatorId
+
+    LaunchedEffect(partnerId) {
+        if (partnerId.isNotEmpty()) {
+            FirebaseFirestore.getInstance().collection("users").document(partnerId).get()
+                .addOnSuccessListener { doc ->
+                    partnerImageUrl = doc.getString("profileImage")
+                }
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -166,12 +184,23 @@ fun ChatRoomItem(chatRoom: ChatRoom,isOperator: Boolean, onClick: () -> Unit) {
                 .background(colorResource(id = R.color.back)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Avatar",
-                tint = colorResource(id = R.color.blue),
-                modifier = Modifier.size(30.dp)
-            )
+            if (partnerImageUrl.isNullOrEmpty()) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Avatar",
+                    tint = colorResource(id = R.color.blue),
+                    modifier = Modifier.size(30.dp)
+                )
+            } else {
+                AsyncImage(
+                    model = partnerImageUrl,
+                    contentDescription = "Foto de perfil",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.width(16.dp))

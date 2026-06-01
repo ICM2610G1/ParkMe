@@ -29,7 +29,8 @@ class ChatViewModel : ViewModel() {
 
     private val _currentChatRoom = MutableStateFlow<ChatRoom?>(null)
     val currentChatRoom: StateFlow<ChatRoom?> = _currentChatRoom.asStateFlow()
-
+    private val _chatPartnerImage = MutableStateFlow<String?>(null)
+    val chatPartnerImage: StateFlow<String?> = _chatPartnerImage.asStateFlow()
     fun listenCurrentChatRoom(chatId: String) {
         db.collection("chats").document(chatId).addSnapshotListener { snapshot, error ->
             if (snapshot != null && snapshot.exists()) {
@@ -61,9 +62,14 @@ class ChatViewModel : ViewModel() {
                         val name = userDoc.getString("name") ?: "Usuario"
                         val lastName = userDoc.getString("lastName") ?: ""
                         _chatPartnerName.value = "$name $lastName".trim()
+
+                        _chatPartnerImage.value = userDoc.getString("profileImageUrl")
                     }
                 } else {
                     _chatPartnerName.value = room.parkingName
+                    db.collection("users").document(room.operatorId).get().addOnSuccessListener { opDoc ->
+                        _chatPartnerImage.value = opDoc.getString("profileImage")
+                    }
                 }
             }
         }.addOnFailureListener {
