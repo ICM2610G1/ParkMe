@@ -142,11 +142,23 @@ fun HomeUser(navController: NavController, viewModel: AppViewModel = viewModel()
         position = CameraPosition.fromLatLngZoom(myLocation, 15f)
     }
 
-    val hasLocationPermission = androidx.core.content.ContextCompat.checkSelfPermission(
-        context, android.Manifest.permission.ACCESS_FINE_LOCATION
-    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    var hasLocationPermission by remember {
+        mutableStateOf(
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted -> hasLocationPermission = isGranted }
+    )
 
     LaunchedEffect(Unit) {
+        if (!hasLocationPermission) {
+            permissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        }
         viewModel.fetchUserReservations()
         viewModel.fetchParkingLots()
     }

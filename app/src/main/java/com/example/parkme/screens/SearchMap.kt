@@ -125,9 +125,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         )
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted -> hasLocationPermission = isGranted })
+
     val sensorListener = remember {
         object : SensorEventListener {
             override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
@@ -347,9 +345,6 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
         }
     }
     LaunchedEffect(Unit) {
-        if (!hasLocationPermission) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
         viewModel.fetchParkingLots()
     }
     DisposableEffect(Unit) {
