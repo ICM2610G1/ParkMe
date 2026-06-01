@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "1051860002476",
+    "firebase_url": "https://parkme-6d96c-default-rtdb.firebaseio.com",
+    "project_id": "parkme-6d96c",
+    "storage_bucket": "parkme-6d96c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051860002476:android:9386dfc462f6b57374e109",
+        "android_client_info": {
+          "package_name": "com.example.parkme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8OhaPGVx_hEAklIlm8aJtssCfI7BOM1Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051860002476:android:f7fe2836e6a6352274e109",
+        "android_client_info": {
+          "package_name": "com.example.parkmeoperator"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8OhaPGVx_hEAklIlm8aJtssCfI7BOM1Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
