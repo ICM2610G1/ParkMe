@@ -19,16 +19,12 @@ import android.os.Looper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.firebase.messaging.FirebaseMessaging
 import android.net.Uri
 import com.google.firebase.storage.FirebaseStorage
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
+import com.google.android.gms.location.LocationResult
 
 data class AuthState(
     val isLoading: Boolean = false,
@@ -238,13 +234,9 @@ class AppViewModel : ViewModel() {
                         val lat = doc.get("latitude")?.toString()?.toDoubleOrNull() ?: doc.get("latitud")?.toString()?.toDoubleOrNull() ?: 0.0
                         val lng = doc.get("longitude")?.toString()?.toDoubleOrNull() ?: doc.get("longitud")?.toString()?.toDoubleOrNull() ?: 0.0
 
-                        var pricePerMin = doc.get("pricePerMin")?.toString() ?: doc.get("precioMinuto")?.toString() ?: "0"
-                        var pricePerHour = doc.get("pricePerHour")?.toString() ?: doc.get("precioHora")?.toString() ?: "0"
-                        var fixedPrice = doc.get("fixedPrice")?.toString() ?: doc.get("tarifaFija")?.toString() ?: "0"
-
-                        if (!pricePerMin.startsWith("$")) pricePerMin = "$$pricePerMin"
-                        if (!pricePerHour.startsWith("$")) pricePerHour = "$$pricePerHour"
-                        if (!fixedPrice.startsWith("$")) fixedPrice = "$$fixedPrice"
+                        val pricePerMin = doc.get("pricePerMin")?.toString() ?: doc.get("precioMinuto")?.toString() ?: "0"
+                        val pricePerHour = doc.get("pricePerHour")?.toString() ?: doc.get("precioHora")?.toString() ?: "0"
+                        val fixedPrice = doc.get("fixedPrice")?.toString() ?: doc.get("tarifaFija")?.toString() ?: "0"
 
                         val terms = doc.getString("terms") ?: doc.getString("terminos") ?: "Sin términos"
                         val hourStart = doc.get("hourStart")?.toString() ?: doc.get("horaApertura")?.toString() ?: ""
@@ -319,7 +311,27 @@ class AppViewModel : ViewModel() {
                 if (snapshot != null) {
                     _operatorParkingLots.value = snapshot.documents.mapNotNull { doc ->
                         try {
-                            ParkingLot(id = doc.id, operatorId = doc.getString("operatorId") ?: "", name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre", slot = (doc.get("slot") as? Number)?.toInt() ?: 0,rate = doc.get("rate")?.toString()?.toFloatOrNull() ?: doc.get("calificacion")?.toString()?.toFloatOrNull() ?: 0f, ratingCount = doc.get("ratingCount")?.toString()?.toIntOrNull() ?: 0)
+                            val name = doc.getString("name") ?: doc.getString("nombre") ?: "Sin nombre"
+                            val operatorId = doc.getString("operatorId") ?: ""
+                            val slot = (doc.get("slot") as? Number)?.toInt() ?: 0
+                            val rate = doc.get("rate")?.toString()?.toFloatOrNull() ?: doc.get("calificacion")?.toString()?.toFloatOrNull() ?: 0f
+                            val ratingCount = doc.get("ratingCount")?.toString()?.toIntOrNull() ?: 0
+
+                            val pricePerMin = doc.get("pricePerMin")?.toString() ?: doc.get("precioMinuto")?.toString() ?: "0"
+                            val pricePerHour = doc.get("pricePerHour")?.toString() ?: doc.get("precioHora")?.toString() ?: "0"
+                            val fixedPrice = doc.get("fixedPrice")?.toString() ?: doc.get("tarifaFija")?.toString() ?: "0"
+
+                            ParkingLot(
+                                id = doc.id,
+                                operatorId = operatorId,
+                                name = name,
+                                slot = slot,
+                                rate = rate,
+                                ratingCount = ratingCount,
+                                pricePerHour = pricePerHour,
+                                pricePerMin = pricePerMin,
+                                fixedPrice = fixedPrice
+                            )
                         } catch (e: Exception) { null }
                     }
                 }
@@ -454,6 +466,7 @@ class AppViewModel : ViewModel() {
             }
         }
     }
+
     fun createReservation(
         parking: ParkingLot,
         licensePlate: String,
@@ -468,24 +481,32 @@ class AppViewModel : ViewModel() {
             return
         }
 
-        var totalHours = 1.0
+        var totalMinutes = 0L
         try {
             val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
             val start = sdf.parse(startTime)
             val end = sdf.parse(endTime)
             if (start != null && end != null) {
-                val diffMs = end.time - start.time
-                if (diffMs > 0) {
-                    totalHours = diffMs.toDouble() / (1000 * 60 * 60)
+                var diffMs = end.time - start.time
+                // Validamos por si ocurre un cambio de día (entra 23:00, sale 01:00)
+                if (diffMs < 0) {
+                    diffMs += 24 * 60 * 60 * 1000 // Le sumamos 24 horas en milisegundos
                 }
+                totalMinutes = diffMs / (1000 * 60)
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        val priceStr = parking.pricePerHour.replace(Regex("[^\\d]"), "")
-        val pricePerHour = priceStr.toDoubleOrNull() ?: 0.0
-        val totalPrice = totalHours * pricePerHour
+        // 1. Convertir los strings crudos a Double de forma limpia y directa
+        val pricePerHour = parking.pricePerHour.toDoubleOrNull() ?: 0.0
+        val pricePerMin = parking.pricePerMin.toDoubleOrNull() ?: 0.0
+
+        // 2. Lógica para cobrar hora completa y el excedente en minutos
+        val horasCompletas = (totalMinutes / 60).toInt()
+        val minutosRestantes = (totalMinutes % 60).toInt()
+
+        val totalPrice = (horasCompletas * pricePerHour) + (minutosRestantes * pricePerMin)
 
         val reservationMap = hashMapOf(
             "parkingId" to parking.id,
@@ -506,5 +527,4 @@ class AppViewModel : ViewModel() {
             .addOnSuccessListener { onSuccess() }
             .addOnFailureListener { onFailure(it) }
     }
-
 }
