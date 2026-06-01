@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Timeline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -525,7 +528,7 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
     val db = FirebaseFirestore.getInstance()
     val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
-    var itemSeleccionado by remember { mutableIntStateOf(1) }
+    var selectedItem by remember { mutableIntStateOf(1) }
     val parkingLots by viewModel.operatorParkingLots.collectAsState()
 
     var liveReservations by remember { mutableStateOf<List<Reservation>>(emptyList()) }
@@ -554,50 +557,100 @@ fun MyActivityOperator(navController: NavController, viewModel: AppViewModel = v
         bottomBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 35.dp, topEnd = 35.dp),
-                color = colorResource(R.color.gris),
-                contentColor = colorResource(R.color.black),
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                color = Color(0xFFF8F9FA),
+                contentColor = Color.Black,
                 shadowElevation = 8.dp
             ) {
-                NavigationBar(containerColor = Color.Transparent) {
+                NavigationBar(
+                    modifier = Modifier.height(76.dp),
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp
+                ) {
+                    val navigationColors = NavigationBarItemDefaults.colors(
+                        indicatorColor = Color.Transparent,
+                        selectedIconColor = colorResource(R.color.azulruta),
+                        selectedTextColor = colorResource(R.color.azulruta),
+                        unselectedIconColor = colorResource(R.color.grisicon),
+                        unselectedTextColor = colorResource(R.color.grisicon)
+                    )
+
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-                        label = { Text("Inicio", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 0,
+                        selected = selectedItem == 0,
+                        onClick = { selectedItem = 0 },
+                        colors = navigationColors,
+                        label = null,
+                        icon = {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Home,
+                                    contentDescription = "Inicio",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Text(
+                                    text = "Inicio",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    )
+
+                    NavigationBarItem(
+                        selected = selectedItem == 1,
                         onClick = {
-                            itemSeleccionado = 0
-                            navController.navigate(AppScreens.HomeOperator.name)
+                            selectedItem = 1
+                            navController.navigate(AppScreens.MyActivityOperator.name)
                         },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
+                        colors = navigationColors,
+                        label = null,
+                        icon = {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Timeline,
+                                    contentDescription = "Parqueaderos",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Text(
+                                    text = "Actividad",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     )
+
                     NavigationBarItem(
-                        icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "Actividad") },
-                        label = { Text("Actividad", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 1,
-                        onClick = { itemSeleccionado = 1 },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                        label = { Text("Perfil", fontWeight = FontWeight.Bold) },
-                        selected = itemSeleccionado == 2,
+                        selected = selectedItem == 2,
                         onClick = {
-                            itemSeleccionado = 2
+                            selectedItem = 2
                             navController.navigate(AppScreens.OperatorProfile.name)
                         },
-                        colors = NavigationBarItemDefaults.colors(
-                            indicatorColor = Color.Black,
-                            selectedIconColor = Color.White,
-                            unselectedIconColor = Color.Black
-                        )
+                        colors = navigationColors,
+                        label = null,
+                        icon = {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.AccountCircle,
+                                    contentDescription = "Perfil",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Text(
+                                    text = "Perfil",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     )
                 }
             }
