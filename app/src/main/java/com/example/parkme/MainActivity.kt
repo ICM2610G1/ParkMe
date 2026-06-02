@@ -1,0 +1,186 @@
+package com.example.parkme
+
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorManager
+import android.location.Geocoder
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import android.widget.Toast
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.fragment.app.FragmentActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
+import androidx.core.content.ContextCompat
+import com.example.parkme.navigation.AppScreens
+import com.example.parkme.navigation.Navigation
+import com.example.parkme.utils.ShakeDetector
+
+lateinit var sensorManager: SensorManager
+var lightSensor: Sensor? = null
+lateinit var geocoder: Geocoder
+var accelerometer: Sensor? = null
+lateinit var shakeDetector: ShakeDetector
+
+class MainActivity : FragmentActivity() {
+
+    private var canAuthenticate = false
+    private lateinit var promptInfo: BiometricPrompt.PromptInfo
+    private var targetRoute by mutableStateOf<String?>(null)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        pedirPermisoNotificaciones()
+        actualizarFCMToken()
+
+        geocoder = Geocoder(this)
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+
+        shakeDetector = ShakeDetector { simulateEmergencyCall() }
+
+        setupAuth()
+
+        manejarClickNotificacion(intent)
+
+        setContent {
+            Navigation(
+                targetRoute = targetRoute,
+                onNavigated = { targetRoute = null }
+            )
+        }
+    }
+
+    private fun pedirPermisoNotificaciones() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        manejarClickNotificacion(intent)
+    }
+
+    private fun manejarClickNotificacion(intent: Intent?) {
+        val action = intent?.getStringExtra("action")
+
+        if (action == "open_map") {
+            val sharingLocation = intent.getBooleanExtra("sharingLocation", false)
+            val reservationId = intent.getStringExtra("reservationId") ?: ""
+
+            if (!sharingLocation) {
+                Toast.makeText(this, "Actualmente el usuario no está compartiendo ubicación", Toast.LENGTH_LONG).show()
+            } else {
+                targetRoute = "${AppScreens.TrackUserMap.name}/$reservationId"
+            }
+        } else if (action == "open_chat") {
+            val chatId = intent.getStringExtra("chatId") ?: ""
+            if (chatId.isNotEmpty()) {
+                targetRoute = "AutoRouteChat/$chatId"
+            }
+        }
+    }
+
+    private fun actualizarFCMToken() {
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user != null) {
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result
+                    FirebaseFirestore.getInstance().collection("users")
+                        .document(user.uid)
+                        .update("fcmToken", token)
+                }
+            }
+        }
+    }
+
+    private fun setupAuth() {
+        val biometricManager = BiometricManager.from(this)
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                BiometricManager.Authenticators.BIOMETRIC_WEAK or
+                BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        when (biometricManager.canAuthenticate(authenticators)) {
+            BiometricManager.BIOMETRIC_SUCCESS -> {
+                canAuthenticate = true
+                promptInfo = BiometricPrompt.PromptInfo.Builder()
+                    .setTitle("Iniciar sesión en ParkMe")
+                    .setSubtitle("Usa tu huella, Face ID o PIN")
+                    .setAllowedAuthenticators(authenticators)
+                    .build()
+            }
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
+                val enrollIntent = Intent(Settings.ACTION_BIOMETRIC_ENROLL).apply {
+                    putExtra(Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED, authenticators)
+                }
+                startActivityForResult(enrollIntent, 100)
+            }
+            else -> { canAuthenticate = false }
+        }
+    }
+
+    fun authenticate(onSuccess: () -> Unit, onError: (String) -> Unit) {
+        if (!canAuthenticate) {
+            setupAuth()
+            if (!canAuthenticate) {
+                onError("Biometría no configurada en este dispositivo")
+                return
+            }
+        }
+
+        val executor = ContextCompat.getMainExecutor(this)
+        val biometricPrompt = BiometricPrompt(this, executor,
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    onError("Autenticación cancelada o fallida")
+                }
+
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    onSuccess()
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                }
+            })
+
+        biometricPrompt.authenticate(promptInfo)
+    }
+
+    private fun simulateEmergencyCall() {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:123")
+        }
+        startActivity(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.let { sensorManager.registerListener(shakeDetector, it, SensorManager.SENSOR_DELAY_NORMAL) }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(shakeDetector)
+    }
+}
