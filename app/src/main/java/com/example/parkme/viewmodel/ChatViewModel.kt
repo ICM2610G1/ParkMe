@@ -54,6 +54,8 @@ class ChatViewModel : ViewModel() {
     }
 
     fun loadChatPartnerName(chatId: String, isOperator: Boolean) {
+        _chatPartnerImage.value = null
+
         db.collection("chats").document(chatId).get().addOnSuccessListener { doc ->
             val room = doc.toObject(ChatRoom::class.java)
             if (room != null) {
@@ -63,10 +65,11 @@ class ChatViewModel : ViewModel() {
                         val lastName = userDoc.getString("lastName") ?: ""
                         _chatPartnerName.value = "$name $lastName".trim()
 
-                        _chatPartnerImage.value = userDoc.getString("profileImageUrl")
+                        _chatPartnerImage.value = userDoc.getString("profileImage")
                     }
                 } else {
                     _chatPartnerName.value = room.parkingName
+
                     db.collection("users").document(room.operatorId).get().addOnSuccessListener { opDoc ->
                         _chatPartnerImage.value = opDoc.getString("profileImage")
                     }
@@ -89,7 +92,8 @@ class ChatViewModel : ViewModel() {
                     parkingName = reservation.parkingName,
                     userName = fullUserName,
                     userId = reservation.userId,
-                    operatorId = reservation.operatorId
+                    operatorId = reservation.operatorId,
+                    sharingLocation = true
                 )
 
                 db.collection("chats").document(reservation.id)
@@ -104,7 +108,8 @@ class ChatViewModel : ViewModel() {
                     parkingName = reservation.parkingName,
                     userName = "Usuario",
                     userId = reservation.userId,
-                    operatorId = reservation.operatorId
+                    operatorId = reservation.operatorId,
+                    sharingLocation = true
                 )
                 db.collection("chats").document(reservation.id).set(chatRoom, SetOptions.merge())
             }

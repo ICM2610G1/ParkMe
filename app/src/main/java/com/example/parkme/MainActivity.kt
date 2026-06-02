@@ -80,7 +80,9 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun manejarClickNotificacion(intent: Intent?) {
-        if (intent?.getStringExtra("action") == "open_map") {
+        val action = intent?.getStringExtra("action")
+
+        if (action == "open_map") {
             val sharingLocation = intent.getBooleanExtra("sharingLocation", false)
             val reservationId = intent.getStringExtra("reservationId") ?: ""
 
@@ -88,6 +90,11 @@ class MainActivity : FragmentActivity() {
                 Toast.makeText(this, "Actualmente el usuario no está compartiendo ubicación", Toast.LENGTH_LONG).show()
             } else {
                 targetRoute = "${AppScreens.TrackUserMap.name}/$reservationId"
+            }
+        } else if (action == "open_chat") {
+            val chatId = intent.getStringExtra("chatId") ?: ""
+            if (chatId.isNotEmpty()) {
+                targetRoute = "AutoRouteChat/$chatId"
             }
         }
     }

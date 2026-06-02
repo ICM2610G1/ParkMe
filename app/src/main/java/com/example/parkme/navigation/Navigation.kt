@@ -168,6 +168,30 @@ fun Navigation(targetRoute: String? = null, onNavigated: () -> Unit = {}) {
             val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
             TrackUserMapScreen(navController = navController, chatId = chatId)
         }
+
+        composable("AutoRouteChat/{chatId}") { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+
+            LaunchedEffect(authState.userRole) {
+                if (authState.userRole != null) {
+                    ReservationHolder.selectedReservationId = chatId
+
+                    val isOperator = authState.userRole.equals("Operador", ignoreCase = true)
+                    val route = if (isOperator) AppScreens.ChatOp.name else AppScreens.ChatCli.name
+
+                    navController.navigate(route) {
+                        popUpTo("AutoRouteChat/{chatId}") { inclusive = true }
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
     }
 
     LaunchedEffect(

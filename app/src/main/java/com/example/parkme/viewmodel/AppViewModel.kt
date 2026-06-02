@@ -164,7 +164,7 @@ class AppViewModel : ViewModel() {
                 }
                 firestore.collection("users").document(user.uid).set(userMap).await()
                 saveDeviceToken(user.uid)
-                _authState.value = AuthState(isAuthenticated = true, userRole = role, isVerified = false, isCheckingSession = false, isLoading = false, userEmail = email, userName = "$name $lastName".trim())
+                _authState.value = AuthState(isAuthenticated = true, userRole = role, isVerified = false, isCheckingSession = false, isLoading = false, userEmail = email, userName = "$name $lastName".trim(), profileImageUrl = profileImageUrl)
             } catch (e: Exception) {
                 _authState.value = AuthState(errorMessage = mapFirebaseError(e.message), isCheckingSession = false, isLoading = false)
             }
@@ -561,7 +561,7 @@ class AppViewModel : ViewModel() {
                     "status" to "Activa",
                     "totalPrice" to totalPrice,
                     "isRated" to false,
-                    "sharingLocation" to false
+                    "sharingLocation" to true
                 )
 
                 firestore.collection("reservas")

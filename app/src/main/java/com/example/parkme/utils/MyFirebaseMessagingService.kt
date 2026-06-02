@@ -30,6 +30,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
+        val chatId = remoteMessage.data["chatId"]
 
         remoteMessage.notification?.let {
             showNotification(
@@ -37,7 +38,9 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 body = it.body,
                 notifId = System.currentTimeMillis().toInt(),
                 channelId = "chat_notifications",
-                channelName = "Mensajes de Chat"
+                channelName = "Mensajes de Chat",
+                chatId = chatId
+
             )
         }
 
@@ -89,10 +92,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         body: String?,
         notifId: Int,
         channelId: String,
-        channelName: String
+        channelName: String,
+        chatId: String? = null
     ) {
         val intent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            if (chatId != null) {
+                putExtra("action", "open_chat")
+                putExtra("chatId", chatId)
+            }
         }
 
         val pendingIntent = PendingIntent.getActivity(
