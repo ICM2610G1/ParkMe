@@ -759,7 +759,7 @@ fun SearchMap(navController: NavController, viewModel: AppViewModel = viewModel(
                             shape = RoundedCornerShape(50),
                             enabled = licensePlate.isNotBlank() && entryTime.isNotBlank() && exitTime.isNotBlank()
                         ) {
-                            Text("Confirm Reservation", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                            Text("Confirmar Reservación", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
